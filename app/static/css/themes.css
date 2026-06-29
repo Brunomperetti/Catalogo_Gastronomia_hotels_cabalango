@@ -1,0 +1,52 @@
+:root {
+  --primary-color: #0f172a;
+  --secondary-color: #22c55e;
+  --background-color: #020617;
+  --card-background: #0b1220;
+  --text-color: #e5e7eb;
+  --muted-text-color: #94a3b8;
+  --accent-color: #38bdf8;
+  --button-background: #0ea5e9;
+  --button-text: #052e16;
+  --border-color: rgba(56, 189, 248, 0.45);
+  --shadow-color: rgba(15, 23, 42, 0.55);
+  --border-radius: 14px;
+}
+
+body.catalog-theme-default {
+  --primary-color: #0f172a; --secondary-color: #22c55e; --background-color: #020617; --card-background: #0b1220;
+  --text-color: #e5e7eb; --muted-text-color: #94a3b8; --accent-color: #38bdf8; --button-background: #0ea5e9;
+  --button-text: #052e16; --border-color: rgba(56,189,248,.45); --shadow-color: rgba(15,23,42,.55);
+}
+body.catalog-theme-autopartes {
+  --primary-color: #111827; --secondary-color: #dc2626; --background-color: #030712; --card-background: #111827;
+  --text-color: #e5e7eb; --muted-text-color: #9ca3af; --accent-color: #3b82f6; --button-background: #2563eb;
+  --button-text: #e5e7eb; --border-color: rgba(59,130,246,.45); --shadow-color: rgba(2,6,23,.7);
+}
+body.catalog-theme-comida {
+  --primary-color: #f97316; --secondary-color: #16a34a; --background-color: #fff7ed; --card-background: #ffffff;
+  --text-color: #3f2a1d; --muted-text-color: #7c5a3c; --accent-color: #fb923c; --button-background: #fb923c;
+  --button-text: #3f2a1d; --border-color: rgba(249,115,22,.35); --shadow-color: rgba(194,65,12,.2);
+}
+body.catalog-theme-farmacia {
+  --primary-color: #0284c7; --secondary-color: #16a34a; --background-color: #f8fcff; --card-background: #ffffff;
+  --text-color: #0f172a; --muted-text-color: #475569; --accent-color: #38bdf8; --button-background: #0ea5e9;
+  --button-text: #f8fafc; --border-color: rgba(56,189,248,.35); --shadow-color: rgba(14,116,144,.18);
+}
+body.catalog-theme-ferreteria {
+  --primary-color: #1f2937; --secondary-color: #facc15; --background-color: #e5e7eb; --card-background: #ffffff;
+  --text-color: #111827; --muted-text-color: #374151; --accent-color: #f59e0b; --button-background: #facc15;
+  --button-text: #111827; --border-color: rgba(75,85,99,.35); --shadow-color: rgba(31,41,55,.22);
+}
+body.catalog-theme-petshop {
+  --primary-color: #22c55e; --secondary-color: #38bdf8; --background-color: #f0fdf4; --card-background: #ffffff;
+  --text-color: #14532d; --muted-text-color: #166534; --accent-color: #0ea5e9; --button-background: #34d399;
+  --button-text: #064e3b; --border-color: rgba(56,189,248,.35); --shadow-color: rgba(20,83,45,.2);
+}
+
+body[class*="catalog-theme-"] .catalog-card { background: var(--card-background) !important; border-color: var(--border-color) !important; box-shadow: 0 10px 24px var(--shadow-color) !important; }
+body[class*="catalog-theme-"] .card-price,
+body[class*="catalog-theme-"] .product-price { color: var(--secondary-color) !important; }
+body[class*="catalog-theme-"] .btn-search,
+body[class*="catalog-theme-"] #btnAgregar,
+body[class*="catalog-theme-"] .cta-download { color: var(--button-text) !important; }
