@@ -2900,31 +2900,69 @@ def get_feature_rows(empresa: models.Empresa, feature_names: list[tuple[str, str
     return rows
 
 
+def _append_text_fact(rows: list[dict], label: str, value: str | None):
+    clean_value = clean_text(value, default="")
+    if clean_value:
+        rows.append({"label": label, "value": clean_value, "enabled": True, "prepared": False})
+
+
+def _append_bool_fact(rows: list[dict], label: str, value):
+    if value is True:
+        rows.append({"label": label, "value": "Sí", "enabled": True, "prepared": False})
+    elif value is None:
+        rows.append({"label": label, "value": "A confirmar", "enabled": False, "prepared": True})
+
+
+def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict]:
+    rows: list[dict] = []
+    if kind == "alojamiento":
+        _append_text_fact(rows, "Precio desde", empresa.precio_desde)
+        _append_text_fact(rows, "Capacidad", empresa.capacidad)
+        _append_text_fact(rows, "Habitaciones", empresa.habitaciones)
+        _append_text_fact(rows, "Baños", empresa.banos)
+        for attr, label in [("pileta", "Pileta"), ("rio", "Frente al río / cerca del río"), ("mascotas", "Mascotas"), ("cochera", "Cochera"), ("wifi", "WiFi"), ("parrilla", "Parrilla")]:
+            _append_bool_fact(rows, label, getattr(empresa, attr, None))
+    elif kind == "gastronomia":
+        for attr, label in [("delivery", "Delivery"), ("take_away", "Take away"), ("comer_en_lugar", "Comer en el lugar")]:
+            _append_bool_fact(rows, label, getattr(empresa, attr, None))
+        _append_text_fact(rows, "Tipo de lugar", empresa.subtipo)
+        _append_text_fact(rows, "Horarios", empresa.horarios)
+        _append_text_fact(rows, "Menú / carta", empresa.menu_url)
+        _append_text_fact(rows, "Especialidad", empresa.promocion)
+    elif kind == "servicios":
+        _append_text_fact(rows, "Tipo de servicio", empresa.subtipo)
+        _append_text_fact(rows, "Horarios", empresa.horarios)
+        _append_text_fact(rows, "Dirección", empresa.direccion)
+        _append_text_fact(rows, "Teléfono / WhatsApp", empresa.telefono or empresa.whatsapp)
+        _append_text_fact(rows, "Guardia / urgencia", empresa.guardia)
+    elif kind == "actividades":
+        subgrupo_label = ACTIVIDADES_SUBGRUPOS.get(empresa.subgrupo or "", {}).get("label", empresa.subgrupo)
+        _append_text_fact(rows, "Subgrupo", subgrupo_label)
+        _append_text_fact(rows, "Fecha", empresa.fecha)
+        _append_text_fact(rows, "Horario", empresa.horarios)
+        _append_text_fact(rows, "Lugar de encuentro", empresa.lugar_encuentro)
+        _append_text_fact(rows, "Organizador", empresa.organizador)
+        _append_text_fact(rows, "Precio", empresa.precio_desde)
+    else:
+        _append_text_fact(rows, "Tipo", empresa.subtipo)
+        _append_text_fact(rows, "Horarios", empresa.horarios)
+        _append_text_fact(rows, "Dirección", empresa.direccion)
+    return rows[:12]
+
+
 @app.get("/prestador/{slug}", response_class=HTMLResponse)
 def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)):
     empresa = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
     if not empresa:
         return HTMLResponse("<h1>Prestador no encontrado</h1>", status_code=404)
 
-    productos = (
-        db.query(models.Producto)
-        .filter(models.Producto.empresa_id == empresa.id, models.Producto.activo == True)
-        .order_by(models.Producto.categoria.asc(), models.Producto.descripcion.asc())
-        .limit(12)
-        .all()
-    )
     kind = get_prestador_kind(empresa)
-    feature_rows = []
-    if kind == "gastronomia":
-        feature_rows = get_feature_rows(
-            empresa,
-            [("delivery", "Delivery"), ("take_away", "Take away"), ("comer_en_lugar", "Comer en el lugar")],
-        )
-    elif kind == "alojamiento":
-        feature_rows = get_feature_rows(
-            empresa,
-            [("pileta", "Pileta"), ("rio", "Río cerca"), ("mascotas", "Acepta mascotas"), ("cochera", "Cochera"), ("wifi", "WiFi")],
-        )
+    galeria_urls = get_empresa_gallery_urls(empresa)
+    empresa_banner_url = get_empresa_banner_url(empresa)
+    empresa_logo_url = get_empresa_logo_url(empresa)
+    fallback_tiles = [url for url in [empresa_banner_url, empresa_logo_url] if url]
+    gallery_tiles = (galeria_urls[1:5] if galeria_urls else fallback_tiles[:2])
+    main_photo_url = galeria_urls[0] if galeria_urls else (empresa_banner_url or empresa_logo_url)
 
     return templates.TemplateResponse(
         "prestador.html",
@@ -2932,11 +2970,12 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "request": request,
             "empresa": empresa,
             "kind": kind,
-            "feature_rows": feature_rows,
-            "productos": productos,
-            "empresa_logo_url": get_empresa_logo_url(empresa),
-            "empresa_banner_url": get_empresa_banner_url(empresa),
-            "galeria_urls": get_empresa_gallery_urls(empresa),
+            "quick_facts": build_prestador_quick_facts(empresa, kind),
+            "empresa_logo_url": empresa_logo_url,
+            "empresa_banner_url": empresa_banner_url,
+            "galeria_urls": galeria_urls,
+            "gallery_tiles": gallery_tiles,
+            "main_photo_url": main_photo_url,
             "theme_display_label": theme_display_label,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
         },
