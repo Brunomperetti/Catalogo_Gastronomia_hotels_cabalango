@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
 </head>
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
+    {% set clean_whatsapp = (empresa.whatsapp or '')|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') %}
+    {% set hero_image = main_photo_url or empresa_banner_url or empresa_logo_url %}
     <main class="portal-shell prestador-page">
         <nav class="portal-topnav" aria-label="Navegación pública">
             <a href="/">Inicio</a>
@@ -15,114 +17,107 @@
             <a href="/alojamientos">Alojamientos</a>
             <a href="/servicios">Servicios útiles</a>
             <a href="/actividades">Actividades</a>
-            <a href="/catalogo/{{ empresa.slug }}">Catálogo compatible</a>
         </nav>
 
-        <section class="prestador-profile-hero">
-            <div class="prestador-profile-banner">
-                <img src="{{ empresa_banner_url }}" alt="Banner de {{ empresa.nombre }}">
-            </div>
-            <div class="prestador-profile-card">
-                <img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}">
-                <p class="portal-kicker">Prestador turístico · {{ theme_display_label(empresa.theme) }}</p>
-                <h1>{{ empresa.nombre }}</h1>
-                {% if empresa.descripcion %}
-                <p class="portal-subtitle">{{ empresa.descripcion }}</p>
-                {% else %}
-                <p class="portal-subtitle">Ficha pública preparada para sumar descripción, fotos y datos turísticos del prestador.</p>
-                {% endif %}
-                <div class="prestador-actions">
-                    {% if empresa.whatsapp %}
-                    <a class="portal-button" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>
-                    {% endif %}
-                    <a class="portal-button portal-button-secondary" href="/catalogo/{{ empresa.slug }}">Ver menú / precios</a>
-                    {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
+        <section class="tourism-hero">
+            <div class="tourism-gallery" id="fotos" aria-label="Galería de fotos de {{ empresa.nombre }}">
+                <figure class="tourism-gallery-main">
+                    <img src="{{ hero_image }}" alt="Foto principal de {{ empresa.nombre }}" onerror="this.closest('.tourism-gallery-main').classList.add('is-empty');">
+                    <figcaption>{{ theme_display_label(empresa.theme) }} en Cabalango</figcaption>
+                </figure>
+                <div class="tourism-gallery-side">
+                    {% for foto in gallery_tiles %}
+                    <img src="{{ foto }}" alt="Foto {{ loop.index + 1 }} de {{ empresa.nombre }}">
+                    {% else %}
+                    <div class="gallery-empty-state">Todavía no hay fotos cargadas.</div>
+                    <div class="gallery-empty-state">Subí hasta 7 fotos desde el panel.</div>
+                    {% endfor %}
                 </div>
-                <div class="prestador-contact-lines">
-                    {% if empresa.telefono %}<span>Tel: {{ empresa.telefono }}</span>{% endif %}
-                    {% if empresa.instagram %}<span>Redes: {{ empresa.instagram }}</span>{% endif %}
-                    {% if empresa.direccion %}<span>Dirección: {{ empresa.direccion }}</span>{% endif %}
+                <a class="gallery-see-all" href="#galeria-completa">Ver todas las fotos</a>
+            </div>
+
+            <div class="tourism-heading-card">
+                <div class="tourism-heading-meta">
+                    <span>{{ theme_display_label(empresa.theme) }}</span>
+                    {% if empresa.subtipo %}<span>{{ empresa.subtipo }}</span>{% endif %}
                     {% if empresa.subgrupo and actividad_subgrupos %}<span>{{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}</span>{% endif %}
                 </div>
+                <img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}">
+                <h1>{{ empresa.nombre }}</h1>
+                <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
+                <div class="prestador-actions">
+                    {% if clean_whatsapp %}<a class="portal-button" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>{% endif %}
+                    {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
+                    <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
+                    {% if kind == 'gastronomia' %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url or '/catalogo/' ~ empresa.slug }}">Ver menú / precios</a>{% endif %}
+                </div>
+                <div class="prestador-contact-lines">
+                    {% if empresa.whatsapp %}<span>WhatsApp: {{ empresa.whatsapp }}</span>{% endif %}
+                    {% if empresa.direccion %}<span>{{ empresa.direccion }}</span>{% endif %}
+                    {% if empresa.horarios %}<span>{{ empresa.horarios }}</span>{% endif %}
+                </div>
             </div>
         </section>
 
-
-        {% if galeria_urls %}
-        <section class="portal-card">
-            <p class="portal-card-label">Fotos del prestador</p>
-            <h2>Galería</h2>
-            <div class="prestador-detail-grid">
-                {% for foto in galeria_urls %}<img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}" style="width:100%;height:220px;object-fit:cover;border-radius:20px;border:1px solid rgba(255,255,255,.14);">{% endfor %}
+        <section class="portal-card quick-facts-card">
+            <p class="portal-card-label">Datos rápidos</p>
+            <h2>{% if kind == 'alojamiento' %}Lo que más consultan los viajeros{% elif kind == 'gastronomia' %}Cómo disfrutar la propuesta{% elif kind == 'servicios' %}Información práctica{% elif kind == 'actividades' %}Detalle de la actividad{% else %}Información destacada{% endif %}</h2>
+            <div class="prestador-facts quick-facts-grid">
+                {% for fact in quick_facts %}
+                <div class="{% if fact.enabled %}is-enabled{% elif fact.prepared %}is-prepared{% endif %}"><strong>{{ fact.label }}</strong><span>{{ fact.value }}</span></div>
+                {% else %}
+                <p>Todavía no hay datos específicos cargados. Esta función está preparada para el próximo sprint.</p>
+                {% endfor %}
             </div>
         </section>
-        {% endif %}
 
-        {% if kind == 'gastronomia' %}
         <section class="prestador-detail-grid">
             <article class="portal-card">
-                <p class="portal-card-label">Gastronomía en Cabalango</p>
-                <h2>Menú, carta y atención</h2>
-                <p>Espacio orientado a fotos del negocio, menú/carta, horarios y modalidades de atención.</p>
-                {% if empresa.horarios %}<p><strong>Horarios:</strong> {{ empresa.horarios }}</p>{% endif %}
-                <div class="feature-list">
-                    {% for item in feature_rows %}
-                    <span class="feature-chip {% if item.enabled %}is-enabled{% elif item.prepared %}is-prepared{% endif %}">{{ '✓' if item.enabled else '•' }} {{ item.label }}{% if item.prepared %} <small>próx.</small>{% endif %}</span>
-                    {% endfor %}
-                </div>
+                <p class="portal-card-label">Descripción</p>
+                <h2>Sobre {{ empresa.nombre }}</h2>
+                <p>{{ empresa.descripcion or empresa.descripcion_corta or 'Este prestador todavía no cargó una descripción completa.' }}</p>
+                {% if empresa.promocion %}<p><strong>Destacado:</strong> {{ empresa.promocion }}</p>{% endif %}
             </article>
             <article class="portal-card">
-                <p class="portal-card-label">Carta compatible</p>
-                <h2>Productos / platos publicados</h2>
-                {% if productos %}
-                <ul class="prestador-product-list">
-                    {% for producto in productos %}<li>{{ producto.descripcion }}{% if producto.categoria %}<small>{{ producto.categoria }}</small>{% endif %}</li>{% endfor %}
-                </ul>
-                {% else %}<p>Todavía no hay productos o platos publicados.</p>{% endif %}
+                <p class="portal-card-label">Contacto</p>
+                <h2>Consultá directo</h2>
+                {% if empresa.telefono %}<p><strong>Teléfono:</strong> {{ empresa.telefono }}</p>{% endif %}
+                {% if empresa.instagram %}<p><strong>Instagram / redes:</strong> {{ empresa.instagram }}</p>{% endif %}
+                {% if empresa.facebook %}<p><strong>Facebook:</strong> {{ empresa.facebook }}</p>{% endif %}
+                {% if empresa.web_url %}<p><a class="prestador-video" href="{{ empresa.web_url }}" target="_blank" rel="noopener">Sitio web</a></p>{% endif %}
+                {% if clean_whatsapp %}<a class="portal-button" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Contactar</a>{% endif %}
             </article>
         </section>
-        {% elif kind == 'alojamiento' %}
+
+        <section class="portal-card" id="galeria-completa">
+            <p class="portal-card-label">Fotos</p>
+            <h2>Galería del lugar</h2>
+            <div class="prestador-detail-grid gallery-full-grid">
+                {% for foto in galeria_urls[:7] %}<img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}">{% else %}<p>Todavía no hay fotos cargadas. El administrador puede subir fotos normales desde “Fotos y video”.</p>{% endfor %}
+            </div>
+        </section>
+
         <section class="prestador-detail-grid">
             <article class="portal-card">
-                <p class="portal-card-label">Hospedaje en Cabalango</p>
-                <h2>Datos de alojamiento</h2>
-                <div class="prestador-facts">
-                    <div><strong>Precio desde</strong><span>{{ empresa.precio_desde or 'A preparar' }}</span></div>
-                    <div><strong>Capacidad</strong><span>{{ empresa.capacidad or 'A preparar' }}</span></div>
-                    <div><strong>Habitaciones</strong><span>{{ empresa.habitaciones or 'A preparar' }}</span></div>
-                </div>
-                <div class="feature-list">
-                    {% for item in feature_rows %}
-                    <span class="feature-chip {% if item.enabled %}is-enabled{% elif item.prepared %}is-prepared{% endif %}">{{ '✓' if item.enabled else '•' }} {{ item.label }}{% if item.prepared %} <small>próx.</small>{% endif %}</span>
-                    {% endfor %}
-                </div>
-                {% if empresa.video_url %}<a class="prestador-video" href="{{ empresa.video_url }}" target="_blank" rel="noopener">Ver video</a>{% endif %}
+                <p class="portal-card-label">Ubicación</p>
+                <h2>Cómo llegar</h2>
+                <p>{{ empresa.direccion or 'Dirección pendiente de carga.' }}</p>
+                {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Abrir mapa</a>{% endif %}
             </article>
-            <article class="portal-card"><p class="portal-card-label">Fotos</p><h2>Galería preparada</h2><p>En el siguiente sprint se podrá cargar una galería específica del alojamiento.</p></article>
-        </section>
-        {% elif kind == 'servicios' %}
-        <section class="prestador-detail-grid">
             <article class="portal-card">
-                <p class="portal-card-label">Servicios útiles</p>
-                <h2>Información práctica</h2>
-                <p>Ficha preparada para dirección, horarios, teléfono/WhatsApp, descripción y ubicación.</p>
-                {% if empresa.horarios %}<p><strong>Horarios:</strong> {{ empresa.horarios }}</p>{% endif %}
+                <p class="portal-card-label">Video</p>
+                <h2>Recorrido o presentación</h2>
+                {% if empresa.video_url %}<a class="prestador-video" href="{{ empresa.video_url }}" target="_blank" rel="noopener">Ver video</a>{% else %}<p>Pegá un link de video desde el panel si tenés YouTube, Instagram, Drive u otra plataforma.</p>{% endif %}
             </article>
-            <article class="portal-card"><p class="portal-card-label">Contacto y ubicación</p><h2>Datos del lugar</h2><p>En el siguiente sprint se podrán destacar datos útiles para vecinos y visitantes.</p></article>
         </section>
-        {% elif kind == 'actividades' %}
-        <section class="prestador-detail-grid">
-            <article class="portal-card">
-                <p class="portal-card-label">Actividades y comunidad</p>
-                <h2>Propuesta local</h2>
-                <p>Ficha preparada para fecha, descripción, organizador, WhatsApp, ubicación, fotos y categoría.</p>
-                {% if empresa.horarios %}<p><strong>Horarios / fecha:</strong> {{ empresa.horarios }}</p>{% endif %}
-            </article>
-            <article class="portal-card"><p class="portal-card-label">Experiencias</p><h2>Galería preparada</h2><p>En el siguiente sprint se podrán sumar fotos, recorridos y detalles de temporada.</p></article>
+
+        <section class="portal-card legacy-compatible-card">
+            <p class="portal-card-label">Compatibilidad catálogo viejo</p>
+            <h2>Herramienta heredada</h2>
+            <p>El catálogo anterior sigue disponible como soporte secundario para productos, platos o precios, pero esta ficha turística es la experiencia pública principal.</p>
+            {% if kind == 'gastronomia' %}<a class="portal-button portal-button-ghost" href="/catalogo/{{ empresa.slug }}">Ver carta compatible</a>{% endif %}
         </section>
-        {% else %}
-        <section class="portal-card"><h2>Ficha del prestador</h2><p>Esta ficha pública separa el prestador del catálogo de productos y queda lista para ampliar datos turísticos.</p></section>
-        {% endif %}
     </main>
+    {% if clean_whatsapp %}<a class="floating-whatsapp" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
 </body>
 </html>
