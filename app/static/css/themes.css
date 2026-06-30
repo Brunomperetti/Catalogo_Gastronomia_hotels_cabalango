@@ -28,6 +28,16 @@ body.catalog-theme-comida {
   --text-color: #3f2a1d; --muted-text-color: #7c5a3c; --accent-color: #fb923c; --button-background: #fb923c;
   --button-text: #3f2a1d; --border-color: rgba(249,115,22,.35); --shadow-color: rgba(194,65,12,.2);
 }
+body.catalog-theme-gastronomia {
+  --primary-color: #0f172a; --secondary-color: #f97316; --background-color: #020617; --card-background: #111827;
+  --text-color: #fff7ed; --muted-text-color: #fed7aa; --accent-color: #fb923c; --button-background: #f97316;
+  --button-text: #1f1308; --border-color: rgba(251,146,60,.48); --shadow-color: rgba(124,45,18,.45);
+}
+body.catalog-theme-alojamiento {
+  --primary-color: #0f172a; --secondary-color: #22c55e; --background-color: #020617; --card-background: #0b1220;
+  --text-color: #e0f2fe; --muted-text-color: #bae6fd; --accent-color: #38bdf8; --button-background: #0ea5e9;
+  --button-text: #052e16; --border-color: rgba(34,197,94,.45); --shadow-color: rgba(8,47,73,.55);
+}
 body.catalog-theme-farmacia {
   --primary-color: #0284c7; --secondary-color: #16a34a; --background-color: #f8fcff; --card-background: #ffffff;
   --text-color: #0f172a; --muted-text-color: #475569; --accent-color: #38bdf8; --button-background: #0ea5e9;

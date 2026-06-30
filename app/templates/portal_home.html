@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Portal turístico Cabalango</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
+</head>
+<body class="catalog-theme-default portal-body">
+    <main class="portal-shell">
+        <section class="portal-hero">
+            <p class="portal-kicker">Cabalango • Valle de Punilla</p>
+            <h1>Portal turístico Cabalango</h1>
+            <p class="portal-subtitle">Encontrá propuestas gastronómicas y alojamientos locales sin salir del catálogo actual.</p>
+        </section>
+
+        <section class="portal-grid" aria-label="Secciones turísticas">
+            <article class="portal-card">
+                <div class="portal-card-icon">🍽️</div>
+                <p class="portal-card-label">Sabores locales</p>
+                <h2>Gastronomía en Cabalango</h2>
+                <p>Restaurantes, bares, rotiserías y emprendimientos gastronómicos para disfrutar durante tu visita.</p>
+                <a class="portal-button" href="/gastronomia">Ver gastronomía</a>
+            </article>
+
+            <article class="portal-card">
+                <div class="portal-card-icon">🏡</div>
+                <p class="portal-card-label">Dónde dormir</p>
+                <h2>Hoteles, cabañas y casas en alquiler</h2>
+                <p>Alojamientos y prestadores turísticos de Cabalango para planificar tu estadía.</p>
+                <a class="portal-button" href="/alojamientos">Ver alojamientos</a>
+            </article>
+        </section>
+    </main>
+</body>
+</html>
