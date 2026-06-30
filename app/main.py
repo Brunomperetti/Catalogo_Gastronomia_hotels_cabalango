@@ -18,6 +18,7 @@ import uuid
 import hashlib
 import hmac
 import secrets
+import threading
 from urllib.parse import quote
 from pathlib import Path
 from io import BytesIO
@@ -52,13 +53,36 @@ app.add_middleware(
 # ---------------------------------------------------
 # STARTUP (Render-safe)
 # ---------------------------------------------------
+def run_startup_db_maintenance():
+    """Run DB bootstrap work without blocking Render's port detection.
+
+    Render marks the deploy as failed if the ASGI process spends too long in
+    FastAPI startup before Uvicorn opens $PORT.  These operations are
+    idempotent, but they can wait on a remote database lock/connection, so they
+    run in a daemon thread after startup returns.
+    """
+    try:
+        Base.metadata.create_all(bind=engine)
+        ensure_empresa_media_columns()
+        ensure_usuario_columns()
+        ensure_catalog_lead_columns()
+        ensure_default_admin_user()
+        print("[catalogo] db maintenance completed")
+    except Exception as exc:
+        print(f"[catalogo] db maintenance failed: {exc}")
+
+
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)
-    ensure_empresa_media_columns()
-    ensure_usuario_columns()
-    ensure_catalog_lead_columns()
-    ensure_default_admin_user()
+    global _startup_db_maintenance_started
+    with _startup_db_maintenance_lock:
+        if not _startup_db_maintenance_started:
+            threading.Thread(
+                target=run_startup_db_maintenance,
+                name="catalogo-db-maintenance",
+                daemon=True,
+            ).start()
+            _startup_db_maintenance_started = True
     print("CODEX_SIGNATURE_2026_04_15")
     route_paths = sorted(
         {
@@ -83,6 +107,8 @@ def on_startup():
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount(MEDIA_URL_PREFIX, StaticFiles(directory=str(STORAGE_DIR)), name="media")
 templates = Jinja2Templates(directory="app/templates")
+_startup_db_maintenance_started = False
+_startup_db_maintenance_lock = threading.Lock()
 
 
 def ensure_empresa_media_columns():
