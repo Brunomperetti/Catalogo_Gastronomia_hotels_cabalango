@@ -32,7 +32,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-06-30-tourism-ux-cards-v3"
+APP_BUILD = "2026-06-30-tourism-public-flow-v4"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -1859,6 +1859,10 @@ def admin_panel(
     if isinstance(user, RedirectResponse):
         return user
 
+    # Ensure nullable tourism/contact columns exist before SQLAlchemy selects Empresa rows.
+    # This keeps tabs like Contacto / ubicación from failing on older Render databases.
+    ensure_empresa_media_columns()
+
     empresas = db.query(models.Empresa).order_by(models.Empresa.nombre).all()
     empresa_activa = get_empresa_by_slug(db, empresa) or get_default_empresa(db)
     import time
@@ -2814,113 +2818,20 @@ def catalogo_acceso(
 ):
     empresa = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
     if not empresa:
-        return HTMLResponse("<h1>Empresa no encontrada</h1>", status_code=404)
-
-    lead = get_active_catalog_lead(request, slug, empresa.id, db)
-    if lead:
-        return RedirectResponse(url=f"/catalogo/{slug}", status_code=303)
-
-    return templates.TemplateResponse(
-        "catalogo_acceso.html",
-        {
-            "request": request,
-            "empresa": empresa,
-            "empresa_logo_url": get_empresa_logo_url(empresa),
-        },
-    )
+        return HTMLResponse("<h1>Prestador no encontrado</h1><p>La ficha turística solicitada no existe.</p>", status_code=404)
+    return RedirectResponse(url=f"/prestador/{empresa.slug}", status_code=308)
 
 
 @app.post("/catalogo/{slug}/acceso")
 def catalogo_acceso_submit(
     slug: str,
     request: Request,
-    nombre: str = Form(""),
-    empresa_nombre: str = Form(""),
-    email: str = Form(""),
-    telefono: str = Form(""),
     db: Session = Depends(get_db),
 ):
     empresa_obj = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
     if not empresa_obj:
-        return HTMLResponse("<h1>Empresa no encontrada</h1>", status_code=404)
-
-    nombre_limpio = clean_text(nombre, default="")
-    empresa_limpia = clean_text(empresa_nombre, default="")
-    email_limpio = clean_text(email, default="").lower()
-    telefono_limpio = clean_text(telefono, default="") or None
-
-    error = None
-    if not nombre_limpio:
-        error = "Completá nombre y apellido."
-    elif not empresa_limpia:
-        error = "Completá empresa o comercio."
-    elif not email_limpio:
-        error = "Completá email."
-    elif not EMAIL_PATTERN.match(email_limpio):
-        error = "Ingresá un email válido."
-
-    if error:
-        return templates.TemplateResponse(
-            "catalogo_acceso.html",
-            {
-                "request": request,
-                "empresa": empresa_obj,
-                "empresa_logo_url": get_empresa_logo_url(empresa_obj),
-                "error": error,
-                "form_data": {
-                    "nombre": nombre_limpio,
-                    "empresa_nombre": empresa_limpia,
-                    "email": email_limpio,
-                    "telefono": telefono_limpio or "",
-                },
-            },
-            status_code=400,
-        )
-
-    lead = (
-        db.query(models.CatalogLead)
-        .filter(
-            models.CatalogLead.empresa_catalogo_id == empresa_obj.id,
-            models.CatalogLead.email == email_limpio,
-        )
-        .first()
-    )
-
-    new_token = secrets.token_urlsafe(32)
-    now = utc_now()
-    if not lead:
-        lead = models.CatalogLead(
-            empresa_catalogo_id=empresa_obj.id,
-            nombre=nombre_limpio,
-            empresa=empresa_limpia,
-            email=email_limpio,
-            telefono=telefono_limpio,
-            fecha_ingreso=now,
-            ultima_actividad=now,
-            session_token=new_token,
-        )
-        db.add(lead)
-        db.commit()
-        db.refresh(lead)
-    else:
-        lead.nombre = nombre_limpio
-        lead.empresa = empresa_limpia
-        lead.telefono = telefono_limpio
-        lead.session_token = new_token
-        lead.ultima_actividad = now
-        db.add(lead)
-        db.commit()
-        db.refresh(lead)
-
-    set_lead_session_for_slug(request, slug, lead.id, new_token)
-    register_catalog_event(
-        db=db,
-        lead=lead,
-        empresa_id=empresa_obj.id,
-        event_type="catalog_entered",
-        metadata={"source": "access_form"},
-    )
-    return RedirectResponse(url=f"/catalogo/{slug}", status_code=303)
+        return HTMLResponse("<h1>Prestador no encontrado</h1><p>La ficha turística solicitada no existe.</p>", status_code=404)
+    return RedirectResponse(url=f"/prestador/{empresa_obj.slug}", status_code=308)
 
 
 def get_prestador_kind(empresa: models.Empresa) -> str:
@@ -3022,6 +2933,22 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
 
 @app.get("/catalogo/{slug}", response_class=HTMLResponse)
 def catalogo(
+    slug: str,
+    request: Request,
+    q: str = "",
+    categoria: str = "",
+    marca: str = "",
+    orden: str = "",
+    db: Session = Depends(get_db)
+):
+    empresa = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
+    if not empresa:
+        return HTMLResponse("<h1>Prestador no encontrado</h1><p>La ficha turística solicitada no existe.</p>", status_code=404)
+    return RedirectResponse(url=f"/prestador/{empresa.slug}", status_code=308)
+
+
+@app.get("/legacy/catalogo/{slug}", response_class=HTMLResponse)
+def legacy_catalogo(
     slug: str,
     request: Request,
     q: str = "",

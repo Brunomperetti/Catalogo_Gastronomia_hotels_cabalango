@@ -49,7 +49,7 @@
                     {% if clean_whatsapp %}<a class="portal-button" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>{% endif %}
                     {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
                     <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
-                    {% if kind == 'gastronomia' %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url or '/catalogo/' ~ empresa.slug }}">Ver carta comercial</a>{% endif %}
+                    {% if kind == 'gastronomia' and empresa.menu_url %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url }}" target="_blank" rel="noopener">Ver carta</a>{% endif %}
                 </div>
                 <div class="prestador-contact-lines">
                     {% if empresa.whatsapp %}<span>WhatsApp: {{ empresa.whatsapp }}</span>{% endif %}
@@ -111,12 +111,6 @@
             </article>
         </section>
 
-        <section class="portal-card legacy-compatible-card" aria-label="Acceso secundario al catálogo heredado">
-            <p class="portal-card-label">Compatibilidad catálogo viejo · acceso secundario</p>
-            <h2>Catálogo comercial heredado</h2>
-            <p>Esta ficha turística es la experiencia pública principal. El catálogo anterior queda disponible solo como compatibilidad para productos, platos o listas comerciales.</p>
-            <a class="legacy-catalog-link" href="/catalogo/{{ empresa.slug }}">Abrir catálogo heredado</a>
-        </section>
     </main>
     {% if clean_whatsapp %}<a class="floating-whatsapp" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
 </body>

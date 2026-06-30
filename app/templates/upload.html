@@ -31,8 +31,8 @@
                     <a href="/prestador/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">
                         Ver ficha pública
                     </a>
-                    <a href="/catalogo/{{ empresa_activa.slug }}" target="_blank" class="btn-secondary-custom">
-                        Abrir catálogo heredado
+                    <a href="/{{ 'gastronomia' if empresa_activa.theme in ['comida','gastronomia'] else 'alojamientos' if empresa_activa.theme == 'alojamiento' else 'servicios' if empresa_activa.theme == 'servicios' else 'actividades' if empresa_activa.theme == 'actividades' else '' }}" target="_blank" class="btn-secondary-custom">
+                        Ver sección pública
                     </a>
                     <a href="/logout" class="btn-outline-custom">Cerrar sesión</a>
                 </div>
@@ -163,7 +163,7 @@
                 <section class="admin-card admin-card--wide">
                     <div class="card-header-custom">
                         <h2 class="card-title-custom">🧰 Compatibilidad catálogo viejo</h2>
-                        <p class="card-subtitle-custom">Herramientas heredadas para catálogos con productos. No forman parte del flujo principal del portal turístico.</p>
+                        <p class="card-subtitle-custom">Herramientas heredadas del catálogo anterior. Usar solo si necesitás compatibilidad con productos o precios. No forman parte de la experiencia pública.</p>
                     </div>
 
                     <div class="tutorial-box">
@@ -181,7 +181,7 @@
                             <div class="step-number">1</div>
                             <div class="step-content">
                                 <h3>Importar productos heredados por Excel</h3>
-                                <p>Uso técnico heredado: requiere código, descripción y precio para mantener compatibilidad con /catalogo/{slug}.</p>
+                                <p>Herramienta heredada del catálogo anterior. No forma parte de la experiencia pública. Usar solo si necesitás compatibilidad técnica con productos o precios.</p>
 
                                 <form action="/upload_excel" method="post" enctype="multipart/form-data" class="stack-form">
                                     <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
@@ -213,7 +213,7 @@
                     </div>
 
                     {% if empresa_activa %}
-                    <a href="/catalogo/{{ empresa_activa.slug }}" target="_blank" class="btn-outline-custom w-100 mt-3">Acceder al catálogo público</a>
+                    <a href="/legacy/catalogo/{{ empresa_activa.slug }}" target="_blank" class="btn-outline-custom w-100 mt-3">Abrir herramienta heredada</a>
                     {% endif %}
                 </section>
 
@@ -240,7 +240,7 @@
                 <section class="admin-card admin-card--wide">
                     <div class="card-header-custom">
                         <h2 class="card-title-custom">🤝 Leads del catálogo</h2>
-                        <p class="card-subtitle-custom">Seguimiento comercial de contactos y actividad reciente en el catálogo de {{ empresa_activa.nombre if empresa_activa else 'la empresa activa' }}.</p>
+                        <p class="card-subtitle-custom">Seguimiento técnico heredado de contactos y actividad reciente de {{ empresa_activa.nombre if empresa_activa else 'la empresa activa' }}.</p>
                     </div>
 
                     <div class="leads-kpi-head">

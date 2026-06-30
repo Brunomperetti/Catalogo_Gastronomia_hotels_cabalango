@@ -73,4 +73,5 @@ def test_prestador_template_empty_gallery_does_not_break():
     html = render_prestador("alojamiento", [])
 
     assert "Todavía no hay fotos cargadas" in html
-    assert "Compatibilidad catálogo viejo" in html
+    assert "Compatibilidad catálogo viejo" not in html
+    assert "Abrir catálogo heredado" not in html
