@@ -33,7 +33,7 @@
                     <div class="gallery-empty-state">Subí hasta 7 fotos desde el panel.</div>
                     {% endfor %}
                 </div>
-                <a class="gallery-see-all" href="#galeria-completa">Ver todas las fotos</a>
+                {% if galeria_urls %}<a class="gallery-see-all" href="#galeria-lightbox" aria-haspopup="dialog">Ver todas las fotos</a>{% endif %}
             </div>
 
             <div class="tourism-heading-card">
@@ -99,12 +99,36 @@
             <p class="portal-card-label">Fotos</p>
             <h2>Fotos del lugar</h2>
             {% if galeria_urls %}
-            <p>La galería principal está arriba para evitar repetir las mismas imágenes. Usá el botón para volver y recorrerlas con más protagonismo.</p>
-            <a class="portal-button portal-button-secondary" href="#fotos">Ver todas las fotos</a>
+            <p>La galería principal usa recortes editoriales para el impacto visual. Abrí la vista completa para ver cada imagen sin recortes.</p>
+            <a class="portal-button portal-button-secondary" href="#galeria-lightbox" aria-haspopup="dialog">Ver todas las fotos</a>
             {% else %}
             <p>Todavía no hay fotos cargadas. El administrador puede subir fotos normales desde “Fotos y video”.</p>
             {% endif %}
         </section>
+
+        {% if galeria_urls %}
+        <section class="gallery-lightbox" id="galeria-lightbox" role="dialog" aria-modal="true" aria-labelledby="galeria-lightbox-title">
+            <a class="gallery-lightbox-backdrop" href="#fotos" aria-label="Cerrar galería"></a>
+            <div class="gallery-lightbox-panel" tabindex="-1">
+                <header class="gallery-lightbox-header">
+                    <div>
+                        <p class="portal-card-label">Galería completa</p>
+                        <h2 id="galeria-lightbox-title">Fotos de {{ empresa.nombre }}</h2>
+                        <span>{{ galeria_urls|length }} foto{% if galeria_urls|length != 1 %}s{% endif %} disponibles sin recorte</span>
+                    </div>
+                    <a class="gallery-lightbox-close" href="#fotos" aria-label="Cerrar galería">Cerrar</a>
+                </header>
+                <div class="gallery-lightbox-grid">
+                    {% for foto in galeria_urls %}
+                    <figure>
+                        <img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }} completa">
+                        <figcaption>Foto {{ loop.index }} de {{ galeria_urls|length }}</figcaption>
+                    </figure>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+        {% endif %}
 
         <section class="portal-card reviews-card">
             <p class="portal-card-label">Reputación</p>
