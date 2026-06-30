@@ -415,3 +415,36 @@
   .gallery-see-all { bottom: 14px; right: 14px; }
   .floating-whatsapp { left: 18px; text-align: center; }
 }
+
+/* Sprint UX turismo: cards compactas y ficha editorial */
+.prestadores-grid-premium { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.prestador-card-premium { border-radius: 26px; position: relative; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.prestador-card-premium:hover { border-color: rgba(56,189,248,.58); box-shadow: 0 24px 64px rgba(0,0,0,.42), 0 0 34px rgba(56,189,248,.18); transform: translateY(-3px); }
+.prestador-media { aspect-ratio: 16 / 9; display: block; overflow: hidden; position: relative; text-decoration: none; }
+.prestador-card-premium .prestador-banner { height: 100%; transition: transform .28s ease; }
+.prestador-card-premium:hover .prestador-banner { transform: scale(1.045); }
+.prestador-media::after { background: linear-gradient(180deg, transparent 45%, rgba(2,6,23,.78)); content: ""; inset: 0; position: absolute; }
+.prestador-logo-chip { border: 1px solid rgba(255,255,255,.5); border-radius: 16px; bottom: 12px; box-shadow: 0 12px 26px rgba(0,0,0,.35); height: 48px; left: 12px; max-width: 88px; padding: 6px; position: absolute; z-index: 2; }
+.prestador-price-badge { background: rgba(255,255,255,.94); border-radius: 999px; bottom: 14px; color: #0f172a; font-weight: 950; padding: 8px 11px; position: absolute; right: 12px; z-index: 2; }
+.prestador-card-premium .prestador-content { padding: 18px; }
+.prestador-card-premium h2 { font-size: 1.18rem; letter-spacing: -.02em; margin-bottom: 7px; }
+.prestador-summary { -webkit-box-orient: vertical; color: var(--muted-text-color); display: -webkit-box; line-height: 1.45; margin: 0; overflow: hidden; -webkit-line-clamp: 2; }
+.prestador-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.prestador-chip-row span { background: rgba(15,23,42,.72); border: 1px solid rgba(148,163,184,.26); border-radius: 999px; color: #dbeafe; font-size: .78rem; font-weight: 850; padding: 7px 10px; }
+.prestador-card-meta { color: var(--muted-text-color); font-size: .86rem; margin-top: 13px; min-height: 1.2em; }
+.prestador-card-premium .portal-button { padding: 10px 13px; }
+.prestador-card-premium .prestador-theme { font-size: .74rem; letter-spacing: .12em; margin-bottom: 8px; }
+
+.tourism-hero { gap: 18px; }
+.tourism-gallery { min-height: 460px; }
+.tourism-gallery-main::after { background: linear-gradient(180deg, transparent 40%, rgba(2,6,23,.72)); content: ""; inset: 0; position: absolute; }
+.tourism-heading-card { margin-top: -76px; position: relative; z-index: 4; }
+.tourism-heading-card .portal-subtitle { margin-left: 0; max-width: 820px; }
+.quick-facts-card { margin-top: 24px; }
+.gallery-full-grid { grid-template-columns: 1.45fr 1fr 1fr; }
+.gallery-full-grid img:first-child { grid-row: span 2; height: 100%; min-height: 430px; }
+.legacy-compatible-card { filter: saturate(.8); margin-top: 28px; opacity: .62; }
+
+@media (max-width: 1040px) { .prestadores-grid-premium { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .prestadores-grid-premium { grid-template-columns: 1fr; } .prestador-card-premium .prestador-content { padding: 16px; } }
+@media (max-width: 860px) { .tourism-heading-card { margin-top: 0; } .gallery-full-grid { grid-template-columns: 1fr; } .gallery-full-grid img:first-child { min-height: 280px; } }

@@ -32,7 +32,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-06-30-admin-fichas-prestador-v2"
+APP_BUILD = "2026-06-30-tourism-ux-cards-v3"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -1720,6 +1720,41 @@ def normalize_actividad_subgrupo(value: str | None) -> str | None:
     return cleaned if cleaned in ACTIVIDADES_SUBGRUPOS else None
 
 
+def get_public_card_main_image(empresa: models.Empresa | None) -> str:
+    """Priority: gallery first, banner, logo, placeholder."""
+    if not empresa:
+        return "/static/img/no-image.jpg"
+    gallery = get_empresa_gallery_urls(empresa)
+    if gallery:
+        return gallery[0]
+    return get_empresa_banner_url(empresa) or get_empresa_logo_url(empresa) or "/static/img/no-image.jpg"
+
+
+def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
+    chips: list[str] = []
+    kind = "alojamiento" if section == "alojamientos" else get_prestador_kind(empresa)
+    if kind == "alojamiento":
+        for attr, label in [("pileta", "Pileta"), ("wifi", "WiFi"), ("mascotas", "Mascotas"), ("cochera", "Cochera"), ("parrilla", "Parrilla")]:
+            if getattr(empresa, attr, None) is True:
+                chips.append(label)
+        for label, value in [("Desde", empresa.precio_desde), ("Capacidad", empresa.capacidad)]:
+            clean_value = clean_text(value, default="")
+            if clean_value:
+                chips.append(f"{label}: {clean_value}")
+    elif kind == "gastronomia":
+        for attr, label in [("delivery", "Delivery"), ("take_away", "Take away"), ("comer_en_lugar", "Comer en el lugar")]:
+            if getattr(empresa, attr, None) is True:
+                chips.append(label)
+        if clean_text(empresa.subtipo, default=""):
+            chips.append(empresa.subtipo)
+    else:
+        for value in [empresa.subtipo, empresa.horarios, empresa.precio_desde]:
+            clean_value = clean_text(value, default="")
+            if clean_value:
+                chips.append(clean_value)
+    return chips[:5]
+
+
 def portal_section_context(request: Request, db: Session, *, title: str, eyebrow: str, description: str, themes: set[str], section: str, subgrupo: str | None = None):
     empresas = get_public_empresas_by_themes(db, themes)
     if section == "actividades" and subgrupo:
@@ -1736,6 +1771,9 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "theme_display_label": theme_display_label,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if section == "actividades" else {},
             "active_subgrupo": subgrupo if section == "actividades" else None,
+            "get_public_card_main_image": get_public_card_main_image,
+            "get_empresa_logo_url": get_empresa_logo_url,
+            "build_public_card_chips": build_public_card_chips,
         },
     )
 
@@ -2910,7 +2948,7 @@ def _append_bool_fact(rows: list[dict], label: str, value):
     if value is True:
         rows.append({"label": label, "value": "Sí", "enabled": True, "prepared": False})
     elif value is None:
-        rows.append({"label": label, "value": "A confirmar", "enabled": False, "prepared": True})
+        rows.append({"label": label, "value": "Consultar", "enabled": False, "prepared": True})
 
 
 def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict]:
@@ -2962,7 +3000,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
     empresa_logo_url = get_empresa_logo_url(empresa)
     fallback_tiles = [url for url in [empresa_banner_url, empresa_logo_url] if url]
     gallery_tiles = (galeria_urls[1:5] if galeria_urls else fallback_tiles[:2])
-    main_photo_url = galeria_urls[0] if galeria_urls else (empresa_banner_url or empresa_logo_url)
+    main_photo_url = galeria_urls[0] if galeria_urls else (empresa_banner_url or empresa_logo_url or "/static/img/no-image.jpg")
 
     return templates.TemplateResponse(
         "prestador.html",
