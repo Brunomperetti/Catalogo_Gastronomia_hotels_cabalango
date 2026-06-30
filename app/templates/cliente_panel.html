@@ -2,178 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel prestador | {{ empresa_activa.nombre }}</title>
+    <title>Mi ficha en el portal | {{ empresa_activa.nombre }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/catalogo.css">
 </head>
 <body class="admin-body">
-<div class="admin-shell" style="max-width:980px;">
+<div class="admin-shell" style="max-width:1040px;">
     <section class="hero-card">
         <div class="hero-card__content">
             <div class="hero-card__left">
-                <div class="hero-badge">Panel prestador</div>
-                <h1 class="hero-title" style="font-size:2.2rem;">{{ empresa_activa.nombre }}</h1>
-                <p class="hero-subtitle">Editá tu ficha turística, fotos, video y datos de contacto sin herramientas técnicas.</p>
+                <div class="hero-badge">Actualizá tu ficha en el portal de Cabalango</div>
+                <h1 class="hero-title" style="font-size:2.35rem;">Mi ficha en el portal</h1>
+                <p class="hero-subtitle">Actualizá la información que ven turistas, vecinos y visitantes.</p>
+                <div class="d-flex gap-2 flex-wrap align-items-center mb-3">
+                    <span class="badge rounded-pill text-bg-dark">{{ empresa_activa.nombre }}</span>
+                    <span class="badge rounded-pill text-bg-info">{{ prestador_section_label }}</span>
+                    <span class="badge rounded-pill {% if empresa_activa.activo is not false %}text-bg-success{% else %}text-bg-secondary{% endif %}">{{ 'Publicada' if empresa_activa.activo is not false else 'Inactiva' }}</span>
+                </div>
                 <div class="hero-actions d-flex gap-2 flex-wrap">
                     <a href="/prestador/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">Ver ficha pública</a>
+                    <a href="{{ portal_section_url }}" target="_blank" class="btn-outline-custom">Ver en el portal</a>
                     <a href="/logout" class="btn-outline-custom">Cerrar sesión</a>
-                    {% if is_admin_view %}
-                    <a href="/admin?empresa={{ empresa_activa.slug }}" class="btn-secondary-custom">Ir al panel admin</a>
-                    {% endif %}
-                </div>
-                <div class="share-actions-panel">
-                    <div class="share-actions-panel__title">Acciones rápidas para compartir</div>
-                    <div class="share-actions-panel__buttons">
-                        <button
-                            type="button"
-                            id="copyCatalogLinkBtn"
-                            class="btn-secondary-custom"
-                            data-catalog-url="{{ catalogo_public_url }}"
-                        >
-                            Copiar link de ficha
-                        </button>
-                        <a
-                            href="{{ whatsapp_share_url }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="btn-whatsapp-custom"
-                        >
-                            Compartir por WhatsApp
-                        </a>
-                    </div>
-                </div>
-                <div id="copyCatalogLinkFeedback" class="copy-feedback" role="status" aria-live="polite"></div>
-            </div>
-            <div class="hero-card__right">
-                <img src="{{ empresa_logo_url }}?ts={{ time }}" alt="Logo empresa" class="hero-logo">
-            </div>
-        </div>
-    </section>
-
-
-    <section class="admin-card admin-card--wide">
-        <div class="card-header-custom">
-            <h2 class="card-title-custom">Ficha pública del prestador</h2>
-            <p class="card-subtitle-custom">El panel cliente queda enfocado en datos seguros: ficha, fotos, menú/precios y contacto.</p>
-        </div>
-        <form action="/cliente/empresa/actualizar" method="post" class="stack-form">
-            <div class="form-grid">
-                <div><label class="field-label">Nombre público</label><input class="input-custom" type="text" name="nombre" value="{{ empresa_activa.nombre }}" required></div>
-                <div><label class="field-label">WhatsApp</label><input class="input-custom" type="text" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div>
-                <div><label class="field-label">Teléfono</label><input class="input-custom" type="text" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div>
-                <div><label class="field-label">Instagram / redes</label><input class="input-custom" type="text" name="instagram" value="{{ empresa_activa.instagram or '' }}"></div>
-                <div><label class="field-label">Dirección</label><input class="input-custom" type="text" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div>
-                <div><label class="field-label">Link Google Maps</label><input class="input-custom" type="url" name="maps_url" value="{{ empresa_activa.maps_url or '' }}"></div>
-                <div class="full-width"><label class="field-label">Descripción</label><textarea class="input-custom" name="descripcion" rows="4" placeholder="Contá qué ofrecés en Cabalango">{{ empresa_activa.descripcion or '' }}</textarea></div>
-                <div><label class="field-label">Horarios (gastronomía)</label><input class="input-custom" type="text" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div>
-                <div><label class="field-label">Video URL opcional</label><input class="input-custom" type="url" name="video_url" value="{{ empresa_activa.video_url or '' }}"></div>
-                <div><label class="field-label">Subgrupo si es actividad</label><select class="input-custom" name="subgrupo"><option value="">No aplica</option><option value="diurnas" {% if empresa_activa.subgrupo == "diurnas" %}selected{% endif %}>Actividades diurnas</option><option value="nocturnas" {% if empresa_activa.subgrupo == "nocturnas" %}selected{% endif %}>Actividades nocturnas</option><option value="locales" {% if empresa_activa.subgrupo == "locales" %}selected{% endif %}>Productos locales y artesanos</option></select></div>
-                <div><label class="field-label">Precio desde</label><input class="input-custom" type="text" name="precio_desde" value="{{ empresa_activa.precio_desde or '' }}"></div>
-                <div><label class="field-label">Capacidad</label><input class="input-custom" type="text" name="capacidad" value="{{ empresa_activa.capacidad or '' }}"></div>
-                <div><label class="field-label">Habitaciones</label><input class="input-custom" type="text" name="habitaciones" value="{{ empresa_activa.habitaciones or '' }}"></div>
-            </div>
-            <div class="feature-list mt-3">
-                {% for field, label in [('delivery','Delivery'),('take_away','Take away'),('comer_en_lugar','Comer en el lugar'),('pileta','Pileta'),('rio','Río cerca'),('mascotas','Acepta mascotas'),('cochera','Cochera'),('wifi','WiFi')] %}
-                <label class="form-check me-3"><input class="form-check-input" type="checkbox" name="{{ field }}" value="1" {% if empresa_activa|attr(field) %}checked{% endif %}> {{ label }}</label>
-                {% endfor %}
-            </div>
-            <button class="btn-primary-custom w-100 mt-3" type="submit">Guardar ficha</button>
-        </form>
-    </section>
-
-    <section class="admin-card admin-card--wide">
-        <div class="card-header-custom"><h2 class="card-title-custom">Fotos principales</h2><p class="card-subtitle-custom">Actualizá logo y banner sin acceder a herramientas avanzadas.</p></div>
-        <form action="/cliente/empresa/imagenes" method="post" enctype="multipart/form-data" class="stack-form">
-            <label class="field-label">Logo</label><input class="input-file-custom" type="file" name="logo" accept="image/*">
-            <label class="field-label">Banner</label><input class="input-file-custom" type="file" name="banner" accept="image/*">
-            <button class="btn-secondary-custom w-100" type="submit">Guardar fotos</button>
-        </form>
-    </section>
-
-    <section class="admin-card admin-card--wide">
-        <div class="card-header-custom">
-            <h2 class="card-title-custom">Datos promocionales / carta opcional</h2>
-            <p class="card-subtitle-custom">Usá estas herramientas para cargar menú, carta o lista de precios sin ver Leads, Backup, Avanzado ni acciones peligrosas.</p>
-        </div>
-        <div class="steps-grid">
-            <div class="step-card">
-                <div class="step-number">1</div>
-                <div class="step-content">
-                    <h3>Importar carta/lista heredada</h3>
-                    <form action="/upload_excel" method="post" enctype="multipart/form-data" class="stack-form">
-                        <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
-                        <input class="input-file-custom" type="file" name="file" accept=".xlsx,.xls" required>
-                        <button class="btn-primary-custom w-100" type="submit">Subir Excel</button>
-                    </form>
+                    {% if is_admin_view %}<a href="/admin?empresa={{ empresa_activa.slug }}" class="btn-secondary-custom">Ir al panel admin</a>{% endif %}
                 </div>
             </div>
-            <div class="step-card">
-                <div class="step-number">2</div>
-                <div class="step-content">
-                    <h3>Importar imágenes heredadas</h3>
-                    <form action="/upload_zip" method="post" enctype="multipart/form-data" class="stack-form">
-                        <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
-                        <input class="input-file-custom" type="file" name="file" accept=".zip" required>
-                        <button class="btn-secondary-custom w-100" type="submit">Subir ZIP</button>
-                    </form>
-                </div>
-            </div>
+            <div class="hero-card__right"><img src="{{ empresa_logo_url }}?ts={{ time }}" alt="Logo" class="hero-logo"></div>
         </div>
-        <a href="/cliente/productos?empresa={{ empresa_query }}" class="btn-outline-custom w-100 mt-3 d-inline-block text-center">Ver / editar ítems importados (opcional)</a>
     </section>
 
     {% if msg %}<div class="alert alert-custom-success mt-3">{{ msg }}</div>{% endif %}
     {% if error %}<div class="alert alert-custom-error mt-3">{{ error }}</div>{% endif %}
+
+    <nav class="admin-tabs" aria-label="Navegación del prestador">
+        <a class="admin-tab is-active" href="#basica">Mi ficha</a>
+        <a class="admin-tab" href="#fotos">Fotos y video</a>
+        <a class="admin-tab" href="#contacto">Contacto</a>
+        <a class="admin-tab" href="#vista">Vista previa</a>
+    </nav>
+
+    <form action="/cliente/empresa/actualizar" method="post" class="stack-form">
+        <section id="basica" class="admin-card admin-card--wide">
+            <div class="card-header-custom">
+                <h2 class="card-title-custom">Información básica</h2>
+                <p class="card-subtitle-custom">Editá los datos de tu ficha. La sección queda como dato de lectura para evitar cambios accidentales.</p>
+            </div>
+            <div class="form-grid">
+                <div><label class="field-label">Nombre del prestador/lugar</label><input class="input-custom" type="text" name="nombre" value="{{ empresa_activa.nombre }}" required></div>
+                <div><label class="field-label">Rubro / sección</label><input class="input-custom" type="text" value="{{ prestador_section_label }}" readonly></div>
+                <div class="full-width"><label class="field-label">Descripción</label><textarea class="input-custom" name="descripcion" rows="5" placeholder="Contá qué ofrecés, qué te hace especial y a quién está orientado.">{{ empresa_activa.descripcion or '' }}</textarea></div>
+                <div><label class="field-label">Horarios</label><input class="input-custom" type="text" name="horarios" value="{{ empresa_activa.horarios or '' }}" placeholder="Ej: todos los días de 9 a 22"></div>
+                <div><label class="field-label">Texto destacado / precio desde</label><input class="input-custom" type="text" name="precio_desde" value="{{ empresa_activa.precio_desde or '' }}" placeholder="Ej: menú desde..., cabañas desde..."></div>
+            </div>
+        </section>
+
+        <section id="contacto" class="admin-card admin-card--wide">
+            <div class="card-header-custom"><h2 class="card-title-custom">Contacto y ubicación</h2><p class="card-subtitle-custom">Este WhatsApp recibirá las consultas. Agregá dirección y link de mapa si corresponde.</p></div>
+            <div class="form-grid">
+                <div><label class="field-label">WhatsApp</label><input class="input-custom" type="text" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div>
+                <div><label class="field-label">Teléfono</label><input class="input-custom" type="text" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div>
+                <div><label class="field-label">Instagram / redes</label><input class="input-custom" type="text" name="instagram" value="{{ empresa_activa.instagram or '' }}"></div>
+                <div><label class="field-label">Dirección</label><input class="input-custom" type="text" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div>
+                <div class="full-width"><label class="field-label">Link de Google Maps / ubicación</label><input class="input-custom" type="url" name="maps_url" value="{{ empresa_activa.maps_url or '' }}"></div>
+            </div>
+        </section>
+
+        <section class="admin-card admin-card--wide">
+            <div class="card-header-custom"><h2 class="card-title-custom">Datos de la sección</h2><p class="card-subtitle-custom">Lenguaje adaptado para {{ prestador_section_label }}. No hay stock, Excel ni operaciones técnicas en este panel.</p></div>
+            {% if prestador_kind == 'gastronomia' %}
+            <p class="card-subtitle-custom">Menú / carta, foto del menú y modalidades de atención.</p>
+            <div class="feature-list mt-2">{% for field, label in [('delivery','Delivery'),('take_away','Take away'),('comer_en_lugar','Comer en el lugar')] %}<label class="form-check me-3"><input class="form-check-input" type="checkbox" name="{{ field }}" value="1" {% if empresa_activa|attr(field) %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+            {% elif prestador_kind == 'alojamiento' %}
+            <div class="form-grid"><div><label class="field-label">Capacidad</label><input class="input-custom" name="capacidad" value="{{ empresa_activa.capacidad or '' }}"></div><div><label class="field-label">Habitaciones</label><input class="input-custom" name="habitaciones" value="{{ empresa_activa.habitaciones or '' }}"></div></div>
+            <div class="feature-list mt-2">{% for field, label in [('pileta','Pileta'),('rio','Frente al río / cerca del río'),('mascotas','Acepta mascotas'),('cochera','Cochera'),('wifi','WiFi')] %}<label class="form-check me-3"><input class="form-check-input" type="checkbox" name="{{ field }}" value="1" {% if empresa_activa|attr(field) %}checked{% endif %}> {{ label }}</label>{% endfor %}</div>
+            {% elif prestador_kind == 'actividades' %}
+            <label class="field-label">Subgrupo</label><select class="input-custom" name="subgrupo"><option value="">General</option><option value="diurnas" {% if empresa_activa.subgrupo == 'diurnas' %}selected{% endif %}>Actividades diurnas</option><option value="nocturnas" {% if empresa_activa.subgrupo == 'nocturnas' %}selected{% endif %}>Actividades nocturnas</option><option value="locales" {% if empresa_activa.subgrupo == 'locales' %}selected{% endif %}>Productos locales y artesanos</option></select>
+            {% else %}<p>Descripción funcional, horarios, teléfono/WhatsApp, dirección y ubicación.</p>{% endif %}
+            <input type="hidden" name="video_url" value="{{ empresa_activa.video_url or '' }}">
+            <button class="btn-primary-custom w-100 mt-3" type="submit">Guardá los cambios para actualizar tu publicación</button>
+        </section>
+    </form>
+
+    <section id="fotos" class="admin-card admin-card--wide">
+        <div class="card-header-custom"><h2 class="card-title-custom">Fotos y video</h2><p class="card-subtitle-custom">Estas fotos se muestran en el portal. Subí hasta 7 fotos para mostrar tu lugar, productos, menú, alojamiento o actividad.</p></div>
+        <form action="/cliente/empresa/imagenes" method="post" enctype="multipart/form-data" class="stack-form mb-3">
+            <label class="field-label">Logo</label><input class="input-file-custom" type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif">
+            <label class="field-label">Banner</label><input class="input-file-custom" type="file" name="banner" accept="image/png,image/jpeg,image/webp,image/gif">
+            <button class="btn-secondary-custom w-100" type="submit">Guardar logo y banner</button>
+        </form>
+        <form action="/cliente/empresa/galeria" method="post" enctype="multipart/form-data" class="stack-form">
+            <label class="field-label">Galería de fotos (máximo 7)</label><input class="input-file-custom" type="file" name="fotos" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+            <button class="btn-secondary-custom w-100" type="submit">Agregar fotos a la galería</button>
+        </form>
+        {% if galeria_urls %}<div class="steps-grid mt-3">{% for foto in galeria_urls %}<img src="{{ foto }}?ts={{ time }}" alt="Foto {{ loop.index }}" style="width:100%;height:150px;object-fit:cover;border-radius:18px;border:1px solid rgba(255,255,255,.14);">{% endfor %}</div>{% endif %}
+        <form action="/cliente/empresa/actualizar" method="post" class="stack-form mt-3">
+            <input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}"><input type="hidden" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"><input type="hidden" name="telefono" value="{{ empresa_activa.telefono or '' }}"><input type="hidden" name="instagram" value="{{ empresa_activa.instagram or '' }}"><input type="hidden" name="direccion" value="{{ empresa_activa.direccion or '' }}"><input type="hidden" name="maps_url" value="{{ empresa_activa.maps_url or '' }}"><input type="hidden" name="descripcion" value="{{ empresa_activa.descripcion or '' }}"><input type="hidden" name="horarios" value="{{ empresa_activa.horarios or '' }}"><input type="hidden" name="precio_desde" value="{{ empresa_activa.precio_desde or '' }}"><input type="hidden" name="capacidad" value="{{ empresa_activa.capacidad or '' }}"><input type="hidden" name="habitaciones" value="{{ empresa_activa.habitaciones or '' }}">{% for field in ['delivery','take_away','comer_en_lugar','pileta','rio','mascotas','cochera','wifi'] %}{% if empresa_activa|attr(field) %}<input type="hidden" name="{{ field }}" value="1">{% endif %}{% endfor %}<input type="hidden" name="subgrupo" value="{{ empresa_activa.subgrupo or '' }}">
+            <label class="field-label">Video URL opcional</label><input class="input-custom" type="url" name="video_url" value="{{ empresa_activa.video_url or '' }}" placeholder="Pegá un link de YouTube, Instagram, Drive u otra plataforma.">
+            <button class="btn-secondary-custom w-100" type="submit">Guardar video</button>
+        </form>
+    </section>
+
+    <section id="vista" class="admin-card admin-card--wide">
+        <div class="card-header-custom"><h2 class="card-title-custom">Vista previa / publicación</h2><p class="card-subtitle-custom">Compartí este link público o revisá cómo aparece en el portal.</p></div>
+        <div class="share-actions-panel__buttons"><a href="/prestador/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">Ver ficha pública</a><button type="button" id="copyCatalogLinkBtn" class="btn-secondary-custom" data-catalog-url="{{ catalogo_public_url }}">Copiar link</button><a href="{{ portal_section_url }}" target="_blank" class="btn-outline-custom">Ver sección del portal</a></div>
+        <div id="copyCatalogLinkFeedback" class="copy-feedback" role="status" aria-live="polite"></div>
+    </section>
 </div>
 <script>
-(() => {
-    const copyButton = document.getElementById("copyCatalogLinkBtn");
-    const feedback = document.getElementById("copyCatalogLinkFeedback");
-    if (!copyButton || !feedback) return;
-
-    const catalogUrl = copyButton.dataset.catalogUrl || "";
-    if (!catalogUrl) {
-        copyButton.disabled = true;
-        feedback.textContent = "No se pudo generar el link del catálogo.";
-        feedback.classList.add("copy-feedback--error");
-        return;
-    }
-
-    const setFeedback = (message, isError = false) => {
-        feedback.textContent = message;
-        feedback.classList.toggle("copy-feedback--error", isError);
-        feedback.classList.toggle("copy-feedback--success", !isError);
-    };
-
-    const fallbackCopy = async (text) => {
-        const input = document.createElement("textarea");
-        input.value = text;
-        input.setAttribute("readonly", "");
-        input.style.position = "absolute";
-        input.style.left = "-9999px";
-        document.body.appendChild(input);
-        input.select();
-        const copied = document.execCommand("copy");
-        document.body.removeChild(input);
-        if (!copied) {
-            throw new Error("copy_failed");
-        }
-    };
-
-    copyButton.addEventListener("click", async () => {
-        try {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(catalogUrl);
-            } else {
-                await fallbackCopy(catalogUrl);
-            }
-            setFeedback("Link copiado");
-        } catch (_) {
-            setFeedback("No se pudo copiar el link. Probá de nuevo.", true);
-        }
-    });
-})();
+(() => { const b=document.getElementById('copyCatalogLinkBtn'), f=document.getElementById('copyCatalogLinkFeedback'); if(!b||!f)return; b.addEventListener('click', async()=>{try{await navigator.clipboard.writeText(b.dataset.catalogUrl||location.href); f.textContent='Link copiado';}catch(e){f.textContent='No se pudo copiar el link.';}}); })();
 </script>
 </body>
 </html>

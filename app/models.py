@@ -37,6 +37,7 @@ class Empresa(Base):
     mascotas = Column(Boolean, nullable=True)
     cochera = Column(Boolean, nullable=True)
     wifi = Column(Boolean, nullable=True)
+    galeria_urls = Column(Text, nullable=True)
 
     productos = relationship(
         "Producto",
