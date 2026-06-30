@@ -38,6 +38,39 @@
 
         .container-main { max-width: 1180px; }
 
+        .legacy-mode-notice {
+            align-items: center;
+            background: rgba(15, 23, 42, .72);
+            border: 1px dashed rgba(148, 163, 184, .45);
+            border-radius: 18px;
+            color: #cbd5e1;
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+            padding: 14px 16px;
+        }
+        .legacy-mode-notice strong { color: var(--text-color); display: block; }
+        .legacy-mode-notice p { margin: 3px 0 0; opacity: .78; }
+        .legacy-mode-notice a {
+            border: 1px solid rgba(56, 189, 248, .55);
+            border-radius: 999px;
+            color: #bfdbfe;
+            font-weight: 700;
+            padding: 9px 13px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .legacy-eyebrow {
+            color: #93c5fd;
+            display: block;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .14em;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+        }
+        @media (max-width: 768px) { .legacy-mode-notice { align-items: flex-start; flex-direction: column; } }
+
         /* BANNER */
         .banner-wrap {
             border-radius: 18px;
@@ -457,6 +490,17 @@
 <body class="catalog-theme-{{ empresa.theme if empresa and empresa.theme else 'default' }}">
 
 <div class="container container-main mt-4 mb-5">
+
+    {% if empresa %}
+    <div class="legacy-mode-notice mb-3" role="note">
+        <div>
+            <span class="legacy-eyebrow">Compatibilidad heredada</span>
+            <strong>Este es el catálogo comercial anterior.</strong>
+            <p>La experiencia pública principal del prestador está en la ficha turística.</p>
+        </div>
+        <a href="/prestador/{{ empresa.slug }}">Ver ficha turística principal</a>
+    </div>
+    {% endif %}
 
     <!-- BANNER -->
     <div class="banner-wrap mb-4">
