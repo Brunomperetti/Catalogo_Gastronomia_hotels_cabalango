@@ -39,7 +39,7 @@ PRODUCTOS_MEDIA_TYPE = "productos"
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 PRICE_POLICY_VALUES = {"mostrar", "consultar", "automatico"}
 STOCK_POLICY_VALUES = {"mostrar", "ocultar", "automatico"}
-THEME_VALUES = {"default", "autopartes", "comida", "farmacia", "ferreteria", "petshop"}
+THEME_VALUES = {"default", "autopartes", "comida", "gastronomia", "alojamiento", "farmacia", "ferreteria", "petshop"}
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 MEDIA_BASE_DIR.mkdir(parents=True, exist_ok=True)
 app.add_middleware(
@@ -120,7 +120,7 @@ def ensure_empresa_media_columns():
                 "UPDATE empresas "
                 "SET theme = 'default' "
                 "WHERE theme IS NULL "
-                "OR theme NOT IN ('default','autopartes','comida','farmacia','ferreteria','petshop')"
+                "OR theme NOT IN ('default','autopartes','comida','gastronomia','alojamiento','farmacia','ferreteria','petshop')"
             )
         )
 
@@ -1479,12 +1479,49 @@ def borrar_empresa_get(request: Request, empresa_id: int, db: Session = Depends(
 # ---------------------------------------------------
 # HOME / DASHBOARDS
 # ---------------------------------------------------
+def get_public_empresas_by_themes(db: Session, themes: set[str]):
+    normalized_themes = {normalize_theme(theme) for theme in themes}
+    return (
+        db.query(models.Empresa)
+        .filter(func.lower(models.Empresa.theme).in_(normalized_themes))
+        .order_by(models.Empresa.nombre.asc())
+        .all()
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
-def home_router(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
-    if not user:
-        return RedirectResponse(url="/login", status_code=303)
-    return RedirectResponse(url=get_dashboard_path(user), status_code=303)
+def portal_home(request: Request):
+    return templates.TemplateResponse("portal_home.html", {"request": request})
+
+
+@app.get("/gastronomia", response_class=HTMLResponse)
+def portal_gastronomia(request: Request, db: Session = Depends(get_db)):
+    empresas = get_public_empresas_by_themes(db, {"gastronomia", "comida"})
+    return templates.TemplateResponse(
+        "portal_prestadores.html",
+        {
+            "request": request,
+            "title": "Gastronomía en Cabalango",
+            "eyebrow": "Sabores locales",
+            "description": "Empresas y prestadores gastronómicos publicados en el portal turístico de Cabalango.",
+            "empresas": empresas,
+        },
+    )
+
+
+@app.get("/alojamientos", response_class=HTMLResponse)
+def portal_alojamientos(request: Request, db: Session = Depends(get_db)):
+    empresas = get_public_empresas_by_themes(db, {"alojamiento"})
+    return templates.TemplateResponse(
+        "portal_prestadores.html",
+        {
+            "request": request,
+            "title": "Hoteles, cabañas y casas en alquiler",
+            "eyebrow": "Dónde dormir",
+            "description": "Prestadores de alojamiento de Cabalango para planificar tu estadía.",
+            "empresas": empresas,
+        },
+    )
 
 
 @app.get("/admin", response_class=HTMLResponse)

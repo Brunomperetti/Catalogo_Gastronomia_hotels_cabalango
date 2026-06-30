@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
+</head>
+<body class="catalog-theme-default portal-body">
+    <main class="portal-shell">
+        <nav class="portal-topnav" aria-label="Navegación pública">
+            <a href="/">Inicio</a>
+            <a href="/gastronomia">Gastronomía</a>
+            <a href="/alojamientos">Alojamientos</a>
+        </nav>
+
+        <section class="portal-hero portal-hero-compact">
+            <p class="portal-kicker">{{ eyebrow }}</p>
+            <h1>{{ title }}</h1>
+            <p class="portal-subtitle">{{ description }}</p>
+        </section>
+
+        {% if empresas %}
+        <section class="prestadores-grid" aria-label="Listado de prestadores">
+            {% for empresa in empresas %}
+            <article class="prestador-card">
+                {% if empresa.banner_url %}
+                <img class="prestador-banner" src="{{ empresa.banner_url }}" alt="Banner de {{ empresa.nombre }}">
+                {% else %}
+                <div class="prestador-banner prestador-banner-placeholder">Cabalango</div>
+                {% endif %}
+
+                <div class="prestador-content">
+                    {% if empresa.logo_url %}
+                    <img class="prestador-logo" src="{{ empresa.logo_url }}" alt="Logo de {{ empresa.nombre }}">
+                    {% endif %}
+                    <p class="prestador-theme">{{ empresa.theme or 'default' }}</p>
+                    <h2>{{ empresa.nombre }}</h2>
+
+                    {% if empresa.whatsapp %}
+                    <a class="prestador-whatsapp" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">WhatsApp: {{ empresa.whatsapp }}</a>
+                    {% endif %}
+
+                    <a class="portal-button" href="/catalogo/{{ empresa.slug }}">Ver ficha / catálogo</a>
+                </div>
+            </article>
+            {% endfor %}
+        </section>
+        {% else %}
+        <section class="portal-empty">
+            <h2>Próximamente</h2>
+            <p>Todavía no hay prestadores cargados en esta sección.</p>
+            <a class="portal-button" href="/">Volver al inicio</a>
+        </section>
+        {% endif %}
+    </main>
+</body>
+</html>
