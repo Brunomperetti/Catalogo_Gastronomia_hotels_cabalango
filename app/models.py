@@ -52,6 +52,9 @@ class Empresa(Base):
     aire_acondicionado = Column(Boolean, nullable=True)
     calefaccion = Column(Boolean, nullable=True)
     galeria_urls = Column(Text, nullable=True)
+    rating_promedio = Column(Float, nullable=True)
+    rating_cantidad = Column(Integer, nullable=True)
+    reviews_destacadas = Column(Text, nullable=True)
 
     productos = relationship(
         "Producto",

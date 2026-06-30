@@ -162,6 +162,9 @@ def ensure_empresa_media_columns():
             "aire_acondicionado": "BOOLEAN",
             "calefaccion": "BOOLEAN",
             "galeria_urls": "TEXT",
+            "rating_promedio": "FLOAT",
+            "rating_cantidad": "INTEGER",
+            "reviews_destacadas": "TEXT",
         }
         for column_name, column_type in optional_columns.items():
             if column_name not in columns:
@@ -1377,6 +1380,9 @@ def editar_empresa_panel(
     calefaccion: str | None = Form(None),
     subgrupo: str | None = Form(None),
     destacado: str | None = Form(None),
+    rating_promedio: str | None = Form(None),
+    rating_cantidad: str | None = Form(None),
+    reviews_destacadas: str | None = Form(None),
     activo: str = Form("1"),
     theme: str = Form("default"),
     editar_slug: str = Form("0"),
@@ -1437,10 +1443,25 @@ def editar_empresa_panel(
         "fecha": fecha,
         "organizador": organizador,
         "lugar_encuentro": lugar_encuentro,
+        "reviews_destacadas": reviews_destacadas,
     }
     for attr, raw_value in optional_text_fields.items():
         if raw_value is not None:
             setattr(empresa, attr, clean_text(raw_value, default="") or None)
+    if rating_promedio is not None:
+        rating_text = clean_text(rating_promedio, default="").replace(",", ".")
+        try:
+            rating_value = float(rating_text) if rating_text else None
+        except ValueError:
+            rating_value = None
+        empresa.rating_promedio = min(max(rating_value, 0), 5) if rating_value is not None else None
+    if rating_cantidad is not None:
+        count_text = clean_text(rating_cantidad, default="")
+        try:
+            count_value = int(count_text) if count_text else None
+        except ValueError:
+            count_value = None
+        empresa.rating_cantidad = max(count_value, 0) if count_value is not None else None
     if subgrupo is not None:
         empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
     if destacado is not None:
@@ -2899,6 +2920,28 @@ def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict
     return rows[:12]
 
 
+def build_public_reviews(empresa: models.Empresa) -> list[dict]:
+    raw_reviews = clean_text(getattr(empresa, "reviews_destacadas", None), default="")
+    reviews: list[dict] = []
+    for line in raw_reviews.splitlines():
+        clean_line = line.strip(" -•	")
+        if not clean_line:
+            continue
+        name = "Visitante"
+        comment = clean_line
+        if "|" in clean_line:
+            parts = [part.strip() for part in clean_line.split("|") if part.strip()]
+            if len(parts) >= 2:
+                name, comment = parts[0], " | ".join(parts[1:])
+        elif ":" in clean_line:
+            name_part, comment_part = clean_line.split(":", 1)
+            if name_part.strip() and comment_part.strip():
+                name, comment = name_part.strip(), comment_part.strip()
+        reviews.append({"nombre": name[:80], "comentario": comment[:360]})
+        if len(reviews) == 3:
+            break
+    return reviews
+
 @app.get("/prestador/{slug}", response_class=HTMLResponse)
 def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)):
     empresa = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
@@ -2920,6 +2963,8 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "empresa": empresa,
             "kind": kind,
             "quick_facts": build_prestador_quick_facts(empresa, kind),
+            "public_reviews": build_public_reviews(empresa),
+            "maps_url": clean_text(empresa.maps_url, default=""),
             "empresa_logo_url": empresa_logo_url,
             "empresa_banner_url": empresa_banner_url,
             "galeria_urls": galeria_urls,
