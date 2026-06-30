@@ -23,6 +23,21 @@
             <p class="portal-subtitle">{{ description }}</p>
         </section>
 
+        {% if actividad_subgrupos %}
+        <section class="activity-subgroups" aria-label="Subgrupos de actividades y comunidad">
+            {% for key, item in actividad_subgrupos.items() %}
+            <a class="activity-subgroup-card {% if active_subgrupo == key %}is-active{% endif %}" href="/actividades?subgrupo={{ key }}">
+                <span class="activity-subgroup-icon">{{ item.icon }}</span>
+                <strong>{{ item.label }}</strong>
+                <small>{{ item.description }}</small>
+            </a>
+            {% endfor %}
+            {% if active_subgrupo %}
+            <a class="activity-subgroup-reset" href="/actividades">Ver todas las propuestas</a>
+            {% endif %}
+        </section>
+        {% endif %}
+
         {% if empresas %}
         <section class="prestadores-grid" aria-label="Listado de prestadores y lugares">
             {% for empresa in empresas %}
@@ -37,7 +52,7 @@
                     {% if empresa.logo_url %}
                     <img class="prestador-logo" src="{{ empresa.logo_url }}" alt="Logo de {{ empresa.nombre }}">
                     {% endif %}
-                    <p class="prestador-theme">{{ theme_display_label(empresa.theme) }}</p>
+                    <p class="prestador-theme">{{ theme_display_label(empresa.theme) }}{% if empresa.subgrupo %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}</p>
                     <h2>{{ empresa.nombre }}</h2>
 
                     {% if empresa.whatsapp %}

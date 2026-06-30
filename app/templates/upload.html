@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel admin | Catálogo</title>
+    <title>Panel admin | Portal Cabalango</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -25,14 +25,14 @@
             <div class="hero-card__left">
                 <div class="hero-badge">Prestador activo</div>
                 <h1 class="hero-title hero-title--compact">{{ empresa_activa.nombre }}</h1>
-                <p class="hero-subtitle hero-subtitle--compact">Panel de gestión centralizado para empresa, productos, usuarios y backups.</p>
+                <p class="hero-subtitle hero-subtitle--compact">Administrá fichas promocionales de prestadores, lugares, fotos, publicación y consultas del portal turístico de Cabalango.</p>
 
                 <div class="hero-actions hero-actions--compact">
-                    <a href="/catalogo/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">
-                        Ver catálogo
+                    <a href="/prestador/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">
+                        Ver ficha pública
                     </a>
                     <a href="/catalogo/{{ empresa_activa.slug }}" target="_blank" class="btn-secondary-custom">
-                        Ir al catálogo
+                        Abrir catálogo heredado
                     </a>
                     <a href="/logout" class="btn-outline-custom">Cerrar sesión</a>
                 </div>
@@ -70,12 +70,12 @@
 
     <section class="tabs-shell">
         <nav class="admin-tabs" role="tablist" aria-label="Secciones del panel admin">
-            <button id="tab-empresa" class="admin-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-empresa" data-tab-target="empresa">Empresa</button>
-            <button id="tab-productos" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-productos" data-tab-target="productos">Productos</button>
-            <button id="tab-leads" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-leads" data-tab-target="leads">Leads</button>
+            <button id="tab-empresa" class="admin-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="panel-empresa" data-tab-target="empresa">Prestadores / lugares</button>
+            <button id="tab-productos" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-productos" data-tab-target="productos">Ficha / menú</button>
+            <button id="tab-leads" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-leads" data-tab-target="leads">Consultas / leads</button>
             <button id="tab-usuarios" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-usuarios" data-tab-target="usuarios">Usuarios</button>
-            <button id="tab-backup" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-backup" data-tab-target="backup">Backup</button>
-            <button id="tab-avanzado" class="admin-tab admin-tab--warning" type="button" role="tab" aria-selected="false" aria-controls="panel-avanzado" data-tab-target="avanzado">Avanzado</button>
+            <button id="tab-backup" class="admin-tab" type="button" role="tab" aria-selected="false" aria-controls="panel-backup" data-tab-target="backup">Configuración</button>
+            <button id="tab-avanzado" class="admin-tab admin-tab--warning" type="button" role="tab" aria-selected="false" aria-controls="panel-avanzado" data-tab-target="avanzado">Técnico</button>
         </nav>
 
         <section id="panel-empresa" class="admin-tab-panel is-active" role="tabpanel" aria-labelledby="tab-empresa" data-tab-panel="empresa">
@@ -84,8 +84,8 @@
                 <section class="admin-card admin-card--empresa-main">
                     <div class="card-header-custom">
                         <p class="section-eyebrow">Bloque A</p>
-                        <h2 class="card-title-custom">Datos y configuración comercial</h2>
-                        <p class="card-subtitle-custom">Centralizá edición de empresa activa y políticas de visualización del catálogo.</p>
+                        <h2 class="card-title-custom">Ficha del prestador / lugar</h2>
+                        <p class="card-subtitle-custom">Editá datos públicos, contacto, sección, subgrupo y estado de publicación sin tocar operaciones técnicas.</p>
                     </div>
 
                     <div class="empresa-stack">
@@ -109,6 +109,26 @@
                                 </div>
 
                                 <div>
+                                    <label class="field-label">Teléfono</label>
+                                    <input class="input-custom" type="text" name="telefono" value="{{ empresa_activa.telefono or '' }}">
+                                </div>
+
+                                <div>
+                                    <label class="field-label">Instagram / redes</label>
+                                    <input class="input-custom" type="text" name="instagram" value="{{ empresa_activa.instagram or '' }}" placeholder="@usuario o URL">
+                                </div>
+
+                                <div>
+                                    <label class="field-label">Dirección</label>
+                                    <input class="input-custom" type="text" name="direccion" value="{{ empresa_activa.direccion or '' }}">
+                                </div>
+
+                                <div>
+                                    <label class="field-label">Link Google Maps</label>
+                                    <input class="input-custom" type="url" name="maps_url" value="{{ empresa_activa.maps_url or '' }}">
+                                </div>
+
+                                <div>
                                     <label class="field-label">Rubro / sección</label>
                                     <select name="theme" class="input-custom select-custom">
                                         <option value="gastronomia" {% if empresa_activa.theme in ["gastronomia", "comida"] %}selected{% endif %}>Gastronomía</option>
@@ -117,6 +137,37 @@
                                         <option value="actividades" {% if empresa_activa.theme == "actividades" %}selected{% endif %}>Actividades y comunidad</option>
                                         <option value="default" {% if (empresa_activa.theme or "default") == "default" %}selected{% endif %}>Otro / General</option>
                                     </select>
+                                </div>
+
+
+                                <div class="full-width">
+                                    <label class="field-label">Descripción promocional</label>
+                                    <textarea class="input-custom" name="descripcion" rows="4" placeholder="Contá qué ofrece este lugar o prestador en Cabalango">{{ empresa_activa.descripcion or '' }}</textarea>
+                                </div>
+
+                                <div>
+                                    <label class="field-label">Horarios</label>
+                                    <input class="input-custom" type="text" name="horarios" value="{{ empresa_activa.horarios or '' }}">
+                                </div>
+
+                                <div>
+                                    <label class="field-label">Video URL</label>
+                                    <input class="input-custom" type="url" name="video_url" value="{{ empresa_activa.video_url or '' }}" placeholder="YouTube, Instagram, Drive...">
+                                </div>
+
+                                <div>
+                                    <label class="field-label">Subgrupo de actividades</label>
+                                    <select name="subgrupo" class="input-custom select-custom">
+                                        <option value="">No aplica</option>
+                                        <option value="diurnas" {% if empresa_activa.subgrupo == "diurnas" %}selected{% endif %}>Actividades diurnas</option>
+                                        <option value="nocturnas" {% if empresa_activa.subgrupo == "nocturnas" %}selected{% endif %}>Actividades nocturnas</option>
+                                        <option value="locales" {% if empresa_activa.subgrupo == "locales" %}selected{% endif %}>Productos locales y artesanos</option>
+                                    </select>
+                                </div>
+
+                                <div class="feature-list full-width">
+                                    <label class="form-check me-3"><input class="form-check-input" type="checkbox" name="destacado" value="1" {% if empresa_activa.destacado %}checked{% endif %}> Destacado</label>
+                                    <label class="form-check me-3"><input class="form-check-input" type="checkbox" name="activo" value="1" {% if empresa_activa.activo is not sameas false %}checked{% endif %}> Publicado / activo</label>
                                 </div>
 
                                 <div class="form-check mt-1">
@@ -137,8 +188,8 @@
 
                         <section class="empresa-subsection">
                             <div class="subsection-heading">
-                                <h3>🧭 Configuración de visualización del catálogo</h3>
-                                <p>Definí cómo mostrar precio y stock para {{ empresa_activa.nombre }}.</p>
+                                <h3>🧭 Publicación y datos promocionales</h3>
+                                <p>Mantené compatibilidad con el catálogo heredado, pero priorizá una ficha simple y promocional.</p>
                             </div>
 
                             <form action="/empresa/politicas_catalogo" method="post" class="stack-form">

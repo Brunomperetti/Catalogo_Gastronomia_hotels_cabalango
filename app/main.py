@@ -31,7 +31,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-06-30-portal-4-secciones-v1"
+APP_BUILD = "2026-06-30-portal-turistico-admin-v2"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -101,6 +101,13 @@ def ensure_empresa_media_columns():
             conn.execute(text("ALTER TABLE empresas ADD COLUMN theme VARCHAR DEFAULT 'default'"))
         optional_columns = {
             "descripcion": "TEXT",
+            "telefono": "VARCHAR",
+            "instagram": "VARCHAR",
+            "direccion": "VARCHAR",
+            "maps_url": "VARCHAR",
+            "subgrupo": "VARCHAR",
+            "destacado": "BOOLEAN",
+            "activo": "BOOLEAN",
             "horarios": "VARCHAR",
             "precio_desde": "VARCHAR",
             "capacidad": "VARCHAR",
@@ -1254,6 +1261,16 @@ def editar_empresa_panel(
     empresa_slug_actual: str = Form(...),
     nombre: str = Form(...),
     whatsapp: str = Form(""),
+    telefono: str = Form(""),
+    instagram: str = Form(""),
+    direccion: str = Form(""),
+    maps_url: str = Form(""),
+    descripcion: str = Form(""),
+    horarios: str = Form(""),
+    video_url: str = Form(""),
+    subgrupo: str = Form(""),
+    destacado: str = Form("0"),
+    activo: str = Form("1"),
     theme: str = Form("default"),
     editar_slug: str = Form("0"),
     nuevo_slug: str = Form(""),
@@ -1291,6 +1308,16 @@ def editar_empresa_panel(
 
     empresa.nombre = nombre_limpio
     empresa.whatsapp = whatsapp_limpio
+    empresa.telefono = clean_text(telefono, default="") or None
+    empresa.instagram = clean_text(instagram, default="") or None
+    empresa.direccion = clean_text(direccion, default="") or None
+    empresa.maps_url = clean_text(maps_url, default="") or None
+    empresa.descripcion = clean_text(descripcion, default="") or None
+    empresa.horarios = clean_text(horarios, default="") or None
+    empresa.video_url = clean_text(video_url, default="") or None
+    empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
+    empresa.destacado = str(destacado) == "1"
+    empresa.activo = str(activo) == "1"
     empresa.theme = normalize_theme(theme)
 
     if slug_final != slug_original:
@@ -1533,8 +1560,34 @@ def get_public_empresas_by_themes(db: Session, themes: set[str]):
     )
 
 
-def portal_section_context(request: Request, db: Session, *, title: str, eyebrow: str, description: str, themes: set[str], section: str):
+ACTIVIDADES_SUBGRUPOS = {
+    "diurnas": {
+        "label": "Actividades diurnas",
+        "description": "Caminatas, paseos, recorridos, actividades recreativas y propuestas para disfrutar durante el día.",
+        "icon": "☀️",
+    },
+    "nocturnas": {
+        "label": "Actividades nocturnas",
+        "description": "Peñas, música en vivo, encuentros, propuestas culturales y actividades para la noche.",
+        "icon": "🌙",
+    },
+    "locales": {
+        "label": "Productos locales y artesanos",
+        "description": "Artesanos, emprendedores, productores regionales y propuestas locales de Cabalango.",
+        "icon": "🧺",
+    },
+}
+
+
+def normalize_actividad_subgrupo(value: str | None) -> str | None:
+    cleaned = clean_text(value, default="").lower()
+    return cleaned if cleaned in ACTIVIDADES_SUBGRUPOS else None
+
+
+def portal_section_context(request: Request, db: Session, *, title: str, eyebrow: str, description: str, themes: set[str], section: str, subgrupo: str | None = None):
     empresas = get_public_empresas_by_themes(db, themes)
+    if section == "actividades" and subgrupo:
+        empresas = [empresa for empresa in empresas if (empresa.subgrupo or "").lower() == subgrupo]
     return templates.TemplateResponse(
         "portal_prestadores.html",
         {
@@ -1545,6 +1598,8 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "empresas": empresas,
             "section": section,
             "theme_display_label": theme_display_label,
+            "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if section == "actividades" else {},
+            "active_subgrupo": subgrupo if section == "actividades" else None,
         },
     )
 
@@ -1594,7 +1649,8 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/actividades", response_class=HTMLResponse)
-def portal_actividades(request: Request, db: Session = Depends(get_db)):
+def portal_actividades(request: Request, subgrupo: str = "", db: Session = Depends(get_db)):
+    active_subgrupo = normalize_actividad_subgrupo(subgrupo)
     return portal_section_context(
         request,
         db,
@@ -1603,6 +1659,7 @@ def portal_actividades(request: Request, db: Session = Depends(get_db)):
         description="Caminatas, ferias, eventos, artesanos, experiencias y propuestas locales para disfrutar la comunidad.",
         themes={"actividades"},
         section="actividades",
+        subgrupo=active_subgrupo,
     )
 
 
@@ -1784,6 +1841,11 @@ def cliente_actualizar_empresa(
     request: Request,
     nombre: str = Form(...),
     whatsapp: str = Form(""),
+    telefono: str = Form(""),
+    instagram: str = Form(""),
+    direccion: str = Form(""),
+    maps_url: str = Form(""),
+    subgrupo: str = Form(""),
     descripcion: str = Form(""),
     horarios: str = Form(""),
     precio_desde: str = Form(""),
@@ -1813,6 +1875,11 @@ def cliente_actualizar_empresa(
 
     empresa.nombre = nombre_limpio
     empresa.whatsapp = clean_text(whatsapp, default="") or None
+    empresa.telefono = clean_text(telefono, default="") or None
+    empresa.instagram = clean_text(instagram, default="") or None
+    empresa.direccion = clean_text(direccion, default="") or None
+    empresa.maps_url = clean_text(maps_url, default="") or None
+    empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
     empresa.descripcion = clean_text(descripcion, default="") or None
     empresa.horarios = clean_text(horarios, default="") or None
     empresa.precio_desde = clean_text(precio_desde, default="") or None
@@ -2033,6 +2100,16 @@ async def crear_empresa_panel(
     nombre: str = Form(...),
     slug: str = Form(...),
     whatsapp: str = Form(""),
+    telefono: str = Form(""),
+    instagram: str = Form(""),
+    direccion: str = Form(""),
+    maps_url: str = Form(""),
+    descripcion: str = Form(""),
+    horarios: str = Form(""),
+    video_url: str = Form(""),
+    subgrupo: str = Form(""),
+    destacado: str = Form("0"),
+    activo: str = Form("1"),
     theme: str = Form("default"),
     logo: UploadFile = File(None),
     banner: UploadFile = File(None),
@@ -2057,7 +2134,17 @@ async def crear_empresa_panel(
     empresa = models.Empresa(
         nombre=nombre,
         slug=slug,
-        whatsapp=whatsapp.strip(),
+        whatsapp=clean_text(whatsapp, default="") or None,
+        telefono=clean_text(telefono, default="") or None,
+        instagram=clean_text(instagram, default="") or None,
+        direccion=clean_text(direccion, default="") or None,
+        maps_url=clean_text(maps_url, default="") or None,
+        descripcion=clean_text(descripcion, default="") or None,
+        horarios=clean_text(horarios, default="") or None,
+        video_url=clean_text(video_url, default="") or None,
+        subgrupo=normalize_actividad_subgrupo(subgrupo),
+        destacado=str(destacado) == "1",
+        activo=str(activo) == "1",
         politica_precio_catalogo="automatico",
         politica_stock_catalogo="mostrar",
         theme=normalize_theme(theme),
@@ -2660,6 +2747,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "empresa_logo_url": get_empresa_logo_url(empresa),
             "empresa_banner_url": get_empresa_banner_url(empresa),
             "theme_display_label": theme_display_label,
+            "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
         },
     )
 

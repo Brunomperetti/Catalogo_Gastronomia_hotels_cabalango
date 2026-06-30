@@ -36,6 +36,13 @@
                     <a class="portal-button" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>
                     {% endif %}
                     <a class="portal-button portal-button-secondary" href="/catalogo/{{ empresa.slug }}">Ver menú / precios</a>
+                    {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
+                </div>
+                <div class="prestador-contact-lines">
+                    {% if empresa.telefono %}<span>Tel: {{ empresa.telefono }}</span>{% endif %}
+                    {% if empresa.instagram %}<span>Redes: {{ empresa.instagram }}</span>{% endif %}
+                    {% if empresa.direccion %}<span>Dirección: {{ empresa.direccion }}</span>{% endif %}
+                    {% if empresa.subgrupo and actividad_subgrupos %}<span>{{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}</span>{% endif %}
                 </div>
             </div>
         </section>
