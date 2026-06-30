@@ -37,6 +37,9 @@ def render_prestador(theme="alojamiento", galeria_urls=None):
         video_url="",
         menu_url="",
         promocion="",
+        rating_promedio=None,
+        rating_cantidad=None,
+        reviews_destacadas="",
         guardia="",
         fecha="",
         organizador="",
@@ -49,6 +52,8 @@ def render_prestador(theme="alojamiento", galeria_urls=None):
         empresa=empresa,
         kind=theme,
         quick_facts=[{"label": "Capacidad", "value": "4 personas", "enabled": True, "prepared": False}],
+        public_reviews=[],
+        maps_url=empresa.maps_url,
         empresa_logo_url="/static/images/logo.png",
         empresa_banner_url="/static/images/banner.jpg",
         galeria_urls=galeria_urls,
@@ -64,6 +69,7 @@ def test_prestador_template_is_tourism_first_for_alojamiento():
 
     assert "Consultar por WhatsApp" in html
     assert "Ver todas las fotos" in html
+    assert "Opiniones de huéspedes" in html
     assert "Lo que más consultan los viajeros" in html
     assert "Descargar lista de precios" not in html
     assert "Productos / platos publicados" not in html

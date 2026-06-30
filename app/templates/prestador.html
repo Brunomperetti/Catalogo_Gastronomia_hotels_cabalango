@@ -47,7 +47,7 @@
                 <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
                 <div class="prestador-actions">
                     {% if clean_whatsapp %}<a class="portal-button" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>{% endif %}
-                    {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
+                    {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
                     <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
                     {% if kind == 'gastronomia' and empresa.menu_url %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url }}" target="_blank" rel="noopener">Ver carta</a>{% endif %}
                 </div>
@@ -76,7 +76,13 @@
                 <p class="portal-card-label">Descripción</p>
                 <h2>Sobre {{ empresa.nombre }}</h2>
                 <p>{{ empresa.descripcion or empresa.descripcion_corta or 'Este prestador todavía no cargó una descripción completa.' }}</p>
-                {% if empresa.promocion %}<p><strong>Destacado:</strong> {{ empresa.promocion }}</p>{% endif %}
+                {% if empresa.promocion %}
+                <div class="promo-highlight" aria-label="Promoción vigente">
+                    <span>Promo vigente</span>
+                    <strong>{{ empresa.promocion }}</strong>
+                    <small>Beneficio especial para visitantes de Cabalango</small>
+                </div>
+                {% endif %}
             </article>
             <article class="portal-card">
                 <p class="portal-card-label">Contacto</p>
@@ -89,12 +95,41 @@
             </article>
         </section>
 
-        <section class="portal-card" id="galeria-completa">
+        <section class="portal-card photos-summary-card" id="galeria-completa">
             <p class="portal-card-label">Fotos</p>
-            <h2>Galería del lugar</h2>
-            <div class="prestador-detail-grid gallery-full-grid">
-                {% for foto in galeria_urls[:7] %}<img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}">{% else %}<p>Todavía no hay fotos cargadas. El administrador puede subir fotos normales desde “Fotos y video”.</p>{% endfor %}
+            <h2>Fotos del lugar</h2>
+            {% if galeria_urls %}
+            <p>La galería principal está arriba para evitar repetir las mismas imágenes. Usá el botón para volver y recorrerlas con más protagonismo.</p>
+            <a class="portal-button portal-button-secondary" href="#fotos">Ver todas las fotos</a>
+            {% else %}
+            <p>Todavía no hay fotos cargadas. El administrador puede subir fotos normales desde “Fotos y video”.</p>
+            {% endif %}
+        </section>
+
+        <section class="portal-card reviews-card">
+            <p class="portal-card-label">Reputación</p>
+            <div class="reviews-header">
+                <div>
+                    <h2>Opiniones de huéspedes</h2>
+                    <p>Experiencias publicadas para ayudar a nuevos visitantes a decidir con confianza.</p>
+                </div>
+                <div class="rating-pill">
+                    <strong>{{ '%.1f'|format(empresa.rating_promedio) if empresa.rating_promedio else '—' }}</strong>
+                    <span>{{ empresa.rating_cantidad or 0 }} reseñas</span>
+                </div>
             </div>
+            {% if public_reviews %}
+            <div class="reviews-grid">
+                {% for review in public_reviews %}
+                <article>
+                    <strong>{{ review.nombre }}</strong>
+                    <p>{{ review.comentario }}</p>
+                </article>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="reviews-empty">Todavía no hay opiniones publicadas.</p>
+            {% endif %}
         </section>
 
         <section class="prestador-detail-grid">
@@ -102,7 +137,7 @@
                 <p class="portal-card-label">Ubicación</p>
                 <h2>Cómo llegar</h2>
                 <p>{{ empresa.direccion or 'Dirección pendiente de carga.' }}</p>
-                {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Abrir mapa</a>{% endif %}
+                {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener">Abrir mapa</a>{% endif %}
             </article>
             <article class="portal-card">
                 <p class="portal-card-label">Video</p>

@@ -552,3 +552,29 @@
     text-align: center;
   }
 }
+
+/* Sprint UX ficha pública: promoción, galería limpia y reputación */
+.promo-highlight {
+  background: linear-gradient(135deg, rgba(14, 165, 233, .18), rgba(217, 70, 239, .16));
+  border: 1px solid rgba(125, 211, 252, .42);
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 42px rgba(14, 165, 233, .12);
+  display: grid;
+  gap: 5px;
+  margin-top: 20px;
+  padding: 16px 18px;
+}
+.promo-highlight span { color: #67e8f9; font-size: .78rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
+.promo-highlight strong { color: #fff; font-size: clamp(1.05rem, 2.2vw, 1.35rem); }
+.promo-highlight small { color: var(--muted-text-color); font-weight: 750; }
+.photos-summary-card { margin-top: clamp(24px, 4vw, 34px); }
+.reviews-card { margin-top: clamp(24px, 4vw, 34px); }
+.reviews-header { align-items: center; display: flex; gap: 18px; justify-content: space-between; }
+.reviews-header h2 { margin-bottom: 8px; }
+.rating-pill { background: rgba(15,23,42,.82); border: 1px solid rgba(250,204,21,.42); border-radius: 22px; min-width: 132px; padding: 14px 16px; text-align: center; }
+.rating-pill strong { color: #fde68a; display: block; font-size: 2rem; line-height: 1; }
+.rating-pill span { color: var(--muted-text-color); font-size: .86rem; font-weight: 850; }
+.reviews-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 18px; }
+.reviews-grid article { background: rgba(15,23,42,.58); border: 1px solid rgba(148,163,184,.22); border-radius: 18px; padding: 16px; }
+.reviews-grid p, .reviews-empty { color: var(--muted-text-color); margin-bottom: 0; }
+@media (max-width: 760px) { .reviews-header { align-items: flex-start; flex-direction: column; } .reviews-grid { grid-template-columns: 1fr; } }
