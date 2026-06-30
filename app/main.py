@@ -31,7 +31,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-06-30-prestadores-v1"
+APP_BUILD = "2026-06-30-portal-4-secciones-v1"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -39,7 +39,7 @@ PRODUCTOS_MEDIA_TYPE = "productos"
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
 PRICE_POLICY_VALUES = {"mostrar", "consultar", "automatico"}
 STOCK_POLICY_VALUES = {"mostrar", "ocultar", "automatico"}
-THEME_VALUES = {"default", "autopartes", "comida", "gastronomia", "alojamiento", "farmacia", "ferreteria", "petshop"}
+THEME_VALUES = {"default", "autopartes", "comida", "gastronomia", "alojamiento", "servicios", "actividades", "farmacia", "ferreteria", "petshop"}
 STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 MEDIA_BASE_DIR.mkdir(parents=True, exist_ok=True)
 app.add_middleware(
@@ -139,7 +139,7 @@ def ensure_empresa_media_columns():
                 "UPDATE empresas "
                 "SET theme = 'default' "
                 "WHERE theme IS NULL "
-                "OR theme NOT IN ('default','autopartes','comida','gastronomia','alojamiento','farmacia','ferreteria','petshop')"
+                "OR theme NOT IN ('default','autopartes','comida','gastronomia','alojamiento','servicios','actividades','farmacia','ferreteria','petshop')"
             )
         )
 
@@ -861,6 +861,31 @@ def normalize_theme(value: str | None) -> str:
     return theme if theme in THEME_VALUES else "default"
 
 
+def public_section_for_theme(value: str | None) -> str:
+    theme = normalize_theme(value)
+    if theme == "comida":
+        return "gastronomia"
+    if theme in {"gastronomia", "alojamiento", "servicios", "actividades"}:
+        return theme
+    return "default"
+
+
+def theme_display_label(value: str | None) -> str:
+    labels = {
+        "gastronomia": "Gastronomía",
+        "comida": "Gastronomía",
+        "alojamiento": "Alojamientos",
+        "servicios": "Servicios útiles",
+        "actividades": "Actividades y comunidad",
+        "default": "Otro / General",
+        "autopartes": "Autopartes",
+        "farmacia": "Farmacia",
+        "ferreteria": "Ferretería",
+        "petshop": "Pet shop",
+    }
+    return labels.get(normalize_theme(value), "Otro / General")
+
+
 def has_valid_price(value) -> bool:
     if value is None:
         return False
@@ -1508,6 +1533,22 @@ def get_public_empresas_by_themes(db: Session, themes: set[str]):
     )
 
 
+def portal_section_context(request: Request, db: Session, *, title: str, eyebrow: str, description: str, themes: set[str], section: str):
+    empresas = get_public_empresas_by_themes(db, themes)
+    return templates.TemplateResponse(
+        "portal_prestadores.html",
+        {
+            "request": request,
+            "title": title,
+            "eyebrow": eyebrow,
+            "description": description,
+            "empresas": empresas,
+            "section": section,
+            "theme_display_label": theme_display_label,
+        },
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
 def portal_home(request: Request):
     return templates.TemplateResponse("portal_home.html", {"request": request})
@@ -1515,31 +1556,53 @@ def portal_home(request: Request):
 
 @app.get("/gastronomia", response_class=HTMLResponse)
 def portal_gastronomia(request: Request, db: Session = Depends(get_db)):
-    empresas = get_public_empresas_by_themes(db, {"gastronomia", "comida"})
-    return templates.TemplateResponse(
-        "portal_prestadores.html",
-        {
-            "request": request,
-            "title": "Gastronomía en Cabalango",
-            "eyebrow": "Sabores locales",
-            "description": "Empresas y prestadores gastronómicos publicados en el portal turístico de Cabalango.",
-            "empresas": empresas,
-        },
+    return portal_section_context(
+        request,
+        db,
+        title="Gastronomía en Cabalango",
+        eyebrow="Dónde comer",
+        description="Sabores locales, casas de comida, bares, restaurantes y opciones para disfrutar en Cabalango.",
+        themes={"gastronomia", "comida"},
+        section="gastronomia",
     )
 
 
 @app.get("/alojamientos", response_class=HTMLResponse)
 def portal_alojamientos(request: Request, db: Session = Depends(get_db)):
-    empresas = get_public_empresas_by_themes(db, {"alojamiento"})
-    return templates.TemplateResponse(
-        "portal_prestadores.html",
-        {
-            "request": request,
-            "title": "Hoteles, cabañas y casas en alquiler",
-            "eyebrow": "Dónde dormir",
-            "description": "Prestadores de alojamiento de Cabalango para planificar tu estadía.",
-            "empresas": empresas,
-        },
+    return portal_section_context(
+        request,
+        db,
+        title="Alojamientos en Cabalango",
+        eyebrow="Dónde dormir",
+        description="Hoteles, cabañas, casas y hospedajes para planificar tu estadía.",
+        themes={"alojamiento"},
+        section="alojamientos",
+    )
+
+
+@app.get("/servicios", response_class=HTMLResponse)
+def portal_servicios(request: Request, db: Session = Depends(get_db)):
+    return portal_section_context(
+        request,
+        db,
+        title="Servicios útiles en Cabalango",
+        eyebrow="Para vecinos y visitantes",
+        description="Farmacia, comisaría, proveedurías, panaderías y lugares clave para resolver necesidades prácticas.",
+        themes={"servicios"},
+        section="servicios",
+    )
+
+
+@app.get("/actividades", response_class=HTMLResponse)
+def portal_actividades(request: Request, db: Session = Depends(get_db)):
+    return portal_section_context(
+        request,
+        db,
+        title="Actividades y comunidad en Cabalango",
+        eyebrow="Qué hacer en Cabalango",
+        description="Caminatas, ferias, eventos, artesanos, experiencias y propuestas locales para disfrutar la comunidad.",
+        themes={"actividades"},
+        section="actividades",
     )
 
 
@@ -2546,11 +2609,9 @@ def catalogo_acceso_submit(
 
 
 def get_prestador_kind(empresa: models.Empresa) -> str:
-    theme = normalize_theme(empresa.theme)
-    if theme == "alojamiento":
-        return "alojamiento"
-    if theme in {"gastronomia", "comida"}:
-        return "gastronomia"
+    theme = public_section_for_theme(empresa.theme)
+    if theme in {"gastronomia", "alojamiento", "servicios", "actividades"}:
+        return theme
     return "general"
 
 
@@ -2598,6 +2659,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "productos": productos,
             "empresa_logo_url": get_empresa_logo_url(empresa),
             "empresa_banner_url": get_empresa_banner_url(empresa),
+            "theme_display_label": theme_display_label,
         },
     )
 

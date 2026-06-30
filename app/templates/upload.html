@@ -23,7 +23,7 @@
     <section class="hero-card admin-hero-compact">
         <div class="hero-card__content admin-hero-grid">
             <div class="hero-card__left">
-                <div class="hero-badge">Empresa activa</div>
+                <div class="hero-badge">Prestador activo</div>
                 <h1 class="hero-title hero-title--compact">{{ empresa_activa.nombre }}</h1>
                 <p class="hero-subtitle hero-subtitle--compact">Panel de gestión centralizado para empresa, productos, usuarios y backups.</p>
 
@@ -51,7 +51,7 @@
 
                 <form method="post" action="/empresa/activar_panel" class="toolbar-form toolbar-form--hero">
                     <div class="toolbar-form__group toolbar-form__group--compact">
-                        <label for="slug" class="field-label">Empresa activa</label>
+                        <label for="slug" class="field-label">Prestador activo</label>
                         <select id="slug" name="slug" class="input-custom select-custom">
                             {% for e in empresas %}
                             <option value="{{ e.slug }}"
@@ -61,7 +61,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <button class="btn-outline-custom w-100" type="submit">Cambiar empresa</button>
+                    <button class="btn-outline-custom w-100" type="submit">Cambiar prestador</button>
                 </form>
             </div>
         </div>
@@ -91,15 +91,15 @@
                     <div class="empresa-stack">
                         <section class="empresa-subsection">
                             <div class="subsection-heading">
-                                <h3>✏️ Editar empresa activa</h3>
-                                <p>Corregí nombre, WhatsApp y slug sin borrar la empresa.</p>
+                                <h3>✏️ Editar prestador activo</h3>
+                                <p>Corregí nombre, WhatsApp y slug sin borrar el prestador o lugar.</p>
                             </div>
 
                             <form action="/empresa/editar_panel" method="post" class="stack-form">
                                 <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
 
                                 <div>
-                                    <label class="field-label">Nombre de la empresa</label>
+                                    <label class="field-label">Nombre del prestador o lugar</label>
                                     <input class="input-custom" type="text" name="nombre" value="{{ empresa_activa.nombre }}" required>
                                 </div>
 
@@ -109,16 +109,13 @@
                                 </div>
 
                                 <div>
-                                    <label class="field-label">Theme / rubro</label>
+                                    <label class="field-label">Rubro / sección</label>
                                     <select name="theme" class="input-custom select-custom">
-                                        <option value="default" {% if (empresa_activa.theme or "default") == "default" %}selected{% endif %}>Default</option>
-                                        <option value="autopartes" {% if empresa_activa.theme == "autopartes" %}selected{% endif %}>Autopartes</option>
-                                        <option value="comida" {% if empresa_activa.theme == "comida" %}selected{% endif %}>Comida</option>
-                                        <option value="gastronomia" {% if empresa_activa.theme == "gastronomia" %}selected{% endif %}>Gastronomía</option>
-                                        <option value="alojamiento" {% if empresa_activa.theme == "alojamiento" %}selected{% endif %}>Alojamiento</option>
-                                        <option value="farmacia" {% if empresa_activa.theme == "farmacia" %}selected{% endif %}>Farmacia</option>
-                                        <option value="ferreteria" {% if empresa_activa.theme == "ferreteria" %}selected{% endif %}>Ferretería</option>
-                                        <option value="petshop" {% if empresa_activa.theme == "petshop" %}selected{% endif %}>Pet shop</option>
+                                        <option value="gastronomia" {% if empresa_activa.theme in ["gastronomia", "comida"] %}selected{% endif %}>Gastronomía</option>
+                                        <option value="alojamiento" {% if empresa_activa.theme == "alojamiento" %}selected{% endif %}>Alojamientos</option>
+                                        <option value="servicios" {% if empresa_activa.theme == "servicios" %}selected{% endif %}>Servicios útiles</option>
+                                        <option value="actividades" {% if empresa_activa.theme == "actividades" %}selected{% endif %}>Actividades y comunidad</option>
+                                        <option value="default" {% if (empresa_activa.theme or "default") == "default" %}selected{% endif %}>Otro / General</option>
                                     </select>
                                 </div>
 
@@ -132,7 +129,7 @@
                                     <input class="input-custom" type="text" name="nuevo_slug" value="{{ empresa_activa.slug }}" placeholder="mi-empresa">
                                 </div>
 
-                                <button type="submit" class="btn-primary-custom w-100">Guardar datos de empresa</button>
+                                <button type="submit" class="btn-primary-custom w-100">Guardar datos del prestador</button>
                             </form>
                         </section>
 
@@ -220,14 +217,14 @@
 
                 <section class="admin-card admin-card--wide">
                     <div class="card-header-custom">
-                        <h2 class="card-title-custom">🏢 Crear empresa</h2>
-                        <p class="card-subtitle-custom">Alta de nueva empresa con identidad visual opcional.</p>
+                        <h2 class="card-title-custom">🏢 Crear prestador / lugar</h2>
+                        <p class="card-subtitle-custom">Alta de nuevo prestador, alojamiento, servicio o actividad de Cabalango.</p>
                     </div>
 
                     <form action="/empresa/crear_panel" method="post" enctype="multipart/form-data" class="stack-form">
                         <div class="form-grid">
                             <div>
-                                <label class="field-label">Nombre de la empresa</label>
+                                <label class="field-label">Nombre del prestador o lugar</label>
                                 <input class="input-custom" type="text" name="nombre" placeholder="Automotores Pepe" required>
                             </div>
 
@@ -242,16 +239,13 @@
                             </div>
 
                             <div class="full-width">
-                                <label class="field-label">Theme / rubro</label>
+                                <label class="field-label">Rubro / sección</label>
                                 <select name="theme" class="input-custom select-custom">
-                                    <option value="default" selected>Default</option>
-                                    <option value="autopartes">Autopartes</option>
-                                    <option value="comida">Comida</option>
                                     <option value="gastronomia">Gastronomía</option>
-                                    <option value="alojamiento">Alojamiento</option>
-                                    <option value="farmacia">Farmacia</option>
-                                    <option value="ferreteria">Ferretería</option>
-                                    <option value="petshop">Pet shop</option>
+                                    <option value="alojamiento">Alojamientos</option>
+                                    <option value="servicios">Servicios útiles</option>
+                                    <option value="actividades">Actividades y comunidad</option>
+                                    <option value="default" selected>Otro / General</option>
                                 </select>
                             </div>
 
@@ -266,7 +260,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-primary-custom w-100">Crear empresa</button>
+                        <button type="submit" class="btn-primary-custom w-100">Crear prestador / lugar</button>
                     </form>
                 </section>
             </div>
@@ -669,7 +663,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="field-label">Empresa para cliente</label>
+                                <label class="field-label">Prestador asignado</label>
                                 <select name="empresa_slug" class="input-custom select-custom">
                                     {% for e in empresas %}
                                     <option value="{{ e.slug }}" {% if empresa_activa and e.id == empresa_activa.id %}selected{% endif %}>{{ e.nombre }}</option>
