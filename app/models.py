@@ -16,6 +16,20 @@ class Empresa(Base):
     politica_precio_catalogo = Column(String, nullable=False, default="automatico")
     politica_stock_catalogo = Column(String, nullable=False, default="mostrar")
     theme = Column(String, nullable=False, default="default")
+    descripcion = Column(Text, nullable=True)
+    horarios = Column(String, nullable=True)
+    precio_desde = Column(String, nullable=True)
+    capacidad = Column(String, nullable=True)
+    habitaciones = Column(String, nullable=True)
+    video_url = Column(String, nullable=True)
+    delivery = Column(Boolean, nullable=True)
+    take_away = Column(Boolean, nullable=True)
+    comer_en_lugar = Column(Boolean, nullable=True)
+    pileta = Column(Boolean, nullable=True)
+    rio = Column(Boolean, nullable=True)
+    mascotas = Column(Boolean, nullable=True)
+    cochera = Column(Boolean, nullable=True)
+    wifi = Column(Boolean, nullable=True)
 
     productos = relationship(
         "Producto",

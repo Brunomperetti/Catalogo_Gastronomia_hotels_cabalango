@@ -31,7 +31,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-04-15-cachefix-v3"
+APP_BUILD = "2026-06-30-prestadores-v1"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -99,6 +99,25 @@ def ensure_empresa_media_columns():
             conn.execute(text("ALTER TABLE empresas ADD COLUMN politica_stock_catalogo VARCHAR DEFAULT 'mostrar'"))
         if "theme" not in columns:
             conn.execute(text("ALTER TABLE empresas ADD COLUMN theme VARCHAR DEFAULT 'default'"))
+        optional_columns = {
+            "descripcion": "TEXT",
+            "horarios": "VARCHAR",
+            "precio_desde": "VARCHAR",
+            "capacidad": "VARCHAR",
+            "habitaciones": "VARCHAR",
+            "video_url": "VARCHAR",
+            "delivery": "BOOLEAN",
+            "take_away": "BOOLEAN",
+            "comer_en_lugar": "BOOLEAN",
+            "pileta": "BOOLEAN",
+            "rio": "BOOLEAN",
+            "mascotas": "BOOLEAN",
+            "cochera": "BOOLEAN",
+            "wifi": "BOOLEAN",
+        }
+        for column_name, column_type in optional_columns.items():
+            if column_name not in columns:
+                conn.execute(text(f"ALTER TABLE empresas ADD COLUMN {column_name} {column_type}"))
         conn.execute(
             text(
                 "UPDATE empresas "
@@ -1673,8 +1692,8 @@ def cliente_panel(
         return HTMLResponse("<h1>Usuario sin empresa asignada</h1>", status_code=403)
 
     import time
-    catalogo_public_url = str(request.url_for("catalogo", slug=empresa_activa.slug))
-    whatsapp_message = f"Hola, te comparto nuestro catálogo online: {catalogo_public_url}"
+    catalogo_public_url = str(request.url_for("prestador_publico", slug=empresa_activa.slug))
+    whatsapp_message = f"Hola, te comparto nuestra ficha turística en Cabalango: {catalogo_public_url}"
     whatsapp_share_url = f"https://wa.me/?text={quote(whatsapp_message, safe='')}"
     response = templates.TemplateResponse(
         "cliente_panel.html",
@@ -1695,6 +1714,78 @@ def cliente_panel(
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
     return response
 
+
+
+@app.post("/cliente/empresa/actualizar")
+def cliente_actualizar_empresa(
+    request: Request,
+    nombre: str = Form(...),
+    whatsapp: str = Form(""),
+    descripcion: str = Form(""),
+    horarios: str = Form(""),
+    precio_desde: str = Form(""),
+    capacidad: str = Form(""),
+    habitaciones: str = Form(""),
+    video_url: str = Form(""),
+    delivery: str = Form("0"),
+    take_away: str = Form("0"),
+    comer_en_lugar: str = Form("0"),
+    pileta: str = Form("0"),
+    rio: str = Form("0"),
+    mascotas: str = Form("0"),
+    cochera: str = Form("0"),
+    wifi: str = Form("0"),
+    db: Session = Depends(get_db),
+):
+    user = require_login(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = resolve_empresa_for_user(user, db, None)
+    if not empresa:
+        return redirect_for_user(user, error="Empresa no encontrada")
+
+    nombre_limpio = clean_text(nombre, default="")
+    if not nombre_limpio:
+        return redirect_for_user(user, empresa_slug=empresa.slug, error="El nombre no puede estar vacío")
+
+    empresa.nombre = nombre_limpio
+    empresa.whatsapp = clean_text(whatsapp, default="") or None
+    empresa.descripcion = clean_text(descripcion, default="") or None
+    empresa.horarios = clean_text(horarios, default="") or None
+    empresa.precio_desde = clean_text(precio_desde, default="") or None
+    empresa.capacidad = clean_text(capacidad, default="") or None
+    empresa.habitaciones = clean_text(habitaciones, default="") or None
+    empresa.video_url = clean_text(video_url, default="") or None
+    for attr, raw_value in {
+        "delivery": delivery, "take_away": take_away, "comer_en_lugar": comer_en_lugar,
+        "pileta": pileta, "rio": rio, "mascotas": mascotas, "cochera": cochera, "wifi": wifi,
+    }.items():
+        setattr(empresa, attr, str(raw_value) == "1")
+    db.add(empresa)
+    db.commit()
+    return redirect_for_user(user, empresa_slug=empresa.slug, msg="Ficha actualizada")
+
+
+@app.post("/cliente/empresa/imagenes")
+async def cliente_actualizar_imagenes_empresa(
+    request: Request,
+    logo: UploadFile = File(None),
+    banner: UploadFile = File(None),
+    db: Session = Depends(get_db),
+):
+    user = require_login(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = resolve_empresa_for_user(user, db, None)
+    if not empresa:
+        return redirect_for_user(user, error="Empresa no encontrada")
+    if logo:
+        empresa.logo_url = await replace_empresa_media(empresa, media_type="logo", upload=logo)
+    if banner:
+        empresa.banner_url = await replace_empresa_media(empresa, media_type="banner", upload=banner)
+    db.add(empresa)
+    db.commit()
+    return redirect_for_user(user, empresa_slug=empresa.slug, msg="Fotos actualizadas")
 
 @app.post("/admin/leads/{lead_id}/status")
 def admin_update_lead_status(
@@ -2452,6 +2543,63 @@ def catalogo_acceso_submit(
         metadata={"source": "access_form"},
     )
     return RedirectResponse(url=f"/catalogo/{slug}", status_code=303)
+
+
+def get_prestador_kind(empresa: models.Empresa) -> str:
+    theme = normalize_theme(empresa.theme)
+    if theme == "alojamiento":
+        return "alojamiento"
+    if theme in {"gastronomia", "comida"}:
+        return "gastronomia"
+    return "general"
+
+
+def get_feature_rows(empresa: models.Empresa, feature_names: list[tuple[str, str]]):
+    rows = []
+    for attr, label in feature_names:
+        value = getattr(empresa, attr, None)
+        rows.append({"label": label, "enabled": value is True, "prepared": value is None})
+    return rows
+
+
+@app.get("/prestador/{slug}", response_class=HTMLResponse)
+def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)):
+    empresa = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
+    if not empresa:
+        return HTMLResponse("<h1>Prestador no encontrado</h1>", status_code=404)
+
+    productos = (
+        db.query(models.Producto)
+        .filter(models.Producto.empresa_id == empresa.id, models.Producto.activo == True)
+        .order_by(models.Producto.categoria.asc(), models.Producto.descripcion.asc())
+        .limit(12)
+        .all()
+    )
+    kind = get_prestador_kind(empresa)
+    feature_rows = []
+    if kind == "gastronomia":
+        feature_rows = get_feature_rows(
+            empresa,
+            [("delivery", "Delivery"), ("take_away", "Take away"), ("comer_en_lugar", "Comer en el lugar")],
+        )
+    elif kind == "alojamiento":
+        feature_rows = get_feature_rows(
+            empresa,
+            [("pileta", "Pileta"), ("rio", "Río cerca"), ("mascotas", "Acepta mascotas"), ("cochera", "Cochera"), ("wifi", "WiFi")],
+        )
+
+    return templates.TemplateResponse(
+        "prestador.html",
+        {
+            "request": request,
+            "empresa": empresa,
+            "kind": kind,
+            "feature_rows": feature_rows,
+            "productos": productos,
+            "empresa_logo_url": get_empresa_logo_url(empresa),
+            "empresa_banner_url": get_empresa_banner_url(empresa),
+        },
+    )
 
 
 @app.get("/catalogo/{slug}", response_class=HTMLResponse)

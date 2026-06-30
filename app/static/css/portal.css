@@ -141,3 +141,30 @@
   .portal-grid, .prestadores-grid { grid-template-columns: 1fr; }
   .portal-shell { padding-top: 24px; }
 }
+
+
+.prestador-profile-hero {
+  background: linear-gradient(180deg, rgba(11, 18, 32, 0.94), rgba(15, 23, 42, 0.86));
+  border: 1px solid var(--border-color);
+  border-radius: 30px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.prestador-profile-banner img { display:block; height: min(340px, 42vw); object-fit: cover; width:100%; }
+.prestador-profile-card { padding: clamp(24px, 5vw, 48px); }
+.prestador-profile-logo { background: rgba(255,255,255,.92); border-radius: 22px; margin-top: -90px; max-height: 120px; max-width: 220px; object-fit: contain; padding: 10px; position: relative; }
+.prestador-profile-card h1 { font-size: clamp(2rem, 6vw, 4.8rem); line-height: .98; margin: 0; }
+.prestador-actions, .feature-list { display:flex; flex-wrap:wrap; gap:12px; margin-top: 22px; }
+.portal-button-secondary { background: rgba(15, 23, 42, .7); color: var(--text-color); }
+.prestador-detail-grid { display:grid; gap:22px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; }
+.feature-chip { border:1px solid var(--border-color); border-radius:999px; color: var(--muted-text-color); padding:10px 14px; }
+.feature-chip.is-enabled { color:#86efac; border-color: rgba(134,239,172,.55); }
+.feature-chip.is-prepared { border-style:dashed; opacity:.78; }
+.feature-chip small { opacity:.75; }
+.prestador-product-list { color: var(--muted-text-color); display:grid; gap:10px; padding-left: 20px; }
+.prestador-product-list small { display:block; opacity:.72; }
+.prestador-facts { display:grid; gap:12px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin:18px 0; }
+.prestador-facts div { border:1px solid var(--border-color); border-radius:18px; padding:14px; }
+.prestador-facts span { color: var(--muted-text-color); display:block; margin-top:4px; }
+.prestador-video { color:#93c5fd; display:inline-block; font-weight:800; margin-top:18px; }
+@media (max-width: 760px) { .prestador-detail-grid, .prestador-facts { grid-template-columns: 1fr; } .prestador-profile-logo { margin-top:-56px; } }
