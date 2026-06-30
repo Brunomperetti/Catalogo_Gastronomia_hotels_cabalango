@@ -10,11 +10,7 @@
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
         <nav class="portal-topnav" aria-label="Navegación pública">
-            <a href="/">Inicio</a>
-            <a href="/gastronomia">Gastronomía</a>
-            <a href="/alojamientos">Alojamientos</a>
-            <a href="/servicios">Servicios útiles</a>
-            <a href="/actividades">Actividades</a>
+            <a href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a>
         </nav>
 
         <section class="portal-hero portal-hero-compact">
@@ -26,55 +22,38 @@
         {% if actividad_subgrupos %}
         <section class="activity-subgroups" aria-label="Subgrupos de actividades y comunidad">
             {% for key, item in actividad_subgrupos.items() %}
-            <a class="activity-subgroup-card {% if active_subgrupo == key %}is-active{% endif %}" href="/actividades?subgrupo={{ key }}">
-                <span class="activity-subgroup-icon">{{ item.icon }}</span>
-                <strong>{{ item.label }}</strong>
-                <small>{{ item.description }}</small>
-            </a>
+            <a class="activity-subgroup-card {% if active_subgrupo == key %}is-active{% endif %}" href="/actividades?subgrupo={{ key }}"><span class="activity-subgroup-icon">{{ item.icon }}</span><strong>{{ item.label }}</strong><small>{{ item.description }}</small></a>
             {% endfor %}
-            {% if active_subgrupo %}
-            <a class="activity-subgroup-reset" href="/actividades">Ver todas las propuestas</a>
-            {% endif %}
+            {% if active_subgrupo %}<a class="activity-subgroup-reset" href="/actividades">Ver todas las propuestas</a>{% endif %}
         </section>
         {% endif %}
 
         {% if empresas %}
-        <section class="prestadores-grid" aria-label="Listado de prestadores y lugares">
+        <section class="prestadores-grid prestadores-grid-premium" aria-label="Listado de prestadores y lugares">
             {% for empresa in empresas %}
-            <article class="prestador-card">
-                {% if empresa.banner_url %}
-                <img class="prestador-banner" src="{{ empresa.banner_url }}" alt="Banner de {{ empresa.nombre }}">
-                {% else %}
-                <div class="prestador-banner prestador-banner-placeholder">Cabalango</div>
-                {% endif %}
-
+            {% set card_image = get_public_card_main_image(empresa) %}
+            {% set logo_url = get_empresa_logo_url(empresa) %}
+            {% set card_chips = build_public_card_chips(empresa, section) %}
+            {% set clean_whatsapp = (empresa.whatsapp or '')|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') %}
+            <article class="prestador-card prestador-card-premium">
+                <a class="prestador-media" href="/prestador/{{ empresa.slug }}" aria-label="Ver ficha de {{ empresa.nombre }}">
+                    <img class="prestador-banner" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">
+                    {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="Logo de {{ empresa.nombre }}" loading="lazy">{% endif %}
+                    {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">{{ empresa.precio_desde }}</span>{% endif %}
+                </a>
                 <div class="prestador-content">
-                    {% if empresa.logo_url %}
-                    <img class="prestador-logo" src="{{ empresa.logo_url }}" alt="Logo de {{ empresa.nombre }}">
-                    {% endif %}
-                    <p class="prestador-theme">{{ theme_display_label(empresa.theme) }}{% if empresa.subgrupo %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}</p>
+                    <p class="prestador-theme">{{ empresa.subtipo or theme_display_label(empresa.theme) }}{% if empresa.subgrupo %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}</p>
                     <h2>{{ empresa.nombre }}</h2>
-
-                    {% if empresa.whatsapp %}
-                    <a class="prestador-whatsapp" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">WhatsApp: {{ empresa.whatsapp }}</a>
-                    {% endif %}
-
-                    <div class="prestador-card-actions">
-                        <a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha</a>
-                        {% if empresa.whatsapp %}
-                        <a class="portal-button portal-button-secondary" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">WhatsApp</a>
-                        {% endif %}
-                    </div>
+                    <p class="prestador-summary">{{ empresa.descripcion_corta or empresa.descripcion or 'Propuesta turística de Cabalango con contacto directo y ficha pública preparada para consultas.' }}</p>
+                    {% if card_chips %}<div class="prestador-chip-row">{% for chip in card_chips %}<span>{{ chip }}</span>{% endfor %}</div>{% endif %}
+                    <div class="prestador-card-meta">{% if empresa.direccion %}<span>📍 {{ empresa.direccion }}</span>{% elif empresa.whatsapp %}<span>💬 WhatsApp {{ empresa.whatsapp }}</span>{% else %}<span>Consultá disponibilidad</span>{% endif %}</div>
+                    <div class="prestador-card-actions"><a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha</a>{% if clean_whatsapp %}<a class="portal-button portal-button-secondary" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div>
                 </div>
             </article>
             {% endfor %}
         </section>
         {% else %}
-        <section class="portal-empty">
-            <h2>Próximamente</h2>
-            <p>Todavía no hay prestadores, lugares o propuestas cargadas en esta sección.</p>
-            <a class="portal-button" href="/">Volver al inicio</a>
-        </section>
+        <section class="portal-empty"><h2>Próximamente</h2><p>Todavía no hay prestadores, lugares o propuestas cargadas en esta sección.</p><a class="portal-button" href="/">Volver al inicio</a></section>
         {% endif %}
     </main>
 </body>
