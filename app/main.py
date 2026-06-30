@@ -31,7 +31,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-06-30-mi-ficha-prestador-v1"
+APP_BUILD = "2026-06-30-admin-fichas-prestador-v2"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -106,13 +106,24 @@ def ensure_empresa_media_columns():
             "direccion": "VARCHAR",
             "maps_url": "VARCHAR",
             "subgrupo": "VARCHAR",
+            "subtipo": "VARCHAR",
+            "descripcion_corta": "VARCHAR",
+            "facebook": "VARCHAR",
+            "web_url": "VARCHAR",
             "destacado": "BOOLEAN",
             "activo": "BOOLEAN",
             "horarios": "VARCHAR",
             "precio_desde": "VARCHAR",
             "capacidad": "VARCHAR",
             "habitaciones": "VARCHAR",
+            "banos": "VARCHAR",
             "video_url": "VARCHAR",
+            "menu_url": "VARCHAR",
+            "promocion": "VARCHAR",
+            "guardia": "VARCHAR",
+            "fecha": "VARCHAR",
+            "organizador": "VARCHAR",
+            "lugar_encuentro": "VARCHAR",
             "delivery": "BOOLEAN",
             "take_away": "BOOLEAN",
             "comer_en_lugar": "BOOLEAN",
@@ -121,6 +132,9 @@ def ensure_empresa_media_columns():
             "mascotas": "BOOLEAN",
             "cochera": "BOOLEAN",
             "wifi": "BOOLEAN",
+            "parrilla": "BOOLEAN",
+            "aire_acondicionado": "BOOLEAN",
+            "calefaccion": "BOOLEAN",
             "galeria_urls": "TEXT",
         }
         for column_name, column_type in optional_columns.items():
@@ -1302,16 +1316,41 @@ def editar_empresa_panel(
     request: Request,
     empresa_slug_actual: str = Form(...),
     nombre: str = Form(...),
-    whatsapp: str = Form(""),
-    telefono: str = Form(""),
-    instagram: str = Form(""),
-    direccion: str = Form(""),
-    maps_url: str = Form(""),
-    descripcion: str = Form(""),
-    horarios: str = Form(""),
-    video_url: str = Form(""),
-    subgrupo: str = Form(""),
-    destacado: str = Form("0"),
+    whatsapp: str | None = Form(None),
+    telefono: str | None = Form(None),
+    instagram: str | None = Form(None),
+    facebook: str | None = Form(None),
+    web_url: str | None = Form(None),
+    direccion: str | None = Form(None),
+    maps_url: str | None = Form(None),
+    descripcion: str | None = Form(None),
+    descripcion_corta: str | None = Form(None),
+    subtipo: str | None = Form(None),
+    horarios: str | None = Form(None),
+    precio_desde: str | None = Form(None),
+    capacidad: str | None = Form(None),
+    habitaciones: str | None = Form(None),
+    banos: str | None = Form(None),
+    video_url: str | None = Form(None),
+    menu_url: str | None = Form(None),
+    promocion: str | None = Form(None),
+    guardia: str | None = Form(None),
+    fecha: str | None = Form(None),
+    organizador: str | None = Form(None),
+    lugar_encuentro: str | None = Form(None),
+    delivery: str | None = Form(None),
+    take_away: str | None = Form(None),
+    comer_en_lugar: str | None = Form(None),
+    pileta: str | None = Form(None),
+    rio: str | None = Form(None),
+    mascotas: str | None = Form(None),
+    cochera: str | None = Form(None),
+    wifi: str | None = Form(None),
+    parrilla: str | None = Form(None),
+    aire_acondicionado: str | None = Form(None),
+    calefaccion: str | None = Form(None),
+    subgrupo: str | None = Form(None),
+    destacado: str | None = Form(None),
     activo: str = Form("1"),
     theme: str = Form("default"),
     editar_slug: str = Form("0"),
@@ -1349,17 +1388,46 @@ def editar_empresa_panel(
             slug_final = nuevo_slug_limpio
 
     empresa.nombre = nombre_limpio
-    empresa.whatsapp = whatsapp_limpio
-    empresa.telefono = clean_text(telefono, default="") or None
-    empresa.instagram = clean_text(instagram, default="") or None
-    empresa.direccion = clean_text(direccion, default="") or None
-    empresa.maps_url = clean_text(maps_url, default="") or None
-    empresa.descripcion = clean_text(descripcion, default="") or None
-    empresa.horarios = clean_text(horarios, default="") or None
-    empresa.video_url = clean_text(video_url, default="") or None
-    empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
-    empresa.destacado = str(destacado) == "1"
-    empresa.activo = str(activo) == "1"
+    optional_text_fields = {
+        "whatsapp": whatsapp_limpio,
+        "telefono": telefono,
+        "instagram": instagram,
+        "facebook": facebook,
+        "web_url": web_url,
+        "direccion": direccion,
+        "maps_url": maps_url,
+        "descripcion": descripcion,
+        "descripcion_corta": descripcion_corta,
+        "subtipo": subtipo,
+        "horarios": horarios,
+        "precio_desde": precio_desde,
+        "capacidad": capacidad,
+        "habitaciones": habitaciones,
+        "banos": banos,
+        "video_url": video_url,
+        "menu_url": menu_url,
+        "promocion": promocion,
+        "guardia": guardia,
+        "fecha": fecha,
+        "organizador": organizador,
+        "lugar_encuentro": lugar_encuentro,
+    }
+    for attr, raw_value in optional_text_fields.items():
+        if raw_value is not None:
+            setattr(empresa, attr, clean_text(raw_value, default="") or None)
+    if subgrupo is not None:
+        empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
+    if destacado is not None:
+        empresa.destacado = str(destacado) == "1"
+    if activo is not None:
+        empresa.activo = str(activo) == "1"
+    for attr, raw_value in {
+        "delivery": delivery, "take_away": take_away, "comer_en_lugar": comer_en_lugar,
+        "pileta": pileta, "rio": rio, "mascotas": mascotas, "cochera": cochera, "wifi": wifi,
+        "parrilla": parrilla, "aire_acondicionado": aire_acondicionado, "calefaccion": calefaccion,
+    }.items():
+        if raw_value is not None:
+            setattr(empresa, attr, str(raw_value) == "1")
     empresa.theme = normalize_theme(theme)
 
     if slug_final != slug_original:
@@ -1732,8 +1800,10 @@ def admin_panel(
     import time
     using_default_admin_password = os.getenv("ADMIN_PASSWORD", "").strip() in {"", "admin123"}
     active_tab = clean_text(tab, default="empresa").lower()
-    if active_tab not in {"empresa", "productos", "usuarios", "backup", "avanzado", "leads"}:
-        active_tab = "empresa"
+    if active_tab not in {"prestadores", "ficha", "fotos", "contacto", "rubro", "leads", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
+        active_tab = "prestadores"
+    legacy_tab_map = {"empresa": "prestadores", "productos": "tecnico", "backup": "configuracion", "avanzado": "tecnico"}
+    active_tab = legacy_tab_map.get(active_tab, active_tab)
 
     lead_whatsapp_filter = parse_bool_query_flag(lead_whatsapp)
     lead_pdf_filter = parse_bool_query_flag(lead_pdf)
@@ -1891,6 +1961,8 @@ def cliente_actualizar_empresa(
     whatsapp: str = Form(""),
     telefono: str = Form(""),
     instagram: str = Form(""),
+    facebook: str = Form(""),
+    web_url: str = Form(""),
     direccion: str = Form(""),
     maps_url: str = Form(""),
     subgrupo: str = Form(""),
@@ -1925,6 +1997,8 @@ def cliente_actualizar_empresa(
     empresa.whatsapp = clean_text(whatsapp, default="") or None
     empresa.telefono = clean_text(telefono, default="") or None
     empresa.instagram = clean_text(instagram, default="") or None
+    empresa.facebook = clean_text(facebook, default="") or None
+    empresa.web_url = clean_text(web_url, default="") or None
     empresa.direccion = clean_text(direccion, default="") or None
     empresa.maps_url = clean_text(maps_url, default="") or None
     empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
@@ -1965,6 +2039,25 @@ async def cliente_actualizar_imagenes_empresa(
     db.commit()
     return redirect_for_user(user, empresa_slug=empresa.slug, msg="Fotos principales actualizadas")
 
+
+
+@app.post("/empresa/galeria")
+async def actualizar_galeria_empresa_admin(
+    request: Request,
+    empresa_slug: str = Form(...),
+    fotos: list[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = get_empresa_by_slug(db, empresa_slug)
+    if not empresa:
+        return panel_redirect(error="Prestador no encontrado")
+    _, message = await append_empresa_gallery_images(empresa, fotos or [])
+    db.add(empresa)
+    db.commit()
+    return panel_redirect(empresa_slug=empresa.slug, msg=message, path="/admin")
 
 @app.post("/cliente/empresa/galeria")
 async def cliente_actualizar_galeria_empresa(
@@ -2168,6 +2261,8 @@ async def crear_empresa_panel(
     whatsapp: str = Form(""),
     telefono: str = Form(""),
     instagram: str = Form(""),
+    facebook: str = Form(""),
+    web_url: str = Form(""),
     direccion: str = Form(""),
     maps_url: str = Form(""),
     descripcion: str = Form(""),
@@ -2203,6 +2298,8 @@ async def crear_empresa_panel(
         whatsapp=clean_text(whatsapp, default="") or None,
         telefono=clean_text(telefono, default="") or None,
         instagram=clean_text(instagram, default="") or None,
+        facebook=clean_text(facebook, default="") or None,
+        web_url=clean_text(web_url, default="") or None,
         direccion=clean_text(direccion, default="") or None,
         maps_url=clean_text(maps_url, default="") or None,
         descripcion=clean_text(descripcion, default="") or None,
