@@ -448,3 +448,107 @@
 @media (max-width: 1040px) { .prestadores-grid-premium { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .prestadores-grid-premium { grid-template-columns: 1fr; } .prestador-card-premium .prestador-content { padding: 16px; } }
 @media (max-width: 860px) { .tourism-heading-card { margin-top: 0; } .gallery-full-grid { grid-template-columns: 1fr; } .gallery-full-grid img:first-child { min-height: 280px; } }
+
+/* Sprint separación ficha turística / catálogo heredado */
+.prestador-page {
+  padding-bottom: 96px;
+}
+
+.tourism-hero {
+  gap: clamp(22px, 4vw, 36px);
+  isolation: isolate;
+  margin-top: 12px;
+}
+
+.tourism-gallery {
+  border-radius: 30px;
+  min-height: clamp(360px, 48vw, 520px);
+  z-index: 1;
+}
+
+.tourism-heading-card {
+  margin-top: 0;
+  z-index: 1;
+}
+
+.tourism-heading-card .prestador-profile-logo {
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .32), 0 0 22px rgba(56, 189, 248, .22);
+  max-height: 86px;
+  max-width: 164px;
+}
+
+.tourism-heading-card h1 {
+  letter-spacing: -.055em;
+}
+
+.quick-facts-card {
+  margin-top: clamp(26px, 4vw, 40px);
+}
+
+.prestador-detail-grid {
+  margin-top: clamp(24px, 4vw, 34px);
+}
+
+.legacy-compatible-card {
+  background: rgba(11, 18, 32, .62);
+  border-style: dashed;
+  box-shadow: none;
+  filter: saturate(.7);
+  margin-top: 34px;
+  opacity: .72;
+}
+
+.legacy-compatible-card h2 {
+  font-size: clamp(1.15rem, 2vw, 1.45rem);
+}
+
+.legacy-catalog-link {
+  border: 1px dashed rgba(148, 163, 184, .45);
+  border-radius: 999px;
+  color: var(--muted-text-color);
+  display: inline-flex;
+  font-size: .92rem;
+  font-weight: 800;
+  margin-top: 6px;
+  padding: 10px 14px;
+  text-decoration: none;
+}
+
+.legacy-catalog-link:hover {
+  border-color: rgba(56, 189, 248, .55);
+  color: var(--text-color);
+}
+
+.floating-whatsapp {
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 12;
+}
+
+@media (max-width: 860px) {
+  .tourism-gallery {
+    border-radius: 26px;
+  }
+}
+
+@media (max-width: 560px) {
+  .prestador-page {
+    padding-bottom: 112px;
+  }
+
+  .tourism-heading-card {
+    padding: 22px;
+  }
+
+  .tourism-heading-card .prestador-profile-logo {
+    max-height: 68px;
+    max-width: 132px;
+  }
+
+  .floating-whatsapp {
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    left: 16px;
+    right: 16px;
+    justify-content: center;
+    text-align: center;
+  }
+}

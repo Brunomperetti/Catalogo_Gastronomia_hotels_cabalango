@@ -49,7 +49,7 @@
                     {% if clean_whatsapp %}<a class="portal-button" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>{% endif %}
                     {% if empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
                     <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
-                    {% if kind == 'gastronomia' %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url or '/catalogo/' ~ empresa.slug }}">Ver menú / precios</a>{% endif %}
+                    {% if kind == 'gastronomia' %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url or '/catalogo/' ~ empresa.slug }}">Ver carta comercial</a>{% endif %}
                 </div>
                 <div class="prestador-contact-lines">
                     {% if empresa.whatsapp %}<span>WhatsApp: {{ empresa.whatsapp }}</span>{% endif %}
@@ -111,11 +111,11 @@
             </article>
         </section>
 
-        <section class="portal-card legacy-compatible-card">
-            <p class="portal-card-label">Compatibilidad catálogo viejo</p>
-            <h2>Herramienta heredada</h2>
-            <p>El catálogo anterior sigue disponible como soporte secundario para productos, platos o precios, pero esta ficha turística es la experiencia pública principal.</p>
-            {% if kind == 'gastronomia' %}<a class="portal-button portal-button-ghost" href="/catalogo/{{ empresa.slug }}">Ver carta compatible</a>{% endif %}
+        <section class="portal-card legacy-compatible-card" aria-label="Acceso secundario al catálogo heredado">
+            <p class="portal-card-label">Compatibilidad catálogo viejo · acceso secundario</p>
+            <h2>Catálogo comercial heredado</h2>
+            <p>Esta ficha turística es la experiencia pública principal. El catálogo anterior queda disponible solo como compatibilidad para productos, platos o listas comerciales.</p>
+            <a class="legacy-catalog-link" href="/catalogo/{{ empresa.slug }}">Abrir catálogo heredado</a>
         </section>
     </main>
     {% if clean_whatsapp %}<a class="floating-whatsapp" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
