@@ -31,7 +31,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-06-30-portal-turistico-admin-v2"
+APP_BUILD = "2026-06-30-mi-ficha-prestador-v1"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -121,6 +121,7 @@ def ensure_empresa_media_columns():
             "mascotas": "BOOLEAN",
             "cochera": "BOOLEAN",
             "wifi": "BOOLEAN",
+            "galeria_urls": "TEXT",
         }
         for column_name, column_type in optional_columns.items():
             if column_name not in columns:
@@ -284,7 +285,7 @@ def require_admin(request: Request, db: Session):
     if isinstance(user, RedirectResponse):
         return user
     if user.rol != "admin":
-        return RedirectResponse(url="/cliente?error=No tenés permisos para acceder al panel admin", status_code=303)
+        return RedirectResponse(url="/mi-ficha?error=No tenés permisos para acceder al panel admin", status_code=303)
     return user
 
 
@@ -303,7 +304,7 @@ def resolve_empresa_for_user(user: models.Usuario, db: Session, slug: str | None
 
 
 def get_dashboard_path(user: models.Usuario) -> str:
-    return "/admin" if user.rol == "admin" else "/cliente"
+    return "/admin" if user.rol == "admin" else "/mi-ficha"
 
 
 def redirect_for_user(user: models.Usuario, empresa_slug: str | None = None, msg: str = "", error: str = ""):
@@ -1065,6 +1066,47 @@ async def replace_empresa_media(empresa: models.Empresa, media_type: str, upload
     return build_media_url(empresa.slug, media_type, filename)
 
 
+
+def get_empresa_gallery_urls(empresa: models.Empresa | None) -> list[str]:
+    if not empresa or not empresa.galeria_urls:
+        return []
+    try:
+        data = json.loads(empresa.galeria_urls)
+    except Exception:
+        return []
+    if not isinstance(data, list):
+        return []
+    return [clean_text(url, default="") for url in data if clean_text(url, default="")][:7]
+
+
+async def append_empresa_gallery_images(empresa: models.Empresa, uploads: list[UploadFile]) -> tuple[list[str], str]:
+    current = get_empresa_gallery_urls(empresa)
+    available = max(0, 7 - len(current))
+    if available <= 0:
+        return current, "La galería ya tiene el máximo de 7 fotos."
+    target_dir = get_empresa_media_dir(empresa.slug, "galeria")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    added = 0
+    skipped = 0
+    for upload in uploads[:available]:
+        if not upload or not upload.filename:
+            continue
+        ext = Path(upload.filename).suffix.lower()
+        if ext not in ALLOWED_IMAGE_EXTENSIONS:
+            skipped += 1
+            continue
+        filename = safe_unique_filename(upload, prefix="foto")
+        with open(target_dir / filename, "wb") as f:
+            f.write(await upload.read())
+        current.append(build_media_url(empresa.slug, "galeria", filename))
+        added += 1
+    empresa.galeria_urls = json.dumps(current[:7], ensure_ascii=False)
+    if skipped and not added:
+        return current, "Formato inválido. Usá PNG, JPG, WEBP o GIF."
+    if skipped:
+        return current, f"Se agregaron {added} fotos. Algunas se omitieron por formato inválido."
+    return current, f"Se agregaron {added} fotos a la galería." if added else "No se seleccionaron fotos nuevas."
+
 def get_empresa_logo_url(empresa: models.Empresa | None) -> str:
     if not empresa:
         return "/static/images/logo.png"
@@ -1796,6 +1838,7 @@ def admin_panel(
     return response
 
 
+@app.get("/mi-ficha", response_class=HTMLResponse)
 @app.get("/cliente", response_class=HTMLResponse)
 def cliente_panel(
     request: Request,
@@ -1824,6 +1867,11 @@ def cliente_panel(
             "empresa_activa": empresa_activa,
             "empresa_query": empresa_activa.slug,
             "empresa_logo_url": get_empresa_logo_url(empresa_activa),
+            "empresa_banner_url": get_empresa_banner_url(empresa_activa),
+            "galeria_urls": get_empresa_gallery_urls(empresa_activa),
+            "prestador_kind": get_prestador_kind(empresa_activa),
+            "prestador_section_label": theme_display_label(empresa_activa.theme),
+            "portal_section_url": "/" + public_section_for_theme(empresa_activa.theme) if public_section_for_theme(empresa_activa.theme) != "default" else "/",
             "catalogo_public_url": catalogo_public_url,
             "whatsapp_share_url": whatsapp_share_url,
             "time": int(time.time()),
@@ -1915,7 +1963,25 @@ async def cliente_actualizar_imagenes_empresa(
         empresa.banner_url = await replace_empresa_media(empresa, media_type="banner", upload=banner)
     db.add(empresa)
     db.commit()
-    return redirect_for_user(user, empresa_slug=empresa.slug, msg="Fotos actualizadas")
+    return redirect_for_user(user, empresa_slug=empresa.slug, msg="Fotos principales actualizadas")
+
+
+@app.post("/cliente/empresa/galeria")
+async def cliente_actualizar_galeria_empresa(
+    request: Request,
+    fotos: list[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db),
+):
+    user = require_login(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = resolve_empresa_for_user(user, db, None)
+    if not empresa:
+        return redirect_for_user(user, error="Prestador no encontrado")
+    _, message = await append_empresa_gallery_images(empresa, fotos or [])
+    db.add(empresa)
+    db.commit()
+    return redirect_for_user(user, empresa_slug=empresa.slug, msg=message)
 
 @app.post("/admin/leads/{lead_id}/status")
 def admin_update_lead_status(
@@ -2089,7 +2155,7 @@ def admin_delete_lead(
 
 @app.get("/panel")
 def panel_alias():
-    return RedirectResponse(url="/cliente", status_code=303)
+    return RedirectResponse(url="/mi-ficha", status_code=303)
 
 # ---------------------------------------------------
 # CREAR EMPRESA
@@ -2746,6 +2812,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "productos": productos,
             "empresa_logo_url": get_empresa_logo_url(empresa),
             "empresa_banner_url": get_empresa_banner_url(empresa),
+            "galeria_urls": get_empresa_gallery_urls(empresa),
             "theme_display_label": theme_display_label,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
         },
@@ -2931,6 +2998,7 @@ def catalogo(
             "app_build": APP_BUILD,
             "empresa_logo_url": get_empresa_logo_url(empresa),
             "empresa_banner_url": get_empresa_banner_url(empresa),
+            "galeria_urls": get_empresa_gallery_urls(empresa),
             "lead_data": {
                 "nombre": lead.nombre,
                 "empresa": lead.empresa,

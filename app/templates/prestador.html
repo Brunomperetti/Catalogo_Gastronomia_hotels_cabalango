@@ -47,6 +47,17 @@
             </div>
         </section>
 
+
+        {% if galeria_urls %}
+        <section class="portal-card">
+            <p class="portal-card-label">Fotos del prestador</p>
+            <h2>Galería</h2>
+            <div class="prestador-detail-grid">
+                {% for foto in galeria_urls %}<img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}" style="width:100%;height:220px;object-fit:cover;border-radius:20px;border:1px solid rgba(255,255,255,.14);">{% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
         {% if kind == 'gastronomia' %}
         <section class="prestador-detail-grid">
             <article class="portal-card">
