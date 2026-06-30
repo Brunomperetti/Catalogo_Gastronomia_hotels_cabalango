@@ -13,6 +13,8 @@
             <a href="/">Inicio</a>
             <a href="/gastronomia">Gastronomía</a>
             <a href="/alojamientos">Alojamientos</a>
+            <a href="/servicios">Servicios útiles</a>
+            <a href="/actividades">Actividades</a>
         </nav>
 
         <section class="portal-hero portal-hero-compact">
@@ -22,7 +24,7 @@
         </section>
 
         {% if empresas %}
-        <section class="prestadores-grid" aria-label="Listado de prestadores">
+        <section class="prestadores-grid" aria-label="Listado de prestadores y lugares">
             {% for empresa in empresas %}
             <article class="prestador-card">
                 {% if empresa.banner_url %}
@@ -35,14 +37,19 @@
                     {% if empresa.logo_url %}
                     <img class="prestador-logo" src="{{ empresa.logo_url }}" alt="Logo de {{ empresa.nombre }}">
                     {% endif %}
-                    <p class="prestador-theme">{{ empresa.theme or 'default' }}</p>
+                    <p class="prestador-theme">{{ theme_display_label(empresa.theme) }}</p>
                     <h2>{{ empresa.nombre }}</h2>
 
                     {% if empresa.whatsapp %}
                     <a class="prestador-whatsapp" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">WhatsApp: {{ empresa.whatsapp }}</a>
                     {% endif %}
 
-                    <a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha del prestador</a>
+                    <div class="prestador-card-actions">
+                        <a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha</a>
+                        {% if empresa.whatsapp %}
+                        <a class="portal-button portal-button-secondary" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">WhatsApp</a>
+                        {% endif %}
+                    </div>
                 </div>
             </article>
             {% endfor %}
@@ -50,7 +57,7 @@
         {% else %}
         <section class="portal-empty">
             <h2>Próximamente</h2>
-            <p>Todavía no hay prestadores cargados en esta sección.</p>
+            <p>Todavía no hay prestadores, lugares o propuestas cargadas en esta sección.</p>
             <a class="portal-button" href="/">Volver al inicio</a>
         </section>
         {% endif %}
