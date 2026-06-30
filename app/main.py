@@ -1826,9 +1826,9 @@ def admin_panel(
     import time
     using_default_admin_password = os.getenv("ADMIN_PASSWORD", "").strip() in {"", "admin123"}
     active_tab = clean_text(tab, default="empresa").lower()
-    if active_tab not in {"prestadores", "ficha", "fotos", "contacto", "rubro", "leads", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
+    if active_tab not in {"prestadores", "ficha", "fotos", "contacto", "rubro", "datos_rubro", "leads", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
         active_tab = "prestadores"
-    legacy_tab_map = {"empresa": "prestadores", "productos": "tecnico", "backup": "configuracion", "avanzado": "tecnico"}
+    legacy_tab_map = {"empresa": "prestadores", "productos": "tecnico", "backup": "configuracion", "avanzado": "tecnico", "datos_rubro": "rubro"}
     active_tab = legacy_tab_map.get(active_tab, active_tab)
 
     lead_whatsapp_filter = parse_bool_query_flag(lead_whatsapp)
@@ -1906,6 +1906,7 @@ def admin_panel(
             "empresa_query": empresa_activa.slug if empresa_activa else "",
             "empresa_logo_url": get_empresa_logo_url(empresa_activa),
             "empresa_banner_url": get_empresa_banner_url(empresa_activa),
+            "galeria_urls": get_empresa_gallery_urls(empresa_activa) if empresa_activa else [],
             "time": int(time.time()),
             "using_default_admin_password": using_default_admin_password,
             "admin_username": os.getenv("ADMIN_USER", "admin"),
