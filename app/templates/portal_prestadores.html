@@ -42,7 +42,7 @@
                     <a class="prestador-whatsapp" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">WhatsApp: {{ empresa.whatsapp }}</a>
                     {% endif %}
 
-                    <a class="portal-button" href="/catalogo/{{ empresa.slug }}">Ver ficha / catálogo</a>
+                    <a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha del prestador</a>
                 </div>
             </article>
             {% endfor %}

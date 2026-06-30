@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ empresa.nombre }} | Prestador Cabalango</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
+</head>
+<body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
+    <main class="portal-shell prestador-page">
+        <nav class="portal-topnav" aria-label="Navegación pública">
+            <a href="/">Inicio</a>
+            <a href="/gastronomia">Gastronomía</a>
+            <a href="/alojamientos">Alojamientos</a>
+            <a href="/catalogo/{{ empresa.slug }}">Catálogo compatible</a>
+        </nav>
+
+        <section class="prestador-profile-hero">
+            <div class="prestador-profile-banner">
+                <img src="{{ empresa_banner_url }}" alt="Banner de {{ empresa.nombre }}">
+            </div>
+            <div class="prestador-profile-card">
+                <img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}">
+                <p class="portal-kicker">Prestador turístico · {{ empresa.theme or 'rubro general' }}</p>
+                <h1>{{ empresa.nombre }}</h1>
+                {% if empresa.descripcion %}
+                <p class="portal-subtitle">{{ empresa.descripcion }}</p>
+                {% else %}
+                <p class="portal-subtitle">Ficha pública preparada para sumar descripción, fotos y datos turísticos del prestador.</p>
+                {% endif %}
+                <div class="prestador-actions">
+                    {% if empresa.whatsapp %}
+                    <a class="portal-button" href="https://wa.me/{{ empresa.whatsapp|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>
+                    {% endif %}
+                    <a class="portal-button portal-button-secondary" href="/catalogo/{{ empresa.slug }}">Ver menú / precios</a>
+                </div>
+            </div>
+        </section>
+
+        {% if kind == 'gastronomia' %}
+        <section class="prestador-detail-grid">
+            <article class="portal-card">
+                <p class="portal-card-label">Gastronomía en Cabalango</p>
+                <h2>Menú, carta y atención</h2>
+                <p>Espacio orientado a fotos del negocio, menú/carta, horarios y modalidades de atención.</p>
+                {% if empresa.horarios %}<p><strong>Horarios:</strong> {{ empresa.horarios }}</p>{% endif %}
+                <div class="feature-list">
+                    {% for item in feature_rows %}
+                    <span class="feature-chip {% if item.enabled %}is-enabled{% elif item.prepared %}is-prepared{% endif %}">{{ '✓' if item.enabled else '•' }} {{ item.label }}{% if item.prepared %} <small>próx.</small>{% endif %}</span>
+                    {% endfor %}
+                </div>
+            </article>
+            <article class="portal-card">
+                <p class="portal-card-label">Carta compatible</p>
+                <h2>Productos / platos publicados</h2>
+                {% if productos %}
+                <ul class="prestador-product-list">
+                    {% for producto in productos %}<li>{{ producto.descripcion }}{% if producto.categoria %}<small>{{ producto.categoria }}</small>{% endif %}</li>{% endfor %}
+                </ul>
+                {% else %}<p>Todavía no hay productos o platos publicados.</p>{% endif %}
+            </article>
+        </section>
+        {% elif kind == 'alojamiento' %}
+        <section class="prestador-detail-grid">
+            <article class="portal-card">
+                <p class="portal-card-label">Hospedaje en Cabalango</p>
+                <h2>Datos de alojamiento</h2>
+                <div class="prestador-facts">
+                    <div><strong>Precio desde</strong><span>{{ empresa.precio_desde or 'A preparar' }}</span></div>
+                    <div><strong>Capacidad</strong><span>{{ empresa.capacidad or 'A preparar' }}</span></div>
+                    <div><strong>Habitaciones</strong><span>{{ empresa.habitaciones or 'A preparar' }}</span></div>
+                </div>
+                <div class="feature-list">
+                    {% for item in feature_rows %}
+                    <span class="feature-chip {% if item.enabled %}is-enabled{% elif item.prepared %}is-prepared{% endif %}">{{ '✓' if item.enabled else '•' }} {{ item.label }}{% if item.prepared %} <small>próx.</small>{% endif %}</span>
+                    {% endfor %}
+                </div>
+                {% if empresa.video_url %}<a class="prestador-video" href="{{ empresa.video_url }}" target="_blank" rel="noopener">Ver video</a>{% endif %}
+            </article>
+            <article class="portal-card"><p class="portal-card-label">Fotos</p><h2>Galería preparada</h2><p>En el siguiente sprint se podrá cargar una galería específica del alojamiento.</p></article>
+        </section>
+        {% else %}
+        <section class="portal-card"><h2>Ficha del prestador</h2><p>Esta ficha pública separa el prestador del catálogo de productos y queda lista para ampliar datos turísticos.</p></section>
+        {% endif %}
+    </main>
+</body>
+</html>
