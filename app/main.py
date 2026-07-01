@@ -38,6 +38,7 @@ MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
 PRODUCTOS_MEDIA_TYPE = "productos"
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
+ALLOWED_MENU_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 PRICE_POLICY_VALUES = {"mostrar", "consultar", "automatico"}
 STOCK_POLICY_VALUES = {"mostrar", "ocultar", "automatico"}
 THEME_VALUES = {"default", "autopartes", "comida", "gastronomia", "alojamiento", "servicios", "actividades", "farmacia", "ferreteria", "petshop"}
@@ -162,6 +163,7 @@ def ensure_empresa_media_columns():
             "aire_acondicionado": "BOOLEAN",
             "calefaccion": "BOOLEAN",
             "galeria_urls": "TEXT",
+            "menu_fotos_urls": "TEXT",
             "rating_promedio": "FLOAT",
             "rating_cantidad": "INTEGER",
             "reviews_destacadas": "TEXT",
@@ -1189,6 +1191,47 @@ async def append_empresa_gallery_images(empresa: models.Empresa, uploads: list[U
         return current, f"Se agregaron {added} fotos. Algunas se omitieron por formato inválido."
     return current, f"Se agregaron {added} fotos a la galería." if added else "No se seleccionaron fotos nuevas."
 
+
+def get_empresa_menu_photo_urls(empresa: models.Empresa | None) -> list[str]:
+    if not empresa or not getattr(empresa, "menu_fotos_urls", None):
+        return []
+    try:
+        data = json.loads(empresa.menu_fotos_urls)
+    except Exception:
+        return []
+    if not isinstance(data, list):
+        return []
+    return [clean_text(url, default="") for url in data if clean_text(url, default="")][:6]
+
+
+async def append_empresa_menu_images(empresa: models.Empresa, uploads: list[UploadFile]) -> tuple[list[str], str]:
+    current = get_empresa_menu_photo_urls(empresa)
+    available = max(0, 6 - len(current))
+    if available <= 0:
+        return current, "La sección Menú / carta ya tiene el máximo recomendado de 6 fotos."
+    target_dir = get_empresa_media_dir(empresa.slug, "menu")
+    target_dir.mkdir(parents=True, exist_ok=True)
+    added = 0
+    skipped = 0
+    for upload in uploads[:available]:
+        if not upload or not upload.filename:
+            continue
+        ext = Path(upload.filename).suffix.lower()
+        if ext not in ALLOWED_MENU_IMAGE_EXTENSIONS:
+            skipped += 1
+            continue
+        filename = safe_unique_filename(upload, prefix="menu")
+        with open(target_dir / filename, "wb") as f:
+            f.write(await upload.read())
+        current.append(build_media_url(empresa.slug, "menu", filename))
+        added += 1
+    empresa.menu_fotos_urls = json.dumps(current[:6], ensure_ascii=False)
+    if skipped and not added:
+        return current, "Formato inválido. Usá JPG, JPEG, PNG o WEBP."
+    if skipped:
+        return current, f"Se agregaron {added} fotos de menú/carta. Algunas se omitieron por formato inválido."
+    return current, f"Se agregaron {added} fotos de menú/carta." if added else "No se seleccionaron fotos nuevas de menú/carta."
+
 def get_empresa_logo_url(empresa: models.Empresa | None) -> str:
     if not empresa:
         return ""
@@ -1476,7 +1519,7 @@ def editar_empresa_panel(
         "habitaciones": habitaciones,
         "banos": banos,
         "video_url": video_url,
-        "menu_url": menu_url,
+        "menu_url": normalize_external_url(menu_url),
         "promocion": promocion,
         "guardia": guardia,
         "fecha": fecha,
@@ -2115,6 +2158,7 @@ def admin_panel(
             "empresa_logo_url": get_empresa_logo_url(empresa_activa),
             "empresa_banner_url": get_empresa_banner_url(empresa_activa),
             "galeria_urls": get_empresa_gallery_urls(empresa_activa) if empresa_activa else [],
+            "menu_fotos_urls": get_empresa_menu_photo_urls(empresa_activa) if empresa_activa else [],
             "time": int(time.time()),
             "using_default_admin_password": using_default_admin_password,
             "admin_username": os.getenv("ADMIN_USER", "admin"),
@@ -2174,6 +2218,7 @@ def cliente_panel(
             "empresa_logo_url": get_empresa_logo_url(empresa_activa),
             "empresa_banner_url": get_empresa_banner_url(empresa_activa),
             "galeria_urls": get_empresa_gallery_urls(empresa_activa),
+            "menu_fotos_urls": get_empresa_menu_photo_urls(empresa_activa),
             "prestador_kind": get_prestador_kind(empresa_activa),
             "prestador_section_label": theme_display_label(empresa_activa.theme),
             "portal_section_url": "/" + public_section_for_theme(empresa_activa.theme) if public_section_for_theme(empresa_activa.theme) != "default" else "/",
@@ -2207,6 +2252,7 @@ def cliente_actualizar_empresa(
     capacidad: str = Form(""),
     habitaciones: str = Form(""),
     video_url: str = Form(""),
+    menu_url: str = Form(""),
     delivery: str = Form("0"),
     take_away: str = Form("0"),
     comer_en_lugar: str = Form("0"),
@@ -2243,6 +2289,7 @@ def cliente_actualizar_empresa(
     empresa.capacidad = clean_text(capacidad, default="") or None
     empresa.habitaciones = clean_text(habitaciones, default="") or None
     empresa.video_url = clean_text(video_url, default="") or None
+    empresa.menu_url = normalize_external_url(menu_url) if "menu_url" in locals() else empresa.menu_url
     for attr, raw_value in {
         "delivery": delivery, "take_away": take_away, "comer_en_lugar": comer_en_lugar,
         "pileta": pileta, "rio": rio, "mascotas": mascotas, "cochera": cochera, "wifi": wifi,
@@ -2307,6 +2354,47 @@ async def cliente_actualizar_galeria_empresa(
     if not empresa:
         return redirect_for_user(user, error="Prestador no encontrado")
     _, message = await append_empresa_gallery_images(empresa, fotos or [])
+    db.add(empresa)
+    db.commit()
+    return redirect_for_user(user, empresa_slug=empresa.slug, msg=message)
+
+
+@app.post("/empresa/menu-fotos")
+async def actualizar_menu_fotos_empresa_admin(
+    request: Request,
+    empresa_slug: str = Form(...),
+    fotos: list[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = get_empresa_by_slug(db, empresa_slug)
+    if not empresa:
+        return panel_redirect(error="Prestador no encontrado")
+    if get_prestador_kind(empresa) != "gastronomia":
+        return panel_redirect(empresa_slug=empresa.slug, error="Las fotos de menú/carta solo aplican a gastronomía.", path="/admin")
+    _, message = await append_empresa_menu_images(empresa, fotos or [])
+    db.add(empresa)
+    db.commit()
+    return panel_redirect(empresa_slug=empresa.slug, msg=message, path="/admin")
+
+
+@app.post("/cliente/empresa/menu-fotos")
+async def cliente_actualizar_menu_fotos_empresa(
+    request: Request,
+    fotos: list[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db),
+):
+    user = require_login(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = resolve_empresa_for_user(user, db, None)
+    if not empresa:
+        return redirect_for_user(user, error="Prestador no encontrado")
+    if get_prestador_kind(empresa) != "gastronomia":
+        return redirect_for_user(user, empresa_slug=empresa.slug, error="Las fotos de menú/carta solo aplican a gastronomía.")
+    _, message = await append_empresa_menu_images(empresa, fotos or [])
     db.add(empresa)
     db.commit()
     return redirect_for_user(user, empresa_slug=empresa.slug, msg=message)
@@ -3007,6 +3095,31 @@ def get_prestador_kind(empresa: models.Empresa) -> str:
     return "general"
 
 
+
+def get_review_copy(kind: str) -> dict[str, str]:
+    copies = {
+        "alojamiento": {
+            "title": "Opiniones de huéspedes",
+            "subtitle": "Experiencias publicadas para ayudar a nuevos visitantes a decidir con confianza.",
+        },
+        "gastronomia": {
+            "title": "Opiniones de clientes",
+            "subtitle": "Experiencias de personas que visitaron o compraron en este lugar.",
+        },
+        "servicios": {
+            "title": "Opiniones de usuarios",
+            "subtitle": "Comentarios de vecinos y visitantes sobre este servicio.",
+        },
+        "actividades": {
+            "title": "Opiniones de participantes",
+            "subtitle": "Experiencias de personas que participaron de esta actividad o propuesta local.",
+        },
+    }
+    return copies.get(kind, {
+        "title": "Opiniones de visitantes",
+        "subtitle": "Experiencias publicadas para ayudar a nuevos visitantes a decidir con confianza.",
+    })
+
 def get_feature_rows(empresa: models.Empresa, feature_names: list[tuple[str, str]]):
     rows = []
     for attr, label in feature_names:
@@ -3042,7 +3155,6 @@ def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict
             _append_bool_fact(rows, label, getattr(empresa, attr, None))
         _append_text_fact(rows, "Tipo de lugar", empresa.subtipo)
         _append_text_fact(rows, "Horarios", empresa.horarios)
-        _append_text_fact(rows, "Menú / carta", empresa.menu_url)
         _append_text_fact(rows, "Especialidad", empresa.promocion)
     elif kind == "servicios":
         _append_text_fact(rows, "Tipo de servicio", empresa.subtipo)
@@ -3095,6 +3207,9 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
 
     kind = get_prestador_kind(empresa)
     galeria_urls = get_empresa_gallery_urls(empresa)
+    menu_fotos_urls = get_empresa_menu_photo_urls(empresa)
+    menu_url = normalize_external_url(empresa.menu_url)
+    show_menu_section = kind == "gastronomia" and bool(menu_url or menu_fotos_urls or clean_text(empresa.promocion, default=""))
     empresa_banner_url = get_empresa_banner_url(empresa)
     empresa_logo_url = get_empresa_logo_url(empresa)
     fallback_tiles = [url for url in [empresa_banner_url] if url]
@@ -3110,6 +3225,10 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "kind": kind,
             "quick_facts": build_prestador_quick_facts(empresa, kind),
             "public_reviews": build_public_reviews(empresa),
+            "review_copy": get_review_copy(kind),
+            "menu_url": menu_url,
+            "menu_fotos_urls": menu_fotos_urls,
+            "show_menu_section": show_menu_section,
             "maps_url": normalize_external_url(empresa.maps_url),
             "instagram_contact": normalize_instagram_contact(empresa.instagram),
             "facebook_url": normalize_external_url(empresa.facebook),

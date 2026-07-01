@@ -118,6 +118,22 @@
                     <button class="btn-secondary-custom w-100">Agregar fotos reales del lugar</button>
                 </form>
 
+                {% if empresa_activa and empresa_activa.theme in ['gastronomia','comida'] %}
+                <div class="gallery-admin-preview media-priority-block mt-4">
+                    <label class="field-label">2. Menú / carta</label>
+                    <p class="field-help">Fotos específicas de carta, menú, lista de precios o promociones. Se guardan separadas de las fotos del lugar. Máximo recomendado: 6 fotos. Formatos: jpg, jpeg, png, webp.</p>
+                    <div class="feature-list">
+                        {% for foto in menu_fotos_urls[:6] %}<img class="admin-gallery-thumb" src="{{ foto }}?ts={{ time }}" alt="Foto de menú/carta {{ loop.index }}">{% else %}<span class="small text-white-50">Todavía no hay fotos de menú/carta cargadas.</span>{% endfor %}
+                    </div>
+                    <form action="/empresa/menu-fotos" method="post" enctype="multipart/form-data" class="stack-form mt-3">
+                        <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
+                        <label class="field-label">Agregar fotos de menú/carta</label>
+                        <input class="input-file-custom" type="file" name="fotos" accept="image/png,image/jpeg,image/webp" multiple>
+                        <button class="btn-secondary-custom w-100">Agregar fotos de menú/carta</button>
+                    </form>
+                </div>
+                {% endif %}
+
                 <div class="media-preview-grid mt-3">
                     <div>
                         <label class="field-label">2. Banner actual (opcional)</label>
