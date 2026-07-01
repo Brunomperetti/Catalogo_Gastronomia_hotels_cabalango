@@ -1093,6 +1093,10 @@ def safe_unique_filename(upload: UploadFile, prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex}{ext}"
 
 
+def has_uploaded_file(upload: UploadFile | None) -> bool:
+    return bool(upload and getattr(upload, "filename", None))
+
+
 async def replace_empresa_media(empresa: models.Empresa, media_type: str, upload: UploadFile) -> str:
     target_dir = get_empresa_media_dir(empresa.slug, media_type)
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -1307,10 +1311,10 @@ async def actualizar_imagenes_empresa(
     if not empresa:
         return panel_redirect(error="Empresa inválida")
 
-    if logo:
+    if has_uploaded_file(logo):
         empresa.logo_url = await replace_empresa_media(empresa, media_type="logo", upload=logo)
 
-    if banner:
+    if has_uploaded_file(banner):
         empresa.banner_url = await replace_empresa_media(empresa, media_type="banner", upload=banner)
 
     db.add(empresa)
@@ -2227,9 +2231,9 @@ async def cliente_actualizar_imagenes_empresa(
     empresa = resolve_empresa_for_user(user, db, None)
     if not empresa:
         return redirect_for_user(user, error="Empresa no encontrada")
-    if logo:
+    if has_uploaded_file(logo):
         empresa.logo_url = await replace_empresa_media(empresa, media_type="logo", upload=logo)
-    if banner:
+    if has_uploaded_file(banner):
         empresa.banner_url = await replace_empresa_media(empresa, media_type="banner", upload=banner)
     db.add(empresa)
     db.commit()
@@ -2514,10 +2518,10 @@ async def crear_empresa_panel(
 
     get_productos_media_dir(empresa.slug).mkdir(parents=True, exist_ok=True)
 
-    if logo:
+    if has_uploaded_file(logo):
         empresa.logo_url = await replace_empresa_media(empresa, media_type="logo", upload=logo)
 
-    if banner:
+    if has_uploaded_file(banner):
         empresa.banner_url = await replace_empresa_media(empresa, media_type="banner", upload=banner)
 
     db.add(empresa)
@@ -3058,10 +3062,10 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
     galeria_urls = get_empresa_gallery_urls(empresa)
     empresa_banner_url = get_empresa_banner_url(empresa)
     empresa_logo_url = get_empresa_logo_url(empresa)
-    fallback_tiles = [url for url in [empresa_banner_url, empresa_logo_url] if url]
+    fallback_tiles = [url for url in [empresa_banner_url] if url]
     gallery_tiles = (galeria_urls[1:5] if galeria_urls else fallback_tiles[:2])
-    main_photo_url = galeria_urls[0] if galeria_urls else (empresa_banner_url or empresa_logo_url or "/static/img/no-image.jpg")
-    has_real_photos = bool(galeria_urls or empresa_banner_url or empresa_logo_url)
+    main_photo_url = galeria_urls[0] if galeria_urls else (empresa_banner_url or "/static/img/no-image.jpg")
+    has_real_photos = bool(galeria_urls or empresa_banner_url)
 
     return templates.TemplateResponse(
         "prestador.html",

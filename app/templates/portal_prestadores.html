@@ -93,7 +93,7 @@
                 <a class="prestador-media" href="/prestador/{{ empresa.slug }}" aria-label="Ver ficha de {{ empresa.nombre }}">
                     <img class="prestador-banner" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">
                     {% if section == 'alojamientos' and (empresa.subtipo or theme_display_label(empresa.theme)) %}<span class="prestador-type-badge">{{ empresa.subtipo or theme_display_label(empresa.theme) }}</span>{% endif %}
-                    {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="Logo de {{ empresa.nombre }}" loading="lazy">{% elif section == 'alojamientos' %}<span class="prestador-logo-fallback" aria-label="Iniciales de {{ empresa.nombre }}">{{ alojamiento_initials(empresa.nombre) }}</span>{% endif %}
+                    {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="" loading="lazy" aria-hidden="true" onerror="this.remove()">{% endif %}
                     {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</span>{% endif %}
                 </a>
                 <div class="prestador-content">
