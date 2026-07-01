@@ -1742,26 +1742,69 @@ def normalize_actividad_subgrupo(value: str | None) -> str | None:
 
 
 def get_public_card_main_image(empresa: models.Empresa | None) -> str:
-    """Priority: gallery first, banner, logo, placeholder."""
+    """Priority for tourism cards: real place photos first, logo never as main image."""
     if not empresa:
         return "/static/img/no-image.jpg"
     gallery = get_empresa_gallery_urls(empresa)
     if gallery:
         return gallery[0]
-    return get_empresa_banner_url(empresa) or get_empresa_logo_url(empresa) or "/static/img/no-image.jpg"
+    return get_empresa_banner_url(empresa) or "/static/img/no-image.jpg"
+
+
+def alojamiento_initials(nombre: str | None) -> str:
+    words = [word for word in re.split(r"\s+", clean_text(nombre, default="")) if word]
+    if not words:
+        return "🏡"
+    return "".join(word[0].upper() for word in words[:3])
+
+
+def parse_public_number(value) -> int | None:
+    text_value = clean_text(value, default="")
+    if not text_value:
+        return None
+    match = re.search(r"\d+", text_value.replace(".", ""))
+    return int(match.group(0)) if match else None
+
+
+def parse_public_price(value) -> int | None:
+    text_value = clean_text(value, default="")
+    if not text_value:
+        return None
+    digits = re.sub(r"\D", "", text_value)
+    return int(digits) if digits else None
+
+
+def alojamiento_fact_label(value, singular: str, plural: str) -> str:
+    clean_value = clean_text(value, default="")
+    if not clean_value:
+        return ""
+    number = parse_public_number(clean_value)
+    label = singular if number == 1 else plural
+    if re.fullmatch(r"\d+", clean_value):
+        return f"{clean_value} {label}"
+    return clean_value if singular in clean_value.lower() or plural in clean_value.lower() else f"{clean_value} {label}"
+
+
+def build_alojamiento_key_facts(empresa: models.Empresa) -> list[str]:
+    facts = []
+    for value, singular, plural in [
+        (empresa.capacidad, "persona", "personas"),
+        (empresa.habitaciones, "habitación", "habitaciones"),
+        (empresa.banos, "baño", "baños"),
+    ]:
+        label = alojamiento_fact_label(value, singular, plural)
+        if label:
+            facts.append(label)
+    return facts
 
 
 def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
     chips: list[str] = []
     kind = "alojamiento" if section == "alojamientos" else get_prestador_kind(empresa)
     if kind == "alojamiento":
-        for attr, label in [("pileta", "Pileta"), ("wifi", "WiFi"), ("mascotas", "Mascotas"), ("cochera", "Cochera"), ("parrilla", "Parrilla")]:
+        for attr, label in [("pileta", "Pileta"), ("rio", "Cerca del río"), ("mascotas", "Mascotas"), ("cochera", "Cochera"), ("wifi", "WiFi"), ("parrilla", "Parrilla")]:
             if getattr(empresa, attr, None) is True:
                 chips.append(label)
-        for label, value in [("Desde", empresa.precio_desde), ("Capacidad", empresa.capacidad)]:
-            clean_value = clean_text(value, default="")
-            if clean_value:
-                chips.append(f"{label}: {clean_value}")
     elif kind == "gastronomia":
         for attr, label in [("delivery", "Delivery"), ("take_away", "Take away"), ("comer_en_lugar", "Comer en el lugar")]:
             if getattr(empresa, attr, None) is True:
@@ -1773,11 +1816,70 @@ def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
             clean_value = clean_text(value, default="")
             if clean_value:
                 chips.append(clean_value)
-    return chips[:5]
+    return chips[:6]
+
+
+ALOJAMIENTO_FILTER_AMENITIES = [
+    ("pileta", "Pileta"),
+    ("rio", "Frente/cerca del río"),
+    ("mascotas", "Acepta mascotas"),
+    ("cochera", "Cochera"),
+    ("wifi", "WiFi"),
+    ("parrilla", "Parrilla"),
+]
+
+
+def get_alojamiento_filters(request: Request) -> dict:
+    params = request.query_params
+    filters = {
+        "tipo": params.get("tipo", "todos"),
+        "capacidad": params.get("capacidad", ""),
+        "habitaciones": params.get("habitaciones", ""),
+        "precio_max": params.get("precio_max", ""),
+        "orden": params.get("orden", "destacados"),
+    }
+    for key, _label in ALOJAMIENTO_FILTER_AMENITIES:
+        filters[key] = params.get(key, "")
+    return filters
+
+
+def filter_alojamientos(empresas: list[models.Empresa], filters: dict) -> list[models.Empresa]:
+    results = list(empresas)
+    tipo = clean_text(filters.get("tipo"), default="todos").lower()
+    if tipo and tipo != "todos":
+        results = [e for e in results if tipo in clean_text(e.subtipo or e.theme, default="").lower()]
+    capacidad_min = parse_public_number(filters.get("capacidad"))
+    if capacidad_min:
+        results = [e for e in results if (parse_public_number(e.capacidad) or 0) >= capacidad_min]
+    habitaciones_min = parse_public_number(filters.get("habitaciones"))
+    if habitaciones_min:
+        results = [e for e in results if (parse_public_number(e.habitaciones) or 0) >= habitaciones_min]
+    precio_filter = clean_text(filters.get("precio_max"), default="")
+    precio_max = parse_public_number(precio_filter)
+    if precio_filter == "mas_100000":
+        results = [e for e in results if parse_public_price(e.precio_desde) is not None and parse_public_price(e.precio_desde) > 100000]
+    elif precio_max:
+        results = [e for e in results if parse_public_price(e.precio_desde) is not None and parse_public_price(e.precio_desde) <= precio_max]
+    for key, _label in ALOJAMIENTO_FILTER_AMENITIES:
+        if filters.get(key) == "1":
+            results = [e for e in results if getattr(e, key, None) is True]
+    orden = filters.get("orden")
+    if orden == "precio_asc":
+        results.sort(key=lambda e: parse_public_price(e.precio_desde) if parse_public_price(e.precio_desde) is not None else 10**12)
+    elif orden == "precio_desc":
+        results.sort(key=lambda e: parse_public_price(e.precio_desde) or -1, reverse=True)
+    elif orden == "capacidad_desc":
+        results.sort(key=lambda e: parse_public_number(e.capacidad) or -1, reverse=True)
+    else:
+        results.sort(key=lambda e: (not bool(e.destacado), e.nombre.lower()))
+    return results
 
 
 def portal_section_context(request: Request, db: Session, *, title: str, eyebrow: str, description: str, themes: set[str], section: str, subgrupo: str | None = None):
     empresas = get_public_empresas_by_themes(db, themes)
+    alojamiento_filters = get_alojamiento_filters(request) if section == "alojamientos" else {}
+    if section == "alojamientos":
+        empresas = filter_alojamientos(empresas, alojamiento_filters)
     if section == "actividades" and subgrupo:
         empresas = [empresa for empresa in empresas if (empresa.subgrupo or "").lower() == subgrupo]
     return templates.TemplateResponse(
@@ -1795,6 +1897,10 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "get_public_card_main_image": get_public_card_main_image,
             "get_empresa_logo_url": get_empresa_logo_url,
             "build_public_card_chips": build_public_card_chips,
+            "build_alojamiento_key_facts": build_alojamiento_key_facts,
+            "alojamiento_initials": alojamiento_initials,
+            "alojamiento_filters": alojamiento_filters,
+            "alojamiento_amenities": ALOJAMIENTO_FILTER_AMENITIES,
         },
     )
 

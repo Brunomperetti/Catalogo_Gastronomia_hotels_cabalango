@@ -19,6 +19,60 @@
             <p class="portal-subtitle">{{ description }}</p>
         </section>
 
+
+        {% if section == 'alojamientos' %}
+        <section class="alojamientos-filter-panel" aria-label="Filtros de alojamientos">
+            <div class="filter-heading">
+                <p class="portal-kicker">Búsqueda inteligente</p>
+                <h2>Encontrá tu alojamiento ideal</h2>
+                <p>Filtrá por capacidad, habitaciones, pileta, río y comodidades.</p>
+            </div>
+            <form class="alojamientos-filters" method="get" action="/alojamientos">
+                <label>Tipo
+                    <select name="tipo">
+                        {% for value, label in [('todos','Todos'),('cabaña','Cabaña'),('casa','Casa'),('hotel','Hotel'),('departamento','Departamento'),('complejo','Complejo'),('hospedaje','Hospedaje')] %}
+                        <option value="{{ value }}" {% if alojamiento_filters.get('tipo') == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Capacidad
+                    <select name="capacidad">
+                        {% for value, label in [('', 'Cualquier capacidad'),('2','2+ personas'),('4','4+ personas'),('6','6+ personas'),('8','8+ personas')] %}
+                        <option value="{{ value }}" {% if alojamiento_filters.get('capacidad') == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Habitaciones
+                    <select name="habitaciones">
+                        {% for value, label in [('', 'Cualquier cantidad'),('1','1 habitación'),('2','2 habitaciones'),('3','3+ habitaciones')] %}
+                        <option value="{{ value }}" {% if alojamiento_filters.get('habitaciones') == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Precio máximo
+                    <select name="precio_max">
+                        {% for value, label in [('', 'Cualquier precio'),('25000','Hasta $25.000'),('50000','Hasta $50.000'),('75000','Hasta $75.000'),('100000','Hasta $100.000'),('mas_100000','Más de $100.000')] %}
+                        <option value="{{ value }}" {% if alojamiento_filters.get('precio_max') == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Ordenar
+                    <select name="orden">
+                        {% for value, label in [('destacados','Recomendados / destacados'),('precio_asc','Menor precio'),('precio_desc','Mayor precio'),('capacidad_desc','Mayor capacidad')] %}
+                        <option value="{{ value }}" {% if alojamiento_filters.get('orden') == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <div class="filter-amenities" role="group" aria-label="Comodidades">
+                    {% for key, label in alojamiento_amenities %}
+                    <label class="amenity-pill"><input type="checkbox" name="{{ key }}" value="1" {% if alojamiento_filters.get(key) == '1' %}checked{% endif %}> <span>{{ label }}</span></label>
+                    {% endfor %}
+                </div>
+                <div class="filter-actions"><button class="portal-button" type="submit">Aplicar filtros</button><a class="portal-button portal-button-secondary" href="/alojamientos">Limpiar</a></div>
+            </form>
+        </section>
+        {% endif %}
+
         {% if actividad_subgrupos %}
         <section class="activity-subgroups" aria-label="Subgrupos de actividades y comunidad">
             {% for key, item in actividad_subgrupos.items() %}
@@ -38,22 +92,27 @@
             <article class="prestador-card prestador-card-premium">
                 <a class="prestador-media" href="/prestador/{{ empresa.slug }}" aria-label="Ver ficha de {{ empresa.nombre }}">
                     <img class="prestador-banner" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">
-                    {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="Logo de {{ empresa.nombre }}" loading="lazy">{% endif %}
-                    {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">{{ empresa.precio_desde }}</span>{% endif %}
+                    {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="Logo de {{ empresa.nombre }}" loading="lazy">{% elif section == 'alojamientos' %}<span class="prestador-logo-fallback" aria-label="Iniciales de {{ empresa.nombre }}">{{ alojamiento_initials(empresa.nombre) }}</span>{% endif %}
+                    {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</span>{% endif %}
                 </a>
                 <div class="prestador-content">
                     <p class="prestador-theme">{{ empresa.subtipo or theme_display_label(empresa.theme) }}{% if empresa.subgrupo %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}</p>
                     <h2>{{ empresa.nombre }}</h2>
                     <p class="prestador-summary">{{ empresa.descripcion_corta or empresa.descripcion or 'Propuesta turística de Cabalango con contacto directo y ficha pública preparada para consultas.' }}</p>
+                    {% if section == 'alojamientos' %}
+                        {% set key_facts = build_alojamiento_key_facts(empresa) %}
+                        {% if empresa.direccion %}<div class="prestador-location">📍 {{ empresa.direccion }}</div>{% endif %}
+                        {% if key_facts %}<div class="alojamiento-key-facts">{% for fact in key_facts %}<span>{{ fact }}</span>{% endfor %}</div>{% endif %}
+                    {% endif %}
                     {% if card_chips %}<div class="prestador-chip-row">{% for chip in card_chips %}<span>{{ chip }}</span>{% endfor %}</div>{% endif %}
-                    <div class="prestador-card-meta">{% if empresa.direccion %}<span>📍 {{ empresa.direccion }}</span>{% elif empresa.whatsapp %}<span>💬 WhatsApp {{ empresa.whatsapp }}</span>{% else %}<span>Consultá disponibilidad</span>{% endif %}</div>
+                    <div class="prestador-card-meta">{% if section != 'alojamientos' and empresa.direccion %}<span>📍 {{ empresa.direccion }}</span>{% elif empresa.whatsapp %}<span>💬 WhatsApp {{ empresa.whatsapp }}</span>{% else %}<span>Consultá disponibilidad</span>{% endif %}</div>
                     <div class="prestador-card-actions"><a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha</a>{% if clean_whatsapp %}<a class="portal-button portal-button-secondary" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div>
                 </div>
             </article>
             {% endfor %}
         </section>
         {% else %}
-        <section class="portal-empty"><h2>Próximamente</h2><p>Todavía no hay prestadores, lugares o propuestas cargadas en esta sección.</p><a class="portal-button" href="/">Volver al inicio</a></section>
+        <section class="portal-empty"><h2>{% if section == 'alojamientos' %}No encontramos alojamientos con esos filtros{% else %}Próximamente{% endif %}</h2><p>{% if section == 'alojamientos' %}Probá ajustar la búsqueda o limpiar los filtros para ver más opciones.{% else %}Todavía no hay prestadores, lugares o propuestas cargadas en esta sección.{% endif %}</p><a class="portal-button" href="{% if section == 'alojamientos' %}/alojamientos{% else %}/{% endif %}">{% if section == 'alojamientos' %}Limpiar filtros{% else %}Volver al inicio{% endif %}</a></section>
         {% endif %}
     </main>
 </body>
