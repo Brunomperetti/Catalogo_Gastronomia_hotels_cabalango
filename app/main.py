@@ -67,6 +67,7 @@ def run_startup_db_maintenance():
         ensure_empresa_media_columns()
         ensure_usuario_columns()
         ensure_catalog_lead_columns()
+        ensure_review_columns()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
     except Exception as exc:
@@ -239,6 +240,35 @@ def ensure_catalog_lead_columns():
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_catalog_leads_estado ON catalog_leads(estado)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_catalog_leads_archived_at ON catalog_leads(archived_at)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_catalog_leads_deleted_at ON catalog_leads(deleted_at)"))
+
+
+def ensure_review_columns():
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "reviews" not in tables:
+        Base.metadata.create_all(bind=engine, tables=[models.Review.__table__])
+        return
+
+    columns = {col["name"] for col in inspector.get_columns("reviews")}
+    optional_columns = {
+        "prestador_id": "INTEGER",
+        "nombre": "VARCHAR",
+        "contacto": "VARCHAR",
+        "rating": "INTEGER",
+        "comentario": "TEXT",
+        "tipo_visitante": "VARCHAR",
+        "fecha": "VARCHAR",
+        "estado": "VARCHAR DEFAULT 'pendiente'",
+        "visible": "BOOLEAN DEFAULT FALSE",
+        "created_at": "TIMESTAMP",
+    }
+    with engine.begin() as conn:
+        for column_name, column_type in optional_columns.items():
+            if column_name not in columns:
+                conn.execute(text(f"ALTER TABLE reviews ADD COLUMN {column_name} {column_type}"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_prestador_id ON reviews(prestador_id)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_estado ON reviews(estado)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_visible ON reviews(visible)"))
 
 # ---------------------------------------------------
 # DB Dependency
@@ -1462,9 +1492,6 @@ def editar_empresa_panel(
     calefaccion: str | None = Form(None),
     subgrupo: str | None = Form(None),
     destacado: str | None = Form(None),
-    rating_promedio: str | None = Form(None),
-    rating_cantidad: str | None = Form(None),
-    reviews_destacadas: str | None = Form(None),
     activo: str = Form("1"),
     theme: str = Form("default"),
     editar_slug: str = Form("0"),
@@ -1525,25 +1552,10 @@ def editar_empresa_panel(
         "fecha": fecha,
         "organizador": organizador,
         "lugar_encuentro": lugar_encuentro,
-        "reviews_destacadas": reviews_destacadas,
     }
     for attr, raw_value in optional_text_fields.items():
         if raw_value is not None:
             setattr(empresa, attr, clean_text(raw_value, default="") or None)
-    if rating_promedio is not None:
-        rating_text = clean_text(rating_promedio, default="").replace(",", ".")
-        try:
-            rating_value = float(rating_text) if rating_text else None
-        except ValueError:
-            rating_value = None
-        empresa.rating_promedio = min(max(rating_value, 0), 5) if rating_value is not None else None
-    if rating_cantidad is not None:
-        count_text = clean_text(rating_cantidad, default="")
-        try:
-            count_value = int(count_text) if count_text else None
-        except ValueError:
-            count_value = None
-        empresa.rating_cantidad = max(count_value, 0) if count_value is not None else None
     if subgrupo is not None:
         empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
     if destacado is not None:
@@ -1591,6 +1603,30 @@ def editar_empresa_panel(
 
     return panel_redirect(empresa_slug=empresa.slug, msg="Empresa actualizada correctamente.")
 
+
+
+@app.post("/admin/opiniones/{review_id}/moderar")
+def moderar_opinion_admin(
+    review_id: int,
+    request: Request,
+    accion: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    review = db.query(models.Review).filter(models.Review.id == review_id).first()
+    if not review:
+        return panel_redirect(active_tab="opiniones", error="Opinión no encontrada.")
+    if accion == "aprobar":
+        review.estado = "aprobada"
+        review.visible = True
+    else:
+        review.estado = "rechazada"
+        review.visible = False
+    db.add(review)
+    db.commit()
+    return panel_redirect(active_tab="opiniones", msg="Opinión moderada correctamente.")
 
 @app.post("/empresa/politicas_catalogo")
 def actualizar_politicas_catalogo(
@@ -2077,7 +2113,7 @@ def admin_panel(
     import time
     using_default_admin_password = os.getenv("ADMIN_PASSWORD", "").strip() in {"", "admin123"}
     active_tab = clean_text(tab, default="empresa").lower()
-    if active_tab not in {"prestadores", "ficha", "fotos", "contacto", "rubro", "datos_rubro", "leads", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
+    if active_tab not in {"prestadores", "ficha", "fotos", "contacto", "rubro", "datos_rubro", "leads", "opiniones", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
         active_tab = "prestadores"
     legacy_tab_map = {"empresa": "prestadores", "productos": "tecnico", "backup": "configuracion", "avanzado": "tecnico", "datos_rubro": "rubro"}
     active_tab = legacy_tab_map.get(active_tab, active_tab)
@@ -2159,6 +2195,7 @@ def admin_panel(
             "empresa_banner_url": get_empresa_banner_url(empresa_activa),
             "galeria_urls": get_empresa_gallery_urls(empresa_activa) if empresa_activa else [],
             "menu_fotos_urls": get_empresa_menu_photo_urls(empresa_activa) if empresa_activa else [],
+            "pending_reviews": db.query(models.Review).filter(models.Review.estado == "pendiente").order_by(models.Review.created_at.desc()).limit(30).all(),
             "time": int(time.time()),
             "using_default_admin_password": using_default_admin_password,
             "admin_username": os.getenv("ADMIN_USER", "admin"),
@@ -3177,27 +3214,40 @@ def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict
     return rows[:12]
 
 
-def build_public_reviews(empresa: models.Empresa) -> list[dict]:
-    raw_reviews = clean_text(getattr(empresa, "reviews_destacadas", None), default="")
-    reviews: list[dict] = []
-    for line in raw_reviews.splitlines():
-        clean_line = line.strip(" -•	")
-        if not clean_line:
-            continue
-        name = "Visitante"
-        comment = clean_line
-        if "|" in clean_line:
-            parts = [part.strip() for part in clean_line.split("|") if part.strip()]
-            if len(parts) >= 2:
-                name, comment = parts[0], " | ".join(parts[1:])
-        elif ":" in clean_line:
-            name_part, comment_part = clean_line.split(":", 1)
-            if name_part.strip() and comment_part.strip():
-                name, comment = name_part.strip(), comment_part.strip()
-        reviews.append({"nombre": name[:80], "comentario": comment[:360]})
-        if len(reviews) == 3:
-            break
-    return reviews
+def build_public_reviews(empresa: models.Empresa, db: Session) -> tuple[list[dict], float | None, int]:
+    reviews = (
+        db.query(models.Review)
+        .filter(
+            models.Review.prestador_id == empresa.id,
+            models.Review.estado == "aprobada",
+            models.Review.visible == True,
+        )
+        .order_by(models.Review.created_at.desc())
+        .limit(6)
+        .all()
+    )
+    public_reviews = [
+        {
+            "nombre": review.nombre[:80],
+            "comentario": review.comentario[:360],
+            "rating": review.rating,
+            "fecha": review.fecha,
+        }
+        for review in reviews
+    ]
+    stats = (
+        db.query(func.avg(models.Review.rating), func.count(models.Review.id))
+        .filter(
+            models.Review.prestador_id == empresa.id,
+            models.Review.estado == "aprobada",
+            models.Review.visible == True,
+        )
+        .first()
+    )
+    avg = float(stats[0]) if stats and stats[0] is not None else None
+    count = int(stats[1] or 0) if stats else 0
+    return public_reviews, avg, count
+
 
 @app.get("/prestador/{slug}", response_class=HTMLResponse)
 def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)):
@@ -3210,6 +3260,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
     menu_fotos_urls = get_empresa_menu_photo_urls(empresa)
     menu_url = normalize_external_url(empresa.menu_url)
     show_menu_section = kind == "gastronomia" and bool(menu_url or menu_fotos_urls or clean_text(empresa.promocion, default=""))
+    public_reviews, review_avg, review_count = build_public_reviews(empresa, db)
     empresa_banner_url = get_empresa_banner_url(empresa)
     empresa_logo_url = get_empresa_logo_url(empresa)
     fallback_tiles = [url for url in [empresa_banner_url] if url]
@@ -3224,7 +3275,10 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "empresa": empresa,
             "kind": kind,
             "quick_facts": build_prestador_quick_facts(empresa, kind),
-            "public_reviews": build_public_reviews(empresa),
+            "public_reviews": public_reviews,
+            "review_avg": review_avg,
+            "review_count": review_count,
+            "review_submitted": request.query_params.get("review") == "gracias",
             "review_copy": get_review_copy(kind),
             "menu_url": menu_url,
             "menu_fotos_urls": menu_fotos_urls,
@@ -3245,6 +3299,39 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
         },
     )
 
+
+
+@app.post("/prestador/{slug}/opiniones")
+def crear_opinion_publica(
+    slug: str,
+    nombre: str = Form(...),
+    rating: int = Form(...),
+    comentario: str = Form(...),
+    contacto: str | None = Form(None),
+    tipo_visitante: str | None = Form(None),
+    db: Session = Depends(get_db),
+):
+    empresa = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Prestador no encontrado")
+    nombre_limpio = clean_text(nombre, default="")[:80]
+    comentario_limpio = clean_text(comentario, default="")[:1000]
+    if not nombre_limpio or not comentario_limpio or rating < 1 or rating > 5:
+        return RedirectResponse(url=f"/prestador/{slug}?review=error#opiniones", status_code=303)
+    review = models.Review(
+        prestador_id=empresa.id,
+        nombre=nombre_limpio,
+        contacto=clean_text(contacto, default="")[:120] or None,
+        tipo_visitante=clean_text(tipo_visitante, default="")[:80] or None,
+        rating=rating,
+        comentario=comentario_limpio,
+        fecha=datetime.now(timezone.utc).date().isoformat(),
+        estado="pendiente",
+        visible=False,
+    )
+    db.add(review)
+    db.commit()
+    return RedirectResponse(url=f"/prestador/{slug}?review=gracias#opiniones", status_code=303)
 
 @app.get("/catalogo/{slug}", response_class=HTMLResponse)
 def catalogo(

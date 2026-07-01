@@ -65,6 +65,25 @@ class Empresa(Base):
     usuarios = relationship("Usuario", back_populates="empresa")
     leads = relationship("CatalogLead", back_populates="empresa_rel", cascade="all, delete-orphan")
     lead_events = relationship("CatalogLeadEvent", back_populates="empresa", cascade="all, delete-orphan")
+    reviews = relationship("Review", back_populates="prestador", cascade="all, delete-orphan")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    prestador_id = Column(Integer, ForeignKey("empresas.id", ondelete="CASCADE"), nullable=False, index=True)
+    nombre = Column(String, nullable=False)
+    contacto = Column(String, nullable=True)
+    rating = Column(Integer, nullable=False)
+    comentario = Column(Text, nullable=False)
+    tipo_visitante = Column(String, nullable=True)
+    fecha = Column(String, nullable=True)
+    estado = Column(String, nullable=False, default="pendiente", index=True)
+    visible = Column(Boolean, nullable=False, default=False, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+    prestador = relationship("Empresa", back_populates="reviews")
 
 
 class Producto(Base):
