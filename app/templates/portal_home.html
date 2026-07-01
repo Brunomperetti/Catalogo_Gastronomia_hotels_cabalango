@@ -4,31 +4,40 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Portal turístico Cabalango</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
 </head>
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
-        <nav class="portal-topnav" aria-label="Navegación pública"><a href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a><a href="/descubri-cabalango">Descubrí Cabalango</a></nav>
+        <nav class="portal-topnav" aria-label="Navegación pública"><a class="is-active" href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a><a href="/descubri-cabalango">Descubrí Cabalango</a></nav>
         <section class="portal-hero portal-hero-home">
-            <p class="portal-kicker">Cabalango • Valle de Punilla</p>
-            <h1>Cabalango te espera entre río, monte y experiencias locales</h1>
-            <p class="portal-subtitle">Hospedajes, sabores, actividades y postales de un destino serrano para disfrutar a tu ritmo.</p>
-            <div class="portal-hero-tags" aria-label="Accesos rápidos">
-                <a href="/gastronomia">Dónde comer</a>
-                <a href="/alojamientos">Dónde dormir</a>
-                <a href="/servicios">Servicios útiles</a>
-                <a href="/actividades">Qué hacer</a>
-                <a href="/descubri-cabalango">Descubrí Cabalango</a>
+            <div class="portal-hero-copy">
+                <p class="portal-kicker">Cabalango • Valle de Punilla</p>
+                <h1>Descubrí Cabalango</h1>
+                <p class="portal-subtitle">Río, naturaleza y experiencias locales en el corazón de las sierras.</p>
+                <div class="portal-hero-tags" aria-label="Accesos rápidos">
+                    <a href="/alojamientos">Dónde dormir</a>
+                    <a href="/gastronomia">Dónde comer</a>
+                    <a href="/actividades">Qué hacer</a>
+                    <a href="/descubri-cabalango">Ver fotos y videos</a>
+                </div>
+            </div>
+            <div class="portal-hero-visual" aria-hidden="true">
+                <span>Río</span>
+                <strong>Monte, calma y sierras</strong>
+                <small>Guía local para recorrer sin apuro</small>
             </div>
         </section>
 
 
         <section class="destination-preview portal-card">
             <div>
-                <p class="portal-kicker">Nuevo espacio del destino</p>
-                <h2>Descubrí rincones únicos de Cabalango</h2>
-                <p>Naturaleza, río, monte, ferias y vida local reunidos en una galería pensada para inspirar la visita.</p>
+                <p class="portal-kicker">Galería del destino</p>
+                <h2>Postales para imaginar la visita</h2>
+                <p>Río, monte, ferias y rincones cotidianos reunidos con una mirada serena del lugar.</p>
                 <a class="portal-button" href="/descubri-cabalango">Ver fotos y videos</a>
             </div>
             <div class="destination-preview-art" aria-hidden="true"><span>Río</span><span>Monte</span><span>Sierras</span></div>
@@ -36,7 +45,7 @@
 
         <section class="portal-grid" aria-label="Secciones turísticas y comunitarias">
             <article class="portal-card">
-                <div class="portal-card-icon">🍽️</div>
+                <div class="portal-card-icon">Sabores</div>
                 <p class="portal-card-label">Dónde comer</p>
                 <h2>Gastronomía</h2>
                 <p>Sabores locales, casas de comida, bares, restaurantes y opciones para disfrutar en Cabalango.</p>
@@ -44,7 +53,7 @@
             </article>
 
             <article class="portal-card">
-                <div class="portal-card-icon">🏡</div>
+                <div class="portal-card-icon">Estadías</div>
                 <p class="portal-card-label">Dónde dormir</p>
                 <h2>Alojamientos</h2>
                 <p>Hoteles, cabañas, casas y hospedajes para planificar tu estadía.</p>
@@ -52,7 +61,7 @@
             </article>
 
             <article class="portal-card">
-                <div class="portal-card-icon">🧭</div>
+                <div class="portal-card-icon">Práctico</div>
                 <p class="portal-card-label">Resolver lo práctico</p>
                 <h2>Servicios útiles</h2>
                 <p>Farmacia, comisaría, proveedurías, panaderías y lugares clave para vecinos y visitantes.</p>
@@ -60,7 +69,7 @@
             </article>
 
             <article class="portal-card">
-                <div class="portal-card-icon">🎪</div>
+                <div class="portal-card-icon">Experiencias</div>
                 <p class="portal-card-label">Qué hacer en Cabalango</p>
                 <h2>Actividades y comunidad</h2>
                 <p>Caminatas, ferias, eventos, artesanos, experiencias y propuestas locales.</p>
