@@ -13,6 +13,9 @@
     {% set menu_fotos_urls = menu_fotos_urls|default([]) %}
     {% set menu_url = menu_url|default(empresa.menu_url or '') %}
     {% set show_menu_section = show_menu_section|default(false) %}
+    {% set review_avg = review_avg|default(none) %}
+    {% set review_count = review_count|default(0) %}
+    {% set review_submitted = review_submitted|default(false) %}
     <main class="portal-shell prestador-page">
         <nav class="portal-topnav" aria-label="Navegación pública">
             <a href="/">Inicio</a>
@@ -113,11 +116,19 @@
             {% if menu_fotos_urls %}
             <div class="menu-photo-grid" aria-label="Fotos del menú o carta de {{ empresa.nombre }}">
                 {% for foto in menu_fotos_urls %}
-                <a href="{{ foto }}" target="_blank" rel="noopener noreferrer"><img src="{{ foto }}" alt="Foto de menú/carta {{ loop.index }} de {{ empresa.nombre }}"></a>
+                <button class="menu-photo-button" type="button" data-menu-open="{{ loop.index0 }}"><img src="{{ foto }}" alt="Foto de menú/carta {{ loop.index }} de {{ empresa.nombre }}"></button>
                 {% endfor %}
             </div>
             {% endif %}
         </section>
+        {% if menu_fotos_urls %}
+        <section class="menu-lightbox" id="menu-lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Carta / menú ampliado">
+            <div class="menu-lightbox__panel">
+                <div class="menu-lightbox__header"><strong>Carta / menú de {{ empresa.nombre }}</strong><button class="menu-lightbox__close" type="button" data-menu-close>Cerrar</button></div>
+                {% for foto in menu_fotos_urls %}<figure class="menu-lightbox__slide {% if loop.first %}is-active{% endif %}" data-menu-slide><img src="{{ foto }}" alt="Carta / menú ampliado {{ loop.index }} de {{ empresa.nombre }}"></figure>{% endfor %}
+            </div>
+        </section>
+        {% endif %}
         {% endif %}
 
         <section class="portal-card photos-summary-card" id="galeria-completa">
@@ -165,7 +176,7 @@
         </section>
         {% endif %}
 
-        <section class="portal-card reviews-card">
+        <section class="portal-card reviews-card" id="opiniones">
             <p class="portal-card-label">Reputación</p>
             <div class="reviews-header">
                 <div>
@@ -173,8 +184,8 @@
                     <p>{{ review_copy.subtitle }}</p>
                 </div>
                 <div class="rating-pill">
-                    <strong>{{ '%.1f'|format(empresa.rating_promedio) if empresa.rating_promedio else '—' }}</strong>
-                    <span>{{ empresa.rating_cantidad or 0 }} reseñas</span>
+                    <strong>{{ '%.1f'|format(review_avg) if review_avg else '—' }}</strong>
+                    <span>{{ review_count }} opiniones aprobadas</span>
                 </div>
             </div>
             {% if public_reviews %}
@@ -188,6 +199,15 @@
             </div>
             {% else %}
             <p class="reviews-empty">Todavía no hay opiniones publicadas.</p>
+            {% endif %}
+            {% if review_submitted %}<p class="reviews-success">Gracias. Tu opinión será revisada antes de publicarse.</p>{% endif %}
+            <form class="review-form" action="/prestador/{{ empresa.slug }}/opiniones" method="post">
+                <h3>Contar mi experiencia</h3>
+                <div class="form-grid-public"><input name="nombre" placeholder="Tu nombre" required><select name="rating" required><option value="5">5 estrellas</option><option value="4">4 estrellas</option><option value="3">3 estrellas</option><option value="2">2 estrellas</option><option value="1">1 estrella</option></select><input name="contacto" placeholder="Contacto opcional"><input name="tipo_visitante" placeholder="Tipo de visitante opcional"></div>
+                <textarea name="comentario" rows="4" placeholder="Contanos cómo fue tu experiencia" required></textarea>
+                <button class="portal-button" type="submit">Dejar opinión</button>
+            </form>
+            {% if false %}
             {% endif %}
         </section>
 
@@ -246,6 +266,25 @@
         if (event.key === 'ArrowLeft' && slides.length > 1) setActive(index - 1);
         if (event.key === 'ArrowRight' && slides.length > 1) setActive(index + 1);
       });
+    })();
+    </script>
+    {% endif %}
+
+    {% if menu_fotos_urls %}
+    <script>
+    (() => {
+      const modal = document.getElementById('menu-lightbox');
+      if (!modal) return;
+      const slides = [...modal.querySelectorAll('[data-menu-slide]')];
+      const openAt = (index) => {
+        slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
+        modal.classList.add('is-open');
+        modal.setAttribute('aria-hidden', 'false');
+      };
+      document.querySelectorAll('[data-menu-open]').forEach((button) => button.addEventListener('click', () => openAt(Number(button.dataset.menuOpen || 0))));
+      modal.querySelector('[data-menu-close]')?.addEventListener('click', () => { modal.classList.remove('is-open'); modal.setAttribute('aria-hidden', 'true'); });
+      modal.addEventListener('click', (event) => { if (event.target === modal) modal.querySelector('[data-menu-close]')?.click(); });
+      document.addEventListener('keydown', (event) => { if (event.key === 'Escape') modal.querySelector('[data-menu-close]')?.click(); });
     })();
     </script>
     {% endif %}

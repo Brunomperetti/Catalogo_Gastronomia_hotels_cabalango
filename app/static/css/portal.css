@@ -999,3 +999,48 @@ button.portal-button { cursor: pointer; font: inherit; }
   object-fit: cover;
   display: block;
 }
+
+/* Sprint opiniones reales + menú legible */
+.menu-photo-grid a,
+.menu-photo-grid .menu-photo-button {
+  appearance: none;
+  display: grid;
+  min-height: 300px;
+  padding: 10px;
+  border: 1px solid rgba(56,189,248,.24);
+  border-radius: 22px;
+  overflow: hidden;
+  background: radial-gradient(circle at top, rgba(56,189,248,.14), rgba(15,23,42,.72));
+  cursor: zoom-in;
+}
+.menu-photo-grid img {
+  width: 100%;
+  height: clamp(300px, 48vw, 560px);
+  object-fit: contain;
+  display: block;
+  border-radius: 16px;
+  background: rgba(2,6,23,.82);
+}
+.menu-lightbox {
+  align-items: center;
+  background: rgba(1,6,18,.94);
+  display: none;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 1200;
+}
+.menu-lightbox.is-open { display: flex; }
+.menu-lightbox__panel { max-width: min(1100px, 96vw); width: 100%; }
+.menu-lightbox__header { align-items: center; display: flex; justify-content: space-between; margin-bottom: 12px; }
+.menu-lightbox__close { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); border-radius: 999px; color: #fff; cursor: pointer; font-weight: 900; padding: 10px 14px; }
+.menu-lightbox__slide { display: none; }
+.menu-lightbox__slide.is-active { display: block; }
+.menu-lightbox__slide img { background: #020617; border: 1px solid rgba(255,255,255,.16); border-radius: 22px; max-height: 82vh; object-fit: contain; width: 100%; }
+.review-form { border-top: 1px solid rgba(148,163,184,.22); display: grid; gap: 12px; margin-top: 18px; padding-top: 18px; }
+.review-form h3 { margin: 0; }
+.form-grid-public { display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0,1fr)); }
+.review-form input, .review-form select, .review-form textarea { background: rgba(15,23,42,.82); border: 1px solid rgba(148,163,184,.3); border-radius: 14px; color: #fff; padding: 12px 14px; width: 100%; }
+.reviews-success { background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.32); border-radius: 16px; color: #bbf7d0; font-weight: 800; margin-top: 16px; padding: 12px 14px; }
+@media (max-width: 760px) { .form-grid-public { grid-template-columns: 1fr; } .menu-lightbox { padding: 8px; } }
