@@ -19,7 +19,7 @@ import hashlib
 import hmac
 import secrets
 import threading
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from pathlib import Path
 from io import BytesIO
 from datetime import datetime, timezone
@@ -878,6 +878,41 @@ def clean_text(value, default=""):
     return text
 
 
+def normalize_external_url(value):
+    """Return a safe absolute http(s) URL for public external links."""
+    text = clean_text(value, default="")
+    if not text or text.startswith("@") or any(char.isspace() for char in text):
+        return None
+    candidate = text if re.match(r"^https?://", text, re.IGNORECASE) else f"https://{text}"
+    try:
+        parsed = urlparse(candidate)
+    except Exception:
+        return None
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+        return None
+    hostname = parsed.hostname or ""
+    if not hostname or "." not in hostname or hostname.startswith(".") or hostname.endswith("."):
+        return None
+    return candidate
+
+
+def normalize_instagram_contact(value):
+    text = clean_text(value, default="")
+    if not text:
+        return {"label": "", "url": None}
+    url = normalize_external_url(text)
+    if url:
+        return {"label": text, "url": url}
+    if text.startswith("@") and re.fullmatch(r"@[A-Za-z0-9._]{1,30}", text):
+        return {"label": text, "url": f"https://instagram.com/{text[1:]}"}
+    return {"label": text, "url": None}
+
+
+def normalize_whatsapp_url(value):
+    clean_number = re.sub(r"\D+", "", clean_text(value, default=""))
+    return f"https://wa.me/{clean_number}" if clean_number else None
+
+
 def clean_price(value, default=0.0):
     if value is None or pd.isna(value):
         return default
@@ -1428,10 +1463,10 @@ def editar_empresa_panel(
         "whatsapp": whatsapp_limpio,
         "telefono": telefono,
         "instagram": instagram,
-        "facebook": facebook,
-        "web_url": web_url,
+        "facebook": normalize_external_url(facebook) or facebook,
+        "web_url": normalize_external_url(web_url),
         "direccion": direccion,
-        "maps_url": maps_url,
+        "maps_url": normalize_external_url(maps_url) or maps_url,
         "descripcion": descripcion,
         "descripcion_corta": descripcion_corta,
         "subtipo": subtipo,
@@ -2197,10 +2232,10 @@ def cliente_actualizar_empresa(
     empresa.whatsapp = clean_text(whatsapp, default="") or None
     empresa.telefono = clean_text(telefono, default="") or None
     empresa.instagram = clean_text(instagram, default="") or None
-    empresa.facebook = clean_text(facebook, default="") or None
-    empresa.web_url = clean_text(web_url, default="") or None
+    empresa.facebook = normalize_external_url(facebook) or (clean_text(facebook, default="") or None)
+    empresa.web_url = normalize_external_url(web_url)
     empresa.direccion = clean_text(direccion, default="") or None
-    empresa.maps_url = clean_text(maps_url, default="") or None
+    empresa.maps_url = normalize_external_url(maps_url) or (clean_text(maps_url, default="") or None)
     empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
     empresa.descripcion = clean_text(descripcion, default="") or None
     empresa.horarios = clean_text(horarios, default="") or None
@@ -2498,10 +2533,10 @@ async def crear_empresa_panel(
         whatsapp=clean_text(whatsapp, default="") or None,
         telefono=clean_text(telefono, default="") or None,
         instagram=clean_text(instagram, default="") or None,
-        facebook=clean_text(facebook, default="") or None,
-        web_url=clean_text(web_url, default="") or None,
+        facebook=normalize_external_url(facebook) or (clean_text(facebook, default="") or None),
+        web_url=normalize_external_url(web_url),
         direccion=clean_text(direccion, default="") or None,
-        maps_url=clean_text(maps_url, default="") or None,
+        maps_url=normalize_external_url(maps_url) or (clean_text(maps_url, default="") or None),
         descripcion=clean_text(descripcion, default="") or None,
         horarios=clean_text(horarios, default="") or None,
         video_url=clean_text(video_url, default="") or None,
@@ -3075,7 +3110,11 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "kind": kind,
             "quick_facts": build_prestador_quick_facts(empresa, kind),
             "public_reviews": build_public_reviews(empresa),
-            "maps_url": clean_text(empresa.maps_url, default=""),
+            "maps_url": normalize_external_url(empresa.maps_url),
+            "instagram_contact": normalize_instagram_contact(empresa.instagram),
+            "facebook_url": normalize_external_url(empresa.facebook),
+            "web_url": normalize_external_url(empresa.web_url),
+            "whatsapp_url": normalize_whatsapp_url(empresa.whatsapp),
             "empresa_logo_url": empresa_logo_url,
             "empresa_banner_url": empresa_banner_url,
             "galeria_urls": galeria_urls,

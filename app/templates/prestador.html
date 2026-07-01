@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
 </head>
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
-    {% set clean_whatsapp = (empresa.whatsapp or '')|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') %}
     {% set hero_image = main_photo_url %}
     <main class="portal-shell prestador-page">
         <nav class="portal-topnav" aria-label="Navegación pública">
@@ -50,10 +49,10 @@
                 <h1>{{ empresa.nombre }}</h1>
                 <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
                 <div class="prestador-actions">
-                    {% if clean_whatsapp %}<a class="portal-button" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>{% endif %}
-                    {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}
+                    {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>{% endif %}
+                    {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a>{% endif %}
                     <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
-                    {% if kind == 'gastronomia' and empresa.menu_url %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url }}" target="_blank" rel="noopener">Ver carta</a>{% endif %}
+                    {% if kind == 'gastronomia' and empresa.menu_url %}<a class="portal-button portal-button-ghost" href="{{ empresa.menu_url }}" target="_blank" rel="noopener noreferrer">Ver carta</a>{% endif %}
                 </div>
                 <div class="prestador-contact-lines">
                     {% if empresa.whatsapp %}<span>WhatsApp: {{ empresa.whatsapp }}</span>{% endif %}
@@ -92,10 +91,12 @@
                 <p class="portal-card-label">Contacto</p>
                 <h2>Consultá directo</h2>
                 {% if empresa.telefono %}<p><strong>Teléfono:</strong> {{ empresa.telefono }}</p>{% endif %}
-                {% if empresa.instagram %}<p><strong>Instagram / redes:</strong> {{ empresa.instagram }}</p>{% endif %}
-                {% if empresa.facebook %}<p><strong>Facebook:</strong> {{ empresa.facebook }}</p>{% endif %}
-                {% if empresa.web_url %}<p><a class="prestador-video" href="{{ empresa.web_url }}" target="_blank" rel="noopener">Sitio web</a></p>{% endif %}
-                {% if clean_whatsapp %}<a class="portal-button" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Contactar</a>{% endif %}
+                {% if instagram_contact and instagram_contact.label %}<p><strong>Instagram / redes:</strong> {% if instagram_contact.url %}<a href="{{ instagram_contact.url }}" target="_blank" rel="noopener noreferrer">{{ instagram_contact.label }}</a>{% else %}{{ instagram_contact.label }}{% endif %}</p>{% endif %}
+                {% if facebook_url %}<p><strong>Facebook:</strong> <a href="{{ facebook_url }}" target="_blank" rel="noopener noreferrer">Facebook</a></p>{% elif empresa.facebook %}<p><strong>Facebook:</strong> {{ empresa.facebook }}</p>{% endif %}
+                {% if web_url %}<p><a class="prestador-video" href="{{ web_url }}" target="_blank" rel="noopener noreferrer">Sitio web</a></p>{% endif %}
+                {% if empresa.direccion %}<p><strong>Dirección:</strong> {{ empresa.direccion }}</p>{% endif %}
+                {% if maps_url %}<p><a class="prestador-video" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a></p>{% endif %}
+                {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Contactar</a>{% endif %}
             </article>
         </section>
 
@@ -175,7 +176,7 @@
                 <p class="portal-card-label">Ubicación</p>
                 <h2>Cómo llegar</h2>
                 <p>{{ empresa.direccion or 'Dirección pendiente de carga.' }}</p>
-                {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener">Abrir mapa</a>{% endif %}
+                {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Abrir mapa</a>{% endif %}
             </article>
             <article class="portal-card">
                 <p class="portal-card-label">Video</p>
@@ -185,7 +186,7 @@
         </section>
 
     </main>
-    {% if clean_whatsapp %}<a class="floating-whatsapp" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}
+    {% if whatsapp_url %}<a class="floating-whatsapp" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">WhatsApp</a>{% endif %}
 {% if galeria_urls %}
     <script>
     (() => {
