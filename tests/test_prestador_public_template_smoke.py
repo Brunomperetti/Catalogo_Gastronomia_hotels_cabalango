@@ -54,6 +54,10 @@ def render_prestador(theme="alojamiento", galeria_urls=None):
         quick_facts=[{"label": "Capacidad", "value": "4 personas", "enabled": True, "prepared": False}],
         public_reviews=[],
         maps_url=empresa.maps_url,
+        instagram_contact={"label": empresa.instagram, "url": None},
+        facebook_url=None,
+        web_url=None,
+        whatsapp_url="https://wa.me/5493510000000",
         empresa_logo_url="/static/images/logo.png",
         empresa_banner_url="/static/images/banner.jpg",
         galeria_urls=galeria_urls,
@@ -81,3 +85,31 @@ def test_prestador_template_empty_gallery_does_not_break():
     assert "Todavía no hay fotos cargadas" in html
     assert "Compatibilidad catálogo viejo" not in html
     assert "Abrir catálogo heredado" not in html
+
+
+def test_prestador_template_uses_normalized_external_contact_links():
+    template_src = Path("app/templates/prestador.html").read_text(encoding="utf-8")
+    template = Environment().from_string(template_src)
+    empresa = SimpleNamespace(
+        nombre="Cabañas Demo", slug="cabanas-demo", theme="alojamiento", whatsapp="5493510000000",
+        telefono="3541000000", instagram="@cabanas_demo", facebook="facebook.com/cabanas",
+        web_url="facebook.com/golata007", direccion="Ruta demo 123", maps_url="maps.google.com/demo",
+        subgrupo="", subtipo="Cabaña", descripcion_corta="Vista al río", descripcion="Demo", horarios="",
+        precio_desde="", capacidad="", habitaciones="", banos="", video_url="", menu_url="", promocion="",
+        rating_promedio=None, rating_cantidad=None, reviews_destacadas="", guardia="", fecha="",
+        organizador="", lugar_encuentro="",
+    )
+    html = template.render(
+        request=SimpleNamespace(url_for=UrlForStub()), url_for=UrlForStub(), empresa=empresa, kind="alojamiento",
+        quick_facts=[], public_reviews=[], maps_url="https://maps.google.com/demo",
+        instagram_contact={"label": "@cabanas_demo", "url": "https://instagram.com/cabanas_demo"},
+        facebook_url="https://facebook.com/cabanas", web_url="https://facebook.com/golata007",
+        whatsapp_url="https://wa.me/5493510000000", empresa_logo_url="", empresa_banner_url="", galeria_urls=[],
+        gallery_tiles=[], main_photo_url="/static/img/no-image.jpg", has_real_photos=False,
+        theme_display_label=lambda value: "Alojamientos", actividad_subgrupos={},
+    )
+
+    assert 'href="https://facebook.com/golata007"' in html
+    assert 'href="https://facebook.com/cabanas"' in html
+    assert 'href="https://instagram.com/cabanas_demo"' in html
+    assert 'href="/prestador/facebook.com/golata007"' not in html
