@@ -76,6 +76,7 @@
             <a id="tab-empresa" class="admin-tab {% if active_tab == 'prestadores' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'prestadores' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=prestadores" aria-controls="panel-prestadores" data-tab-target="prestadores">Prestadores / lugares</a>
             <a id="tab-ficha" class="admin-tab {% if active_tab == 'ficha' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'ficha' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=ficha" aria-controls="panel-ficha" data-tab-target="ficha">Ficha</a>
             <a id="tab-fotos" class="admin-tab {% if active_tab == 'fotos' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'fotos' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=fotos" aria-controls="panel-fotos" data-tab-target="fotos">Fotos y video</a>
+            <a id="tab-cabalango" class="admin-tab {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'cabalango' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=cabalango" aria-controls="panel-cabalango" data-tab-target="cabalango">Descubrí Cabalango</a>
             <a id="tab-contacto" class="admin-tab {% if active_tab == 'contacto' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'contacto' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=contacto" aria-controls="panel-contacto" data-tab-target="contacto">Contacto / ubicación</a>
             <a id="tab-rubro" class="admin-tab {% if active_tab == 'rubro' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'rubro' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=rubro" aria-controls="panel-rubro" data-tab-target="rubro">Datos por rubro</a>
             <a id="tab-leads" class="admin-tab {% if active_tab == 'leads' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'leads' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=leads" aria-controls="panel-leads" data-tab-target="leads">Consultas / leads</a>
@@ -163,6 +164,31 @@
                     <input class="input-custom" type="url" name="video_url" value="{{ empresa_activa.video_url or '' }}" placeholder="YouTube, Instagram, Drive...">
                     <button class="btn-secondary-custom w-100">Guardar video</button>
                 </form>
+            </section>
+        </section>
+
+
+        <section id="panel-cabalango" class="admin-tab-panel {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-cabalango" data-tab-panel="cabalango" {% if active_tab != 'cabalango' %}hidden{% endif %}>
+            <section class="admin-card admin-card--wide">
+                <div class="card-header-custom"><h2 class="card-title-custom">Contenido del destino</h2><p class="card-subtitle-custom">Cargá fotos y videos generales de Cabalango: río, monte, ferias, paisajes y vida local. No pertenecen a un prestador.</p></div>
+                <form action="/admin/cabalango/media" method="post" enctype="multipart/form-data" class="stack-form">
+                    <div class="form-grid">
+                        <div><label class="field-label">Tipo</label><select class="input-custom" name="tipo"><option value="foto">Fotos</option><option value="video">Video / link</option></select></div>
+                        <div><label class="field-label">Categoría</label><select class="input-custom" name="categoria">{% for key, label in destino_categories.items() %}<option value="{{ key }}">{{ label }}</option>{% endfor %}</select></div>
+                        <div><label class="field-label">Título opcional</label><input class="input-custom" name="titulo" placeholder="Atardecer junto al río"></div>
+                        <div><label class="field-label">Orden</label><input class="input-custom" type="number" name="orden" value="0"></div>
+                        <div class="full-width"><label class="field-label">Descripción breve</label><textarea class="input-custom" name="descripcion" rows="3" placeholder="Una postal simple y cálida del destino"></textarea></div>
+                        <div class="full-width"><label class="field-label">Fotos (múltiples)</label><input class="input-custom" type="file" name="fotos" accept="image/*" multiple><small class="form-help">Para videos, dejá fotos vacío y pegá el link abajo.</small></div>
+                        <div class="full-width"><label class="field-label">Link de video</label><input class="input-custom" name="video_url" placeholder="YouTube, Instagram, Drive o Vimeo"></div>
+                        <label class="feature-chip is-enabled"><input type="checkbox" name="destacado" value="1"> Destacado</label>
+                        <label class="feature-chip is-enabled"><input type="checkbox" name="visible" value="1" checked> Visible</label>
+                    </div>
+                    <button class="btn-primary-custom w-100">Guardar contenido de Cabalango</button>
+                </form>
+            </section>
+            <section class="admin-card admin-card--wide mt-4">
+                <div class="card-header-custom"><h2 class="card-title-custom">Contenido cargado</h2><p class="card-subtitle-custom">Primera versión simple: permite publicar/ocultar y preparar el orden editorial.</p></div>
+                <div class="destination-admin-grid">{% for item in destino_media %}<article class="gallery-admin-preview"><strong>{{ item.titulo or destino_categories.get(item.categoria, item.categoria) }}</strong><p>{{ item.tipo }} · {{ destino_categories.get(item.categoria, item.categoria) }} · orden {{ item.orden }} · {% if item.visible %}visible{% else %}oculto{% endif %}</p>{% if item.image_path %}<img class="admin-gallery-thumb" src="{{ item.image_path }}?ts={{ time }}" alt="{{ item.titulo or 'Foto Cabalango' }}">{% endif %}{% if item.video_url %}<p><a href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir video</a></p>{% endif %}<form method="post" action="/admin/cabalango/media/{{ item.id }}/toggle"><button class="btn-secondary-custom">{% if item.visible %}Ocultar{% else %}Publicar{% endif %}</button></form></article>{% else %}<p class="small text-white-50">Todavía no hay contenido cargado.</p>{% endfor %}</div>
             </section>
         </section>
 

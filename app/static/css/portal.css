@@ -1044,3 +1044,55 @@ button.portal-button { cursor: pointer; font: inherit; }
 .review-form input, .review-form select, .review-form textarea { background: rgba(15,23,42,.82); border: 1px solid rgba(148,163,184,.3); border-radius: 14px; color: #fff; padding: 12px 14px; width: 100%; }
 .reviews-success { background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.32); border-radius: 16px; color: #bbf7d0; font-weight: 800; margin-top: 16px; padding: 12px 14px; }
 @media (max-width: 760px) { .form-grid-public { grid-template-columns: 1fr; } .menu-lightbox { padding: 8px; } }
+
+/* Identidad Cabalango: noche serrana, río, monte y tierra cálida */
+.portal-body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(77, 124, 15, .24), transparent 30rem),
+    radial-gradient(circle at 88% 18%, rgba(45, 212, 191, .14), transparent 28rem),
+    linear-gradient(145deg, #071713 0%, #0b1f1c 44%, #1f160f 100%);
+}
+.portal-topnav a,
+.portal-hero-tags a,
+.portal-button-secondary { background: rgba(11, 31, 28, .72); }
+.portal-button { background: linear-gradient(135deg, #d9a441, #5f8d4e); color: #112018; box-shadow: 0 14px 34px rgba(95, 141, 78, .22); }
+.portal-hero,
+.portal-card,
+.prestador-card,
+.portal-empty,
+.tourism-heading-card,
+.activity-subgroup-card,
+.activity-subgroup-reset {
+  background: linear-gradient(180deg, rgba(12, 34, 29, .94), rgba(31, 22, 15, .86));
+  border-color: rgba(214, 189, 142, .22);
+  box-shadow: 0 24px 70px rgba(4, 12, 10, .44);
+}
+.portal-kicker, .portal-card-label, .prestador-theme { color: #d9c99d; }
+.portal-hero h1 { text-shadow: 0 18px 46px rgba(0,0,0,.36); letter-spacing: -.055em; }
+.portal-card::before { background: linear-gradient(90deg, #5f8d4e, #2dd4bf, transparent); }
+.prestador-chip-row span, .feature-chip { background: rgba(11, 31, 28, .72); color: #e9dec1; }
+
+.destination-preview { align-items: center; display: grid; gap: 24px; grid-template-columns: 1.35fr .9fr; margin-top: 28px; }
+.destination-preview-art { background: linear-gradient(135deg, rgba(95,141,78,.82), rgba(45,212,191,.28)), url('/static/img/no-image.jpg') center/cover; border: 1px solid rgba(214,189,142,.22); border-radius: 24px; display: grid; gap: 10px; min-height: 230px; padding: 18px; place-content: end start; }
+.destination-preview-art span { background: rgba(7,23,19,.78); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; color: #f5ead2; font-weight: 900; padding: 9px 13px; width: max-content; }
+.destination-hero { background: linear-gradient(135deg, rgba(7, 23, 19, .86), rgba(32, 64, 44, .68)), url('/static/img/no-image.jpg') center/cover; min-height: 360px; display: grid; place-content: center; }
+.destination-categories { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 26px; }
+.destination-categories article { background: rgba(12,34,29,.78); border: 1px solid rgba(214,189,142,.20); border-radius: 22px; padding: 20px; }
+.destination-categories span { color: #f3d58b; font-weight: 950; }
+.destination-categories p, .destination-section p, .destination-cta p { color: var(--muted-text-color); line-height: 1.6; }
+.destination-section, .destination-cta { margin-top: 38px; }
+.destination-section h2, .destination-cta h2 { font-size: clamp(1.8rem, 4vw, 3.4rem); margin: 0 0 18px; }
+.destination-masonry { display: grid; gap: 16px; grid-auto-flow: dense; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.destination-photo { border: 1px solid rgba(214,189,142,.22); border-radius: 26px; color: #fff; min-height: 240px; overflow: hidden; position: relative; text-decoration: none; }
+.destination-photo.is-featured { grid-column: span 2; grid-row: span 2; min-height: 496px; }
+.destination-photo img { height: 100%; object-fit: cover; transition: transform .28s ease; width: 100%; }
+.destination-photo:hover img { transform: scale(1.045); }
+.destination-photo::after { background: linear-gradient(180deg, transparent 45%, rgba(7,23,19,.82)); content: ""; inset: 0; position: absolute; }
+.destination-photo span { bottom: 16px; font-weight: 950; left: 16px; position: absolute; z-index: 1; }
+.video-card-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.destination-cta { background: linear-gradient(135deg, rgba(95,141,78,.26), rgba(217,164,65,.18)); border: 1px solid rgba(214,189,142,.24); border-radius: 30px; padding: clamp(24px, 5vw, 48px); }
+.gallery-lightbox-panel > img { display: block; max-height: 74vh; object-fit: contain; width: 100%; }
+.gallery-lightbox-panel > p { color: var(--muted-text-color); margin: 0; padding: 0 22px 22px; }
+.destination-admin-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .destination-preview, .destination-categories, .video-card-grid, .destination-admin-grid { grid-template-columns: 1fr; } .destination-masonry { grid-template-columns: 1fr 1fr; } .destination-photo.is-featured { grid-column: span 2; min-height: 360px; } }
+@media (max-width: 560px) { .destination-masonry { grid-template-columns: 1fr; } .destination-photo.is-featured { grid-column: span 1; min-height: 300px; } .destination-photo { min-height: 230px; } }
