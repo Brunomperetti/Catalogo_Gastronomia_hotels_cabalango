@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Descubrí Cabalango</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
+</head>
+<body class="catalog-theme-default portal-body">
+<main class="portal-shell">
+    <nav class="portal-topnav" aria-label="Navegación pública"><a href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a><a href="/descubri-cabalango">Descubrí Cabalango</a></nav>
+    <section class="portal-hero destination-hero">
+        <p class="portal-kicker">Galería del destino</p>
+        <h1>Cabalango, naturaleza que invita a quedarse</h1>
+        <p class="portal-subtitle">Río, monte, descanso y experiencias auténticas para conocer la esencia serrana desde adentro.</p>
+    </section>
+    <section class="destination-categories" aria-label="Categorías de fotos y videos">
+        {% for key, label in categories.items() %}<article><span>{{ label }}</span><p>{{ category_descriptions.get(key) }}</p></article>{% endfor %}
+    </section>
+    <section class="destination-section">
+        <p class="portal-kicker">Postales de Cabalango</p><h2>Fotos destacadas</h2>
+        {% if fotos %}<div class="destination-masonry">{% for foto in fotos %}<a href="#foto-{{ foto.id }}" class="destination-photo {% if loop.index == 1 or foto.destacado %}is-featured{% endif %}"><img src="{{ foto.image_path }}" alt="{{ foto.titulo or categories.get(foto.categoria, 'Foto de Cabalango') }}"><span>{{ foto.titulo or categories.get(foto.categoria) }}</span></a>{% endfor %}</div>{% else %}<div class="portal-empty"><h2>La galería está lista para recibir fotos</h2><p>Desde el admin se pueden cargar postales del río, las sierras, ferias y actividades.</p></div>{% endif %}
+    </section>
+    <section class="destination-section">
+        <p class="portal-kicker">Videos / recorridos</p><h2>Recorré el destino</h2>
+        {% if videos %}<div class="video-card-grid">{% for video in videos %}<article class="portal-card"><h3>{{ video.titulo or 'Video de Cabalango' }}</h3><p>{{ video.descripcion or 'Un recorrido para sentir el lugar antes de llegar.' }}</p><a class="portal-button" href="{{ video.video_url }}" target="_blank" rel="noopener">Ver video</a></article>{% endfor %}</div>{% else %}<div class="portal-empty"><h2>Próximamente vas a poder recorrer Cabalango también en video.</h2><p>Mientras tanto, explorá alojamientos, sabores y actividades locales.</p></div>{% endif %}
+    </section>
+    <section class="destination-cta"><h2>Organizá tu visita a tu ritmo</h2><p>Elegí dónde dormir, dónde comer y qué hacer en un entorno serrano único.</p><div class="prestador-actions"><a class="portal-button" href="/alojamientos">Ver alojamientos</a><a class="portal-button portal-button-secondary" href="/gastronomia">Ver gastronomía</a><a class="portal-button portal-button-secondary" href="/actividades">Ver actividades</a></div></section>
+</main>
+{% for foto in fotos %}<aside id="foto-{{ foto.id }}" class="gallery-lightbox"><a class="gallery-lightbox-backdrop" href="#"></a><div class="gallery-lightbox-panel"><div class="gallery-lightbox-header"><strong>{{ foto.titulo or 'Postal de Cabalango' }}</strong><a href="#" class="portal-button portal-button-secondary">Cerrar</a></div><img src="{{ foto.image_path }}" alt="{{ foto.titulo or 'Foto de Cabalango' }}"><p>{{ foto.descripcion or categories.get(foto.categoria) }}</p></div></aside>{% endfor %}
+</body>
+</html>

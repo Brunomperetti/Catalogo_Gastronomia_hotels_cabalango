@@ -181,3 +181,19 @@ class CatalogLeadEvent(Base):
 
     lead = relationship("CatalogLead", back_populates="eventos")
     empresa = relationship("Empresa", back_populates="lead_events")
+
+
+class DestinoMedia(Base):
+    __tablename__ = "destino_media"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tipo = Column(String, nullable=False, default="foto", index=True)
+    categoria = Column(String, nullable=False, default="rio_naturaleza", index=True)
+    titulo = Column(String, nullable=True)
+    descripcion = Column(Text, nullable=True)
+    image_path = Column(String, nullable=True)
+    video_url = Column(String, nullable=True)
+    destacado = Column(Boolean, nullable=False, default=False, index=True)
+    orden = Column(Integer, nullable=False, default=0, index=True)
+    visible = Column(Boolean, nullable=False, default=True, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)

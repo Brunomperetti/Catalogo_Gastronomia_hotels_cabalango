@@ -32,7 +32,7 @@ from app.database import SessionLocal, engine, Base
 from app import models
 
 app = FastAPI()
-APP_BUILD = "2026-06-30-tourism-public-flow-v4"
+APP_BUILD = "2026-07-01-descubri-cabalango-v1"
 STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 MEDIA_URL_PREFIX = "/media"
@@ -68,6 +68,7 @@ def run_startup_db_maintenance():
         ensure_usuario_columns()
         ensure_catalog_lead_columns()
         ensure_review_columns()
+        ensure_destino_media_table()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
     except Exception as exc:
@@ -270,6 +271,35 @@ def ensure_review_columns():
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_estado ON reviews(estado)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_visible ON reviews(visible)"))
 
+
+def ensure_destino_media_table():
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "destino_media" not in tables:
+        Base.metadata.create_all(bind=engine, tables=[models.DestinoMedia.__table__])
+        return
+
+    columns = {col["name"] for col in inspector.get_columns("destino_media")}
+    optional_columns = {
+        "tipo": "VARCHAR DEFAULT 'foto'",
+        "categoria": "VARCHAR DEFAULT 'rio_naturaleza'",
+        "titulo": "VARCHAR",
+        "descripcion": "TEXT",
+        "image_path": "VARCHAR",
+        "video_url": "VARCHAR",
+        "destacado": "BOOLEAN DEFAULT FALSE",
+        "orden": "INTEGER DEFAULT 0",
+        "visible": "BOOLEAN DEFAULT TRUE",
+        "created_at": "TIMESTAMP",
+    }
+    with engine.begin() as conn:
+        for column_name, column_type in optional_columns.items():
+            if column_name not in columns:
+                conn.execute(text(f"ALTER TABLE destino_media ADD COLUMN {column_name} {column_type}"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_tipo ON destino_media(tipo)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_categoria ON destino_media(categoria)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_visible ON destino_media(visible)"))
+
 # ---------------------------------------------------
 # DB Dependency
 # ---------------------------------------------------
@@ -424,6 +454,51 @@ LEAD_STATUS_LABELS = {
     "oportunidad": "Oportunidad",
     "archivado": "Archivado",
 }
+
+DESTINO_MEDIA_CATEGORIES = {
+    "rio_naturaleza": "Río y naturaleza",
+    "paisajes": "Paisajes y montaña",
+    "vida_local": "Vida local",
+    "eventos": "Eventos y ferias",
+    "actividades": "Caminatas y actividades",
+    "videos": "Videos / recorridos",
+}
+DESTINO_MEDIA_CATEGORY_DESCRIPTIONS = {
+    "rio_naturaleza": "Agua clara, sombra y rincones para bajar el ritmo.",
+    "paisajes": "Sierras, monte nativo y postales abiertas del valle.",
+    "vida_local": "La calidez de la comunidad y sus pequeños momentos.",
+    "eventos": "Ferias, encuentros y propuestas que conectan visitantes y vecinos.",
+    "actividades": "Caminatas, recorridos y experiencias al aire libre.",
+    "videos": "Recorridos para sentir Cabalango antes de llegar.",
+}
+
+def normalize_destino_categoria(value: str) -> str:
+    value = clean_text(value, default="rio_naturaleza").lower()
+    return value if value in DESTINO_MEDIA_CATEGORIES else "rio_naturaleza"
+
+def normalize_destino_tipo(value: str) -> str:
+    return "video" if clean_text(value, default="foto").lower() == "video" else "foto"
+
+def get_destino_media_dir() -> Path:
+    return STORAGE_DIR / "destino" / "cabalango"
+
+def build_destino_media_url(filename: str) -> str:
+    return f"{MEDIA_URL_PREFIX}/destino/cabalango/{filename}"
+
+async def save_destino_image(upload: UploadFile) -> str:
+    target_dir = get_destino_media_dir()
+    target_dir.mkdir(parents=True, exist_ok=True)
+    filename = safe_unique_filename(upload, prefix="cabalango")
+    with open(target_dir / filename, "wb") as f:
+        f.write(await upload.read())
+    return build_destino_media_url(filename)
+
+def get_public_destino_media(db: Session, tipo: str | None = None) -> list[models.DestinoMedia]:
+    query = db.query(models.DestinoMedia).filter(models.DestinoMedia.visible == True)
+    if tipo:
+        query = query.filter(models.DestinoMedia.tipo == tipo)
+    return query.order_by(models.DestinoMedia.destacado.desc(), models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc(), models.DestinoMedia.id.desc()).all()
+
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
@@ -2082,6 +2157,24 @@ def portal_actividades(request: Request, subgrupo: str = "", db: Session = Depen
     )
 
 
+@app.get("/descubri-cabalango", response_class=HTMLResponse)
+@app.get("/cabalango", response_class=HTMLResponse)
+def descubri_cabalango(request: Request, db: Session = Depends(get_db)):
+    ensure_destino_media_table()
+    fotos = get_public_destino_media(db, "foto")
+    videos = get_public_destino_media(db, "video")
+    return templates.TemplateResponse(
+        "descubri_cabalango.html",
+        {
+            "request": request,
+            "fotos": fotos,
+            "videos": videos,
+            "categories": DESTINO_MEDIA_CATEGORIES,
+            "category_descriptions": DESTINO_MEDIA_CATEGORY_DESCRIPTIONS,
+        },
+    )
+
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_panel(
     request: Request,
@@ -2107,13 +2200,14 @@ def admin_panel(
     # Ensure nullable tourism/contact columns exist before SQLAlchemy selects Empresa rows.
     # This keeps tabs like Contacto / ubicación from failing on older Render databases.
     ensure_empresa_media_columns()
+    ensure_destino_media_table()
 
     empresas = db.query(models.Empresa).order_by(models.Empresa.nombre).all()
     empresa_activa = get_empresa_by_slug(db, empresa) or get_default_empresa(db)
     import time
     using_default_admin_password = os.getenv("ADMIN_PASSWORD", "").strip() in {"", "admin123"}
     active_tab = clean_text(tab, default="empresa").lower()
-    if active_tab not in {"prestadores", "ficha", "fotos", "contacto", "rubro", "datos_rubro", "leads", "opiniones", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
+    if active_tab not in {"prestadores", "ficha", "fotos", "cabalango", "contacto", "rubro", "datos_rubro", "leads", "opiniones", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
         active_tab = "prestadores"
     legacy_tab_map = {"empresa": "prestadores", "productos": "tecnico", "backup": "configuracion", "avanzado": "tecnico", "datos_rubro": "rubro"}
     active_tab = legacy_tab_map.get(active_tab, active_tab)
@@ -2216,6 +2310,8 @@ def admin_panel(
             "lead_timeline": lead_timeline,
             "lead_status_labels": LEAD_STATUS_LABELS,
             "leads_kpis": leads_kpis if empresa_activa else [],
+            "destino_media": db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc()).all(),
+            "destino_categories": DESTINO_MEDIA_CATEGORIES,
         },
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -2359,6 +2455,59 @@ async def cliente_actualizar_imagenes_empresa(
     return redirect_for_user(user, empresa_slug=empresa.slug, msg="Fotos principales actualizadas")
 
 
+
+
+@app.post("/admin/cabalango/media")
+async def crear_destino_media(
+    request: Request,
+    tipo: str = Form("foto"),
+    categoria: str = Form("rio_naturaleza"),
+    titulo: str = Form(""),
+    descripcion: str = Form(""),
+    video_url: str = Form(""),
+    destacado: str = Form(""),
+    visible: str = Form("1"),
+    orden: int = Form(0),
+    fotos: list[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    ensure_destino_media_table()
+    tipo_clean = normalize_destino_tipo(tipo)
+    categoria_clean = normalize_destino_categoria(categoria)
+    created = 0
+    if tipo_clean == "video":
+        url = clean_text(video_url, default="")
+        if not url:
+            return panel_redirect(error="Cargá un link de video.", path="/admin")
+        db.add(models.DestinoMedia(tipo="video", categoria="videos", titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), video_url=url, destacado=bool(destacado), visible=bool(visible), orden=orden))
+        created = 1
+    else:
+        for upload in fotos or []:
+            if not has_uploaded_file(upload):
+                continue
+            if Path(upload.filename).suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
+                continue
+            image_url = await save_destino_image(upload)
+            db.add(models.DestinoMedia(tipo="foto", categoria=categoria_clean, titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), image_path=image_url, destacado=bool(destacado), visible=bool(visible), orden=orden))
+            created += 1
+    db.commit()
+    msg = f"Contenido del destino agregado ({created})." if created else "No se cargó contenido nuevo."
+    return RedirectResponse(url=f"/admin?tab=cabalango&msg={quote(msg)}", status_code=303)
+
+@app.post("/admin/cabalango/media/{media_id}/toggle")
+def toggle_destino_media(media_id: int, request: Request, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    item = db.query(models.DestinoMedia).filter(models.DestinoMedia.id == media_id).first()
+    if item:
+        item.visible = not bool(item.visible)
+        db.add(item)
+        db.commit()
+    return RedirectResponse(url="/admin?tab=cabalango&msg=Contenido actualizado", status_code=303)
 
 @app.post("/empresa/galeria")
 async def actualizar_galeria_empresa_admin(
