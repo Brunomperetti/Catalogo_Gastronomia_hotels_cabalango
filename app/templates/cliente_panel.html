@@ -27,7 +27,7 @@
                     {% if is_admin_view %}<a href="/admin?empresa={{ empresa_activa.slug }}" class="btn-secondary-custom">Ir al panel admin</a>{% endif %}
                 </div>
             </div>
-            <div class="hero-card__right"><img src="{{ empresa_logo_url }}?ts={{ time }}" alt="Logo" class="hero-logo"></div>
+            <div class="hero-card__right">{% if empresa_logo_url %}<img src="{{ empresa_logo_url }}?ts={{ time }}" alt="Logo" class="hero-logo">{% else %}<div class="hero-logo-fallback">{{ empresa_activa.slug[:2].upper() if empresa_activa.slug else 'EM' }}</div>{% endif %}</div>
         </div>
     </section>
 
@@ -84,15 +84,15 @@
     </form>
 
     <section id="fotos" class="admin-card admin-card--wide">
-        <div class="card-header-custom"><h2 class="card-title-custom">Fotos y video</h2><p class="card-subtitle-custom">Estas fotos se muestran en el portal. Subí hasta 7 fotos para mostrar tu lugar, productos, menú, alojamiento o actividad.</p></div>
+        <div class="card-header-custom"><h2 class="card-title-custom">Fotos y video</h2><p class="card-subtitle-custom">Subí fotos reales del lugar. Son las imágenes más importantes para la ficha pública. Logo y banner son opcionales. Si no cargás banner, usaremos una foto de la galería como portada. Máximo recomendado: 7 fotos.</p></div>
         <form action="/cliente/empresa/imagenes" method="post" enctype="multipart/form-data" class="stack-form mb-3">
-            <label class="field-label">Logo</label><input class="input-file-custom" type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif">
-            <label class="field-label">Banner</label><input class="input-file-custom" type="file" name="banner" accept="image/png,image/jpeg,image/webp,image/gif">
-            <button class="btn-secondary-custom w-100" type="submit">Guardar logo y banner</button>
+            <label class="field-label">Logo (opcional)</label><input class="input-file-custom" type="file" name="logo" accept="image/png,image/jpeg,image/webp,image/gif">
+            <label class="field-label">Banner (opcional)</label><input class="input-file-custom" type="file" name="banner" accept="image/png,image/jpeg,image/webp,image/gif">
+            <button class="btn-secondary-custom w-100" type="submit">Guardar logo y banner opcionales</button>
         </form>
         <form action="/cliente/empresa/galeria" method="post" enctype="multipart/form-data" class="stack-form">
-            <label class="field-label">Galería de fotos (máximo 7)</label><input class="input-file-custom" type="file" name="fotos" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-            <button class="btn-secondary-custom w-100" type="submit">Agregar fotos a la galería</button>
+            <label class="field-label">Fotos del lugar (recomendado, máximo 7)</label><input class="input-file-custom" type="file" name="fotos" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+            <button class="btn-secondary-custom w-100" type="submit">Agregar fotos reales del lugar</button>
         </form>
         {% if galeria_urls %}<div class="steps-grid mt-3">{% for foto in galeria_urls %}<img src="{{ foto }}?ts={{ time }}" alt="Foto {{ loop.index }}" style="width:100%;height:150px;object-fit:cover;border-radius:18px;border:1px solid rgba(255,255,255,.14);">{% endfor %}</div>{% endif %}
         <form action="/cliente/empresa/actualizar" method="post" class="stack-form mt-3">

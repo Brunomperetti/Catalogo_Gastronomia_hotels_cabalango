@@ -1152,24 +1152,24 @@ async def append_empresa_gallery_images(empresa: models.Empresa, uploads: list[U
 
 def get_empresa_logo_url(empresa: models.Empresa | None) -> str:
     if not empresa:
-        return "/static/images/logo.png"
+        return ""
     if empresa.logo_url:
         return empresa.logo_url
     legacy = Path(f"app/static/empresas/{empresa.slug}/logo.png")
     if legacy.exists():
         return f"/static/empresas/{empresa.slug}/logo.png"
-    return "/static/images/logo.png"
+    return ""
 
 
 def get_empresa_banner_url(empresa: models.Empresa | None) -> str:
     if not empresa:
-        return "/static/images/banner.jpg"
+        return ""
     if empresa.banner_url:
         return empresa.banner_url
     legacy = Path(f"app/static/empresas/{empresa.slug}/banner.jpg")
     if legacy.exists():
         return f"/static/empresas/{empresa.slug}/banner.jpg"
-    return "/static/images/banner.jpg"
+    return ""
 
 
 @app.get("/login", response_class=HTMLResponse)
@@ -2955,6 +2955,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
     fallback_tiles = [url for url in [empresa_banner_url, empresa_logo_url] if url]
     gallery_tiles = (galeria_urls[1:5] if galeria_urls else fallback_tiles[:2])
     main_photo_url = galeria_urls[0] if galeria_urls else (empresa_banner_url or empresa_logo_url or "/static/img/no-image.jpg")
+    has_real_photos = bool(galeria_urls or empresa_banner_url or empresa_logo_url)
 
     return templates.TemplateResponse(
         "prestador.html",
@@ -2970,6 +2971,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "galeria_urls": galeria_urls,
             "gallery_tiles": gallery_tiles,
             "main_photo_url": main_photo_url,
+            "has_real_photos": has_real_photos,
             "theme_display_label": theme_display_label,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
         },
