@@ -28,41 +28,41 @@
                 <p>Filtrá por capacidad, habitaciones, pileta, río y comodidades.</p>
             </div>
             <form class="alojamientos-filters" method="get" action="/alojamientos">
-                <label>Tipo
-                    <select name="tipo">
+                <div class="filter-control"><label for="filter-tipo">Tipo</label>
+                    <select id="filter-tipo" name="tipo">
                         {% for value, label in [('todos','Todos'),('cabaña','Cabaña'),('casa','Casa'),('hotel','Hotel'),('departamento','Departamento'),('complejo','Complejo'),('hospedaje','Hospedaje')] %}
                         <option value="{{ value }}" {% if alojamiento_filters.get('tipo') == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-                </label>
-                <label>Capacidad
-                    <select name="capacidad">
+                </div>
+                <div class="filter-control"><label for="filter-capacidad">Capacidad</label>
+                    <select id="filter-capacidad" name="capacidad">
                         {% for value, label in [('', 'Cualquier capacidad'),('2','2+ personas'),('4','4+ personas'),('6','6+ personas'),('8','8+ personas')] %}
                         <option value="{{ value }}" {% if alojamiento_filters.get('capacidad') == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-                </label>
-                <label>Habitaciones
-                    <select name="habitaciones">
+                </div>
+                <div class="filter-control"><label for="filter-habitaciones">Habitaciones</label>
+                    <select id="filter-habitaciones" name="habitaciones">
                         {% for value, label in [('', 'Cualquier cantidad'),('1','1 habitación'),('2','2 habitaciones'),('3','3+ habitaciones')] %}
                         <option value="{{ value }}" {% if alojamiento_filters.get('habitaciones') == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-                </label>
-                <label>Precio máximo
-                    <select name="precio_max">
+                </div>
+                <div class="filter-control"><label for="filter-precio-max">Precio máximo</label>
+                    <select id="filter-precio-max" name="precio_max">
                         {% for value, label in [('', 'Cualquier precio'),('25000','Hasta $25.000'),('50000','Hasta $50.000'),('75000','Hasta $75.000'),('100000','Hasta $100.000'),('mas_100000','Más de $100.000')] %}
                         <option value="{{ value }}" {% if alojamiento_filters.get('precio_max') == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-                </label>
-                <label>Ordenar
-                    <select name="orden">
+                </div>
+                <div class="filter-control"><label for="filter-orden">Ordenar</label>
+                    <select id="filter-orden" name="orden">
                         {% for value, label in [('destacados','Recomendados / destacados'),('precio_asc','Menor precio'),('precio_desc','Mayor precio'),('capacidad_desc','Mayor capacidad')] %}
                         <option value="{{ value }}" {% if alojamiento_filters.get('orden') == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
-                </label>
+                </div>
                 <div class="filter-amenities" role="group" aria-label="Comodidades">
                     {% for key, label in alojamiento_amenities %}
                     <label class="amenity-pill"><input type="checkbox" name="{{ key }}" value="1" {% if alojamiento_filters.get(key) == '1' %}checked{% endif %}> <span>{{ label }}</span></label>
@@ -92,6 +92,7 @@
             <article class="prestador-card prestador-card-premium">
                 <a class="prestador-media" href="/prestador/{{ empresa.slug }}" aria-label="Ver ficha de {{ empresa.nombre }}">
                     <img class="prestador-banner" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">
+                    {% if section == 'alojamientos' and (empresa.subtipo or theme_display_label(empresa.theme)) %}<span class="prestador-type-badge">{{ empresa.subtipo or theme_display_label(empresa.theme) }}</span>{% endif %}
                     {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="Logo de {{ empresa.nombre }}" loading="lazy">{% elif section == 'alojamientos' %}<span class="prestador-logo-fallback" aria-label="Iniciales de {{ empresa.nombre }}">{{ alojamiento_initials(empresa.nombre) }}</span>{% endif %}
                     {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</span>{% endif %}
                 </a>
