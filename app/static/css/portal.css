@@ -796,61 +796,102 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 /* Sprint alojamientos: filtros turísticos y cards de decisión */
 .alojamientos-filter-panel {
-  background: linear-gradient(180deg, rgba(11, 18, 32, .94), rgba(15, 23, 42, .82));
-  border: 1px solid var(--border-color);
-  border-radius: 26px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .28), 0 0 28px rgba(56, 189, 248, .08);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, .20), transparent 30%),
+    linear-gradient(180deg, rgba(11, 18, 32, .96), rgba(15, 23, 42, .86));
+  border: 1px solid rgba(125, 211, 252, .18);
+  border-radius: 30px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .34), 0 0 34px rgba(56, 189, 248, .10);
   margin-top: 24px;
-  padding: clamp(18px, 3vw, 28px);
+  padding: clamp(20px, 3vw, 34px);
 }
-.filter-heading h2 { font-size: clamp(1.45rem, 3vw, 2.25rem); margin: 0 0 8px; }
-.filter-heading p:not(.portal-kicker) { color: var(--muted-text-color); margin: 0 0 18px; }
-.alojamientos-filters { display: grid; gap: 14px; grid-template-columns: repeat(5, minmax(0, 1fr)); }
-.alojamientos-filters label { color: var(--muted-text-color); display: grid; font-size: .82rem; font-weight: 850; gap: 7px; }
+.filter-heading { margin-bottom: 20px; max-width: 760px; }
+.filter-heading h2 { font-size: clamp(1.55rem, 3vw, 2.35rem); letter-spacing: -.035em; margin: 0 0 8px; }
+.filter-heading p:not(.portal-kicker) { color: var(--muted-text-color); font-size: 1rem; line-height: 1.55; margin: 0; }
+.alojamientos-filters { display: grid; gap: 16px; grid-template-columns: repeat(5, minmax(150px, 1fr)); }
+.filter-control {
+  background: rgba(2, 6, 23, .38);
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 20px;
+  display: grid;
+  gap: 9px;
+  padding: 12px;
+}
+.filter-control label { color: #bfdbfe; font-size: .88rem; font-weight: 900; letter-spacing: .01em; }
 .alojamientos-filters select {
   appearance: none;
-  background: rgba(2, 6, 23, .7);
-  border: 1px solid rgba(148, 163, 184, .32);
-  border-radius: 16px;
+  background: rgba(2, 6, 23, .78);
+  border: 1px solid rgba(148, 163, 184, .34);
+  border-radius: 15px;
   color: var(--text-color);
   font: inherit;
-  min-height: 46px;
-  padding: 0 13px;
+  font-size: .95rem;
+  min-height: 48px;
+  outline: none;
+  padding: 0 38px 0 13px;
+  width: 100%;
 }
-.filter-amenities { display: flex; flex-wrap: wrap; gap: 10px; grid-column: 1 / -1; }
+.filter-control:focus-within, .alojamientos-filters select:focus-visible {
+  border-color: rgba(103, 232, 249, .72);
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, .13);
+}
+.filter-amenities { display: flex; flex-wrap: wrap; gap: 10px; grid-column: 1 / -1; padding-top: 2px; }
 .amenity-pill { display: inline-flex !important; }
 .amenity-pill input { inline-size: 1px; opacity: 0; position: absolute; }
 .amenity-pill span {
-  background: rgba(15, 23, 42, .72);
-  border: 1px solid rgba(148, 163, 184, .28);
+  background: rgba(15, 23, 42, .76);
+  border: 1px solid rgba(148, 163, 184, .30);
   border-radius: 999px;
   color: #dbeafe;
   cursor: pointer;
+  font-size: .92rem;
   font-weight: 900;
-  padding: 10px 13px;
+  min-height: 44px;
+  padding: 11px 15px;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
 }
-.amenity-pill input:checked + span { background: rgba(34, 197, 94, .16); border-color: rgba(134, 239, 172, .6); color: #bbf7d0; box-shadow: 0 0 18px rgba(34, 197, 94, .14); }
-.filter-actions { display: flex; flex-wrap: wrap; gap: 10px; grid-column: 1 / -1; margin-top: 2px; }
+.amenity-pill span:hover { border-color: rgba(125, 211, 252, .55); transform: translateY(-1px); }
+.amenity-pill input:focus-visible + span { box-shadow: 0 0 0 4px rgba(56, 189, 248, .16); }
+.amenity-pill input:checked + span { background: rgba(34, 197, 94, .16); border-color: rgba(134, 239, 172, .62); color: #bbf7d0; box-shadow: 0 0 20px rgba(34, 197, 94, .16); }
+.filter-actions { display: flex; flex-wrap: wrap; gap: 12px; grid-column: 1 / -1; margin-top: 4px; }
+.prestador-card-premium { overflow: hidden; }
 .prestador-logo-fallback {
   align-items: center;
-  background: linear-gradient(135deg, rgba(15, 23, 42, .95), rgba(14, 165, 233, .72));
-  border: 1px solid rgba(255, 255, 255, .42);
-  border-radius: 16px;
+  background: rgba(2, 6, 23, .76);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, .34);
+  border-radius: 14px;
   bottom: 12px;
   box-shadow: 0 12px 26px rgba(0,0,0,.35);
   color: white;
   display: inline-flex;
-  font-size: .88rem;
+  font-size: .82rem;
   font-weight: 1000;
-  height: 48px;
+  height: 42px;
   justify-content: center;
   left: 12px;
-  min-width: 48px;
+  min-width: 42px;
   padding: 0 10px;
   position: absolute;
   z-index: 2;
 }
-.prestador-location { color: var(--muted-text-color); font-size: .86rem; font-weight: 750; margin-top: 11px; }
+.prestador-type-badge {
+  background: rgba(14, 165, 233, .88);
+  border: 1px solid rgba(255,255,255,.34);
+  border-radius: 999px;
+  color: white;
+  font-size: .78rem;
+  font-weight: 950;
+  left: 12px;
+  padding: 7px 10px;
+  position: absolute;
+  text-transform: capitalize;
+  top: 12px;
+  z-index: 2;
+}
+.prestador-logo-chip { background: rgba(255,255,255,.94); object-fit: contain; }
+.prestador-price-badge { box-shadow: 0 12px 24px rgba(0,0,0,.24); }
+.prestador-location { color: var(--muted-text-color); font-size: .88rem; font-weight: 750; margin-top: 11px; }
 .alojamiento-key-facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
 .alojamiento-key-facts span {
   background: rgba(56, 189, 248, .12);
@@ -861,9 +902,11 @@ button.portal-button { cursor: pointer; font: inherit; }
   font-weight: 950;
   padding: 7px 10px;
 }
-@media (max-width: 980px) { .alojamientos-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1180px) { .alojamientos-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) {
+  .alojamientos-filter-panel { border-radius: 24px; padding: 18px; }
   .alojamientos-filters { grid-template-columns: 1fr; }
   .filter-actions .portal-button { justify-content: center; width: 100%; }
-  .amenity-pill span { padding: 11px 12px; }
+  .amenity-pill { flex: 1 1 calc(50% - 10px); }
+  .amenity-pill span { text-align: center; width: 100%; }
 }
