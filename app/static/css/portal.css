@@ -1096,3 +1096,339 @@ button.portal-button { cursor: pointer; font: inherit; }
 .destination-admin-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 900px) { .destination-preview, .destination-categories, .video-card-grid, .destination-admin-grid { grid-template-columns: 1fr; } .destination-masonry { grid-template-columns: 1fr 1fr; } .destination-photo.is-featured { grid-column: span 2; min-height: 360px; } }
 @media (max-width: 560px) { .destination-masonry { grid-template-columns: 1fr; } .destination-photo.is-featured { grid-column: span 1; min-height: 300px; } .destination-photo { min-height: 230px; } }
+
+/* Sprint dirección visual boutique Cabalango: sistema cálido, editorial y natural */
+:root {
+  --portal-bg: #f5efe4;
+  --portal-bg-soft: #fbf8f1;
+  --portal-sand: #e9dcc8;
+  --portal-stone: #d8d2c4;
+  --portal-sage: #9bab8b;
+  --portal-olive: #66724f;
+  --portal-earth: #9a7658;
+  --portal-smoke: #6f716b;
+  --portal-graphite: #2f342e;
+  --portal-cream: #fffdf7;
+  --portal-border: rgba(102, 114, 79, .20);
+  --portal-shadow: 0 24px 70px rgba(74, 63, 48, .10);
+  --portal-serif: "Cormorant Garamond", Georgia, serif;
+  --portal-sans: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.portal-body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(155, 171, 139, .24), transparent 28rem),
+    radial-gradient(circle at 88% 22%, rgba(233, 220, 200, .74), transparent 30rem),
+    linear-gradient(180deg, var(--portal-bg-soft), var(--portal-bg));
+  color: var(--portal-graphite);
+  font-family: var(--portal-sans);
+  letter-spacing: -.01em;
+}
+
+.portal-body h1,
+.portal-body h2,
+.portal-body h3 {
+  color: var(--portal-graphite);
+  font-family: var(--portal-serif);
+  font-weight: 600;
+  letter-spacing: -.025em;
+}
+
+.portal-shell {
+  padding: clamp(20px, 4vw, 42px) 0 clamp(64px, 8vw, 96px);
+  width: min(1160px, calc(100% - clamp(28px, 5vw, 72px)));
+}
+
+.portal-topnav {
+  align-items: center;
+  background: rgba(255, 253, 247, .72);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(102, 114, 79, .16);
+  border-radius: 999px;
+  box-shadow: 0 16px 44px rgba(74, 63, 48, .07);
+  gap: 4px;
+  justify-content: center;
+  margin: 0 auto clamp(24px, 4vw, 44px);
+  padding: 7px;
+  width: fit-content;
+}
+
+.portal-topnav a,
+.portal-button,
+.portal-button-secondary,
+.portal-button-ghost,
+.gallery-see-all,
+.gallery-lightbox-close,
+.gallery-lightbox-nav,
+.gallery-lightbox-header .portal-button {
+  background: rgba(255, 253, 247, .72);
+  border: 1px solid rgba(102, 114, 79, .18);
+  box-shadow: none;
+  color: var(--portal-graphite);
+  font-family: var(--portal-sans);
+  font-size: .88rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+  padding: 10px 15px;
+  text-shadow: none;
+}
+
+.portal-topnav a {
+  background: transparent;
+  color: var(--portal-smoke);
+  padding: 9px 13px;
+}
+
+.portal-topnav a:hover,
+.portal-topnav a.is-active,
+.portal-button:hover,
+.portal-button-secondary:hover,
+.portal-button-ghost:hover {
+  background: rgba(155, 171, 139, .14);
+  border-color: rgba(102, 114, 79, .28);
+  box-shadow: 0 12px 30px rgba(74, 63, 48, .08);
+  color: var(--portal-olive);
+  transform: translateY(-1px);
+}
+
+.portal-button {
+  background: var(--portal-olive);
+  border-color: var(--portal-olive);
+  color: #fffdf7;
+}
+
+.portal-button-secondary,
+.portal-button-ghost {
+  background: rgba(255, 253, 247, .72);
+  color: var(--portal-olive);
+}
+
+.portal-hero {
+  background: linear-gradient(135deg, rgba(255,253,247,.94), rgba(233,220,200,.58));
+  border: 1px solid var(--portal-border);
+  border-radius: clamp(26px, 4vw, 42px);
+  box-shadow: var(--portal-shadow);
+  text-align: left;
+}
+
+.portal-hero-home {
+  align-items: center;
+  display: grid;
+  gap: clamp(26px, 5vw, 70px);
+  grid-template-columns: minmax(0, 1.08fr) minmax(280px, .72fr);
+  min-height: clamp(480px, 58vw, 640px);
+  padding: clamp(34px, 7vw, 84px);
+}
+
+.portal-hero-home::after {
+  background: linear-gradient(160deg, rgba(155,171,139,.28), rgba(233,220,200,.24));
+  border-radius: 999px;
+  filter: blur(1px);
+  height: 320px;
+  opacity: .65;
+  right: -110px;
+  top: -130px;
+  width: 320px;
+}
+
+.portal-hero-copy { position: relative; z-index: 1; }
+
+.portal-kicker,
+.portal-card-label,
+.prestador-theme {
+  color: var(--portal-olive);
+  font-size: .73rem;
+  font-weight: 800;
+  letter-spacing: .18em;
+}
+
+.portal-hero h1,
+.tourism-heading-card h1 {
+  font-size: clamp(3.1rem, 7vw, 6rem);
+  line-height: .93;
+  max-width: 10ch;
+  text-shadow: none;
+}
+
+.portal-hero-compact h1,
+.destination-hero h1 {
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  line-height: .98;
+  max-width: 12ch;
+}
+
+.portal-subtitle {
+  color: var(--portal-smoke);
+  font-size: clamp(1rem, 1.65vw, 1.22rem);
+  font-weight: 500;
+  line-height: 1.72;
+  margin: 20px 0 0;
+  max-width: 570px;
+}
+
+.portal-hero-tags {
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.portal-hero-tags a {
+  background: rgba(255,253,247,.78);
+  border: 1px solid rgba(102, 114, 79, .20);
+  color: var(--portal-olive);
+  font-size: .9rem;
+  font-weight: 700;
+  padding: 10px 14px;
+}
+
+.portal-hero-tags a:first-child {
+  background: var(--portal-olive);
+  color: #fffdf7;
+}
+
+.portal-hero-visual {
+  align-self: stretch;
+  background:
+    linear-gradient(180deg, rgba(47,52,46,.02), rgba(47,52,46,.14)),
+    radial-gradient(circle at 42% 24%, rgba(255,253,247,.58), transparent 9rem),
+    linear-gradient(145deg, #c8b69d, #8f9c7d 55%, #5f6b4b);
+  border: 1px solid rgba(255,253,247,.62);
+  border-radius: 36px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 28px 70px rgba(74,63,48,.16);
+  color: #fffdf7;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 360px;
+  overflow: hidden;
+  padding: 28px;
+  position: relative;
+}
+
+.portal-hero-visual::before {
+  background: linear-gradient(115deg, transparent 0 34%, rgba(255,253,247,.22) 34% 35%, transparent 35% 100%);
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.portal-hero-visual span { font-size: .78rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; }
+.portal-hero-visual strong { font-family: var(--portal-serif); font-size: clamp(2rem, 4vw, 3.5rem); font-weight: 600; line-height: .95; max-width: 8ch; }
+.portal-hero-visual small { color: rgba(255,253,247,.82); font-weight: 700; margin-top: 12px; }
+
+.portal-grid,
+.prestadores-grid { gap: clamp(18px, 3vw, 28px); margin-top: clamp(26px, 4vw, 42px); }
+
+.portal-card,
+.prestador-card,
+.portal-empty,
+.tourism-heading-card,
+.prestador-profile-hero,
+.alojamientos-filter-panel,
+.activity-subgroup-card,
+.activity-subgroup-reset,
+.tourism-gallery-main,
+.tourism-gallery-side img,
+.gallery-empty-state,
+.gallery-lightbox-panel,
+.menu-photo-grid .menu-photo-button {
+  background: rgba(255, 253, 247, .78);
+  border: 1px solid var(--portal-border);
+  box-shadow: var(--portal-shadow);
+  color: var(--portal-graphite);
+}
+
+.portal-card,
+.portal-empty { border-radius: 30px; padding: clamp(24px, 3.5vw, 38px); }
+.portal-card::before { display: none; }
+.portal-card-icon {
+  color: var(--portal-earth);
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+  margin-bottom: 22px;
+  text-transform: uppercase;
+}
+.portal-card h2,
+.prestador-card h2,
+.portal-empty h2,
+.filter-heading h2 { font-size: clamp(1.7rem, 3vw, 2.5rem); line-height: 1; }
+.portal-card p,
+.portal-empty p,
+.activity-subgroup-card small,
+.filter-heading p:not(.portal-kicker),
+.prestador-summary,
+.prestador-card-meta,
+.prestador-location,
+.prestador-contact-lines,
+.reviews-grid p,
+.reviews-empty { color: var(--portal-smoke); }
+
+.destination-preview {
+  align-items: center;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, .55fr);
+  margin-top: clamp(26px, 4vw, 42px);
+}
+.destination-preview-art {
+  background: linear-gradient(145deg, rgba(155,171,139,.24), rgba(233,220,200,.68));
+  border: 1px solid rgba(102,114,79,.16);
+  border-radius: 28px;
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+.destination-preview-art span {
+  background: rgba(255,253,247,.70);
+  border: 1px solid rgba(102,114,79,.14);
+  border-radius: 999px;
+  color: var(--portal-olive);
+  font-weight: 800;
+  padding: 11px 14px;
+}
+
+.prestador-media::after { background: linear-gradient(180deg, transparent 50%, rgba(47,52,46,.52)); }
+.prestador-card-premium:hover,
+.activity-subgroup-card:hover,
+.activity-subgroup-card.is-active { border-color: rgba(102,114,79,.34); box-shadow: 0 28px 76px rgba(74,63,48,.14); }
+.prestador-chip-row span,
+.alojamiento-key-facts span,
+.tourism-heading-meta span,
+.quick-facts-grid div,
+.prestador-contact-lines span,
+.feature-chip,
+.amenity-pill span { background: rgba(255,253,247,.66); border-color: rgba(102,114,79,.18); color: var(--portal-olive); }
+.alojamientos-filters select,
+.filter-control { background: rgba(255,253,247,.68); border-color: rgba(102,114,79,.18); color: var(--portal-graphite); }
+.filter-control label { color: var(--portal-olive); }
+.alojamientos-filters select { background-image: linear-gradient(45deg, transparent 50%, var(--portal-olive) 50%), linear-gradient(135deg, var(--portal-olive) 50%, transparent 50%); }
+.amenity-pill input:checked + span { background: rgba(155,171,139,.20); border-color: rgba(102,114,79,.38); color: var(--portal-graphite); box-shadow: none; }
+
+.prestador-banner-placeholder,
+.gallery-hero-placeholder,
+.promo-highlight {
+  background: linear-gradient(135deg, rgba(155,171,139,.22), rgba(233,220,200,.55));
+  color: var(--portal-olive);
+}
+.prestador-whatsapp,
+.prestador-video { color: var(--portal-olive); }
+.floating-whatsapp { background: var(--portal-olive); color: #fffdf7; box-shadow: 0 16px 44px rgba(74, 63, 48, .18); }
+.rating-pill { background: rgba(255,253,247,.72); border-color: rgba(154,118,88,.28); }
+.rating-pill strong { color: var(--portal-earth); }
+
+@media (max-width: 900px) {
+  .portal-topnav { border-radius: 28px; width: auto; }
+  .portal-hero-home { grid-template-columns: 1fr; min-height: 0; }
+  .portal-hero-visual { min-height: 280px; }
+  .destination-preview { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .portal-shell { width: min(100% - 24px, 1160px); }
+  .portal-topnav { justify-content: flex-start; overflow-x: auto; padding: 6px; }
+  .portal-topnav a { flex: 0 0 auto; }
+  .portal-hero-home { padding: 28px; }
+  .portal-hero h1 { font-size: clamp(3rem, 15vw, 4.3rem); }
+  .portal-hero-tags a { flex: 1 1 100%; justify-content: center; }
+}
