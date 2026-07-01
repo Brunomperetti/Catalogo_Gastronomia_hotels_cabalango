@@ -46,7 +46,7 @@
                     {% if empresa.subtipo %}<span>{{ empresa.subtipo }}</span>{% endif %}
                     {% if empresa.subgrupo and actividad_subgrupos %}<span>{{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}</span>{% endif %}
                 </div>
-                {% if empresa_logo_url %}<img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}">{% endif %}
+                {% if empresa_logo_url %}<img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="" aria-hidden="true" onerror="this.remove()">{% endif %}
                 <h1>{{ empresa.nombre }}</h1>
                 <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
                 <div class="prestador-actions">
@@ -118,7 +118,7 @@
                     <div>
                         <p class="portal-card-label">Galería completa</p>
                         <h2 id="galeria-lightbox-title">Fotos de {{ empresa.nombre }}</h2>
-                        <span><strong data-gallery-counter>1 / {{ galeria_urls|length }}</strong> · imágenes completas sin recorte</span>
+                        <span><strong data-gallery-counter>Foto 1 de {{ galeria_urls|length }}</strong> · imágenes completas sin recorte</span>
                     </div>
                     <button class="gallery-lightbox-close" type="button" data-gallery-close aria-label="Cerrar galería">Cerrar</button>
                 </header>
@@ -132,11 +132,14 @@
                     {% endfor %}
                     {% if galeria_urls|length > 1 %}<button class="gallery-lightbox-nav gallery-lightbox-next" type="button" data-gallery-next aria-label="Foto siguiente">›</button>{% endif %}
                 </div>
-                {% if galeria_urls|length > 1 %}
-                <div class="gallery-lightbox-thumbs" aria-label="Miniaturas de galería">
-                    {% for foto in galeria_urls %}<button class="gallery-thumb {% if loop.first %}is-active{% endif %}" type="button" data-gallery-thumb="{{ loop.index0 }}" aria-label="Ver foto {{ loop.index }}"><img src="{{ foto }}" alt="Miniatura {{ loop.index }}"></button>{% endfor %}
-                </div>
-                {% endif %}
+                <footer class="gallery-lightbox-footer">
+                    {% if galeria_urls|length > 1 %}
+                    <div class="gallery-lightbox-thumbs" aria-label="Miniaturas de galería">
+                        {% for foto in galeria_urls %}<button class="gallery-thumb {% if loop.first %}is-active{% endif %}" type="button" data-gallery-thumb="{{ loop.index0 }}" aria-label="Ver foto {{ loop.index }}"><img src="{{ foto }}" alt="Miniatura {{ loop.index }}"></button>{% endfor %}
+                    </div>
+                    {% endif %}
+                    <p class="gallery-lightbox-footer-counter" data-gallery-footer-counter>Foto 1 de {{ galeria_urls|length }}</p>
+                </footer>
             </div>
         </section>
         {% endif %}
@@ -196,7 +199,9 @@
         index = (next + slides.length) % slides.length;
         slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
         thumbs.forEach((thumb, i) => thumb.classList.toggle('is-active', i === index));
-        if (counter) counter.textContent = `${index + 1} / ${slides.length}`;
+        if (counter) counter.textContent = `Foto ${index + 1} de ${slides.length}`;
+        const footerCounter = modal.querySelector('[data-gallery-footer-counter]');
+        if (footerCounter) footerCounter.textContent = `Foto ${index + 1} de ${slides.length}`;
       };
       const open = () => {
         modal.classList.add('is-open');
