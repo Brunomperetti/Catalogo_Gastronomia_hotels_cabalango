@@ -20,6 +20,11 @@
     {% set review_count = review_count|default(0) %}
     {% set review_submitted = review_submitted|default(false) %}
     <main class="portal-shell prestador-page">
+        <input class="portal-nav-toggle" id="portal-nav-toggle" type="checkbox" aria-hidden="true">
+        <header class="portal-mobile-header">
+            <a class="portal-mobile-brand" href="/">Cabalango</a>
+            <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú"><span></span><span></span><span></span></label>
+        </header>
         <nav class="portal-topnav" aria-label="Navegación pública">
             <a href="/">Inicio</a>
             <a href="/gastronomia">Gastronomía</a>
@@ -229,7 +234,7 @@
         </section>
 
     </main>
-    {% if whatsapp_url %}<a class="floating-whatsapp" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">WhatsApp</a>{% endif %}
+    {% if whatsapp_url %}<a class="floating-whatsapp" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>{% endif %}
 {% if galeria_urls %}
     <script>
     (() => {
