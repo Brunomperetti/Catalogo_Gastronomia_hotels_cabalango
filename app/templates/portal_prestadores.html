@@ -98,8 +98,8 @@
             {% set card_chips = build_public_card_chips(empresa, section) %}
             {% set clean_whatsapp = (empresa.whatsapp or '')|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') %}
             <article class="prestador-card prestador-card-premium">
-                <a class="prestador-media" href="/prestador/{{ empresa.slug }}" aria-label="Ver ficha de {{ empresa.nombre }}">
-                    <img class="prestador-banner" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">
+                <a class="prestador-media {% if not card_image %}prestador-media--placeholder{% endif %}" href="/prestador/{{ empresa.slug }}" aria-label="Ver ficha de {{ empresa.nombre }}">
+                    {% if card_image %}<img class="prestador-banner" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">{% else %}<div class="prestador-banner prestador-banner-abstract" aria-hidden="true"><span>{{ empresa.subtipo or theme_display_label(empresa.theme) }}</span></div>{% endif %}
                     {% if section == 'alojamientos' and (empresa.subtipo or theme_display_label(empresa.theme)) %}<span class="prestador-type-badge">{{ empresa.subtipo or theme_display_label(empresa.theme) }}</span>{% endif %}
                     {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="" loading="lazy" aria-hidden="true" onerror="this.remove()">{% endif %}
                     {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</span>{% endif %}
