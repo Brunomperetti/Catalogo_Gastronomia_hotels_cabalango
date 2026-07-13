@@ -2227,3 +2227,210 @@ button.portal-button { cursor: pointer; font: inherit; }
   .portal-topnav a { color: var(--portal-olive-dark); }
   .floating-whatsapp { background: var(--portal-monte); }
 }
+
+/* Sistema visual final solicitado: guía boutique natural (70/20/10) */
+:root {
+  --portal-ivory: #F6F1E8;
+  --portal-sand: #EAE2D3;
+  --portal-graphite: #2F352D;
+  --portal-olive: #6F7B52;
+  --portal-monte: #4E5C45;
+  --portal-clay: #B9825A;
+  --portal-sage: #AEB8A0;
+  --portal-warm-white: #FFFDF7;
+  --portal-muted: #66705F;
+  --portal-line: rgba(78, 92, 69, .18);
+  --portal-soft-line: rgba(174, 184, 160, .42);
+  --portal-card: rgba(255, 253, 247, .86);
+  --portal-shadow: 0 24px 70px rgba(47, 53, 45, .09);
+}
+
+.portal-body {
+  background:
+    radial-gradient(circle at 10% -8%, rgba(174, 184, 160, .26), transparent 30rem),
+    radial-gradient(circle at 92% 4%, rgba(185, 130, 90, .12), transparent 24rem),
+    linear-gradient(180deg, var(--portal-ivory) 0%, var(--portal-warm-white) 54%, var(--portal-sand) 100%);
+  color: var(--portal-graphite);
+}
+
+.portal-shell { width: min(1180px, calc(100% - clamp(24px, 5vw, 64px))); }
+
+.portal-topnav {
+  background: rgba(255, 253, 247, .80);
+  border: 1px solid var(--portal-soft-line);
+  box-shadow: 0 18px 44px rgba(47, 53, 45, .07);
+}
+
+.portal-topnav a {
+  color: var(--portal-monte);
+}
+
+.portal-topnav a:hover,
+.portal-topnav a.is-active {
+  background: rgba(174, 184, 160, .22);
+  border-color: rgba(111, 123, 82, .24);
+  color: var(--portal-graphite);
+}
+
+.portal-button,
+.gallery-lightbox-close,
+.menu-lightbox__close {
+  background: var(--portal-olive);
+  border-color: var(--portal-olive);
+  box-shadow: 0 16px 34px rgba(78, 92, 69, .18);
+  color: var(--portal-warm-white);
+}
+
+.portal-button:hover,
+.gallery-lightbox-close:hover,
+.menu-lightbox__close:hover {
+  background: var(--portal-monte);
+  border-color: var(--portal-monte);
+  color: var(--portal-warm-white);
+}
+
+.portal-button-secondary,
+.portal-button-ghost,
+.gallery-see-all,
+.gallery-lightbox-nav {
+  background: rgba(255, 253, 247, .78);
+  border-color: rgba(174, 184, 160, .50);
+  color: var(--portal-monte);
+}
+
+.portal-hero,
+.portal-card,
+.prestador-card,
+.prestador-card-premium,
+.portal-empty,
+.tourism-heading-card,
+.prestador-profile-hero,
+.alojamientos-filter-panel,
+.activity-subgroup-card,
+.activity-subgroup-reset,
+.destination-categories article,
+.destination-section,
+.destination-cta,
+.gallery-lightbox-panel {
+  background: var(--portal-card);
+  border: 1px solid var(--portal-line);
+  box-shadow: var(--portal-shadow);
+  color: var(--portal-graphite);
+}
+
+.portal-hero {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(174, 184, 160, .30), transparent 18rem),
+    linear-gradient(135deg, rgba(255, 253, 247, .96), rgba(234, 226, 211, .70));
+}
+
+.portal-hero h1,
+.tourism-heading-card h1,
+.destination-section h2,
+.destination-cta h2,
+.portal-card h2,
+.prestador-card h2,
+.portal-empty h2,
+.filter-heading h2 {
+  color: var(--portal-graphite);
+}
+
+.portal-subtitle,
+.portal-card p,
+.portal-empty p,
+.destination-categories p,
+.destination-section p,
+.destination-cta p,
+.prestador-summary,
+.prestador-card-meta,
+.prestador-location,
+.reviews-empty,
+.reviews-grid p,
+.activity-subgroup-card small,
+.filter-heading p:not(.portal-kicker) {
+  color: var(--portal-muted);
+}
+
+.portal-kicker,
+.portal-card-label,
+.prestador-theme,
+.destination-categories span,
+.portal-card-icon {
+  color: var(--portal-clay);
+}
+
+.portal-hero-visual,
+.destination-preview-art,
+.prestador-banner-abstract,
+.gallery-hero-placeholder,
+.gallery-empty-state,
+.tourism-gallery-main,
+.tourism-gallery-side img {
+  background:
+    radial-gradient(circle at 24% 18%, rgba(174, 184, 160, .58), transparent 9rem),
+    linear-gradient(145deg, rgba(246, 241, 232, .96), rgba(234, 226, 211, .88) 50%, rgba(111, 123, 82, .22));
+  border-color: var(--portal-soft-line);
+  color: var(--portal-graphite);
+}
+
+.portal-hero-tags a,
+.prestador-type-badge,
+.prestador-price-badge,
+.tourism-gallery-main figcaption,
+.destination-preview-art span,
+.portal-hero-visual span {
+  background: rgba(255, 253, 247, .84);
+  border-color: var(--portal-soft-line);
+  color: var(--portal-monte);
+}
+
+.portal-hero-tags a:first-child {
+  background: var(--portal-olive);
+  border-color: var(--portal-olive);
+  color: var(--portal-warm-white);
+}
+
+.prestador-chip-row span,
+.alojamiento-key-facts span,
+.tourism-heading-meta span,
+.quick-facts-grid div,
+.prestador-contact-lines span,
+.feature-chip,
+.amenity-pill span {
+  background: rgba(174, 184, 160, .16);
+  border-color: rgba(174, 184, 160, .44);
+  color: var(--portal-monte);
+}
+
+.alojamientos-filters select,
+.review-form input,
+.review-form select,
+.review-form textarea,
+.filter-control {
+  background: var(--portal-warm-white);
+  border-color: var(--portal-soft-line);
+  color: var(--portal-graphite);
+}
+
+.filter-control label { color: var(--portal-monte); }
+.amenity-pill input:checked + span { background: rgba(111, 123, 82, .18); border-color: rgba(78, 92, 69, .48); color: var(--portal-graphite); }
+.alojamientos-filters select { background-image: linear-gradient(45deg, transparent 50%, var(--portal-monte) 50%), linear-gradient(135deg, var(--portal-monte) 50%, transparent 50%); }
+
+.portal-card::before { display: none; }
+.prestador-card-premium:hover,
+.activity-subgroup-card:hover,
+.activity-subgroup-card.is-active { border-color: rgba(78, 92, 69, .34); box-shadow: 0 30px 78px rgba(47, 53, 45, .13); }
+.prestador-media::after,
+.destination-photo span { background: linear-gradient(180deg, transparent 44%, rgba(47, 53, 45, .68)); }
+.floating-whatsapp { background: var(--portal-monte); color: var(--portal-warm-white); }
+
+@media (max-width: 760px) {
+  .portal-mobile-header,
+  .portal-topnav { background: rgba(255, 253, 247, .94); border-color: var(--portal-soft-line); }
+  .portal-mobile-brand { color: var(--portal-graphite); }
+  .portal-mobile-menu span { background: var(--portal-graphite); }
+  .portal-nav-toggle:checked + .portal-mobile-header + .portal-topnav { display: grid; grid-template-columns: 1fr 1fr; }
+  .portal-topnav a { color: var(--portal-monte); }
+  .portal-hero { padding: 28px 22px; }
+  .portal-hero-tags a, .portal-button { width: 100%; }
+}
