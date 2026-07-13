@@ -2545,3 +2545,344 @@ button.portal-button { cursor: pointer; font: inherit; }
     border-radius: 24px;
   }
 }
+
+/* Refinamiento premium sin degradados: superficies planas, CTA de marca y jerarquía editorial */
+:root {
+  --portal-ivory: #F7F4ED;
+  --portal-warm-white: #FCFAF5;
+  --portal-sand: #EFE8DA;
+  --portal-graphite: #263126;
+  --portal-forest: #1F2B22;
+  --portal-muted: #5E6658;
+  --portal-olive: #6F7B52;
+  --portal-monte: #5D6844;
+  --portal-clay: #B9875A;
+  --portal-soft-clay: #E8D8C5;
+  --portal-sage: #DCE1D2;
+  --portal-line: #DDD8CA;
+  --portal-soft-line: #E7E1D4;
+  --portal-card: #FCFAF5;
+  --portal-card-alt: #F2EBDD;
+  --portal-shadow: 0 18px 48px rgba(38, 49, 38, .08);
+  --portal-shadow-hover: 0 24px 58px rgba(38, 49, 38, .12);
+}
+
+.portal-body {
+  background: var(--portal-ivory);
+  color: var(--portal-graphite);
+}
+
+.portal-shell {
+  padding-top: clamp(24px, 4vw, 48px);
+}
+
+.portal-topnav {
+  align-items: center;
+  background: rgba(252, 250, 245, .92);
+  border: 1px solid var(--portal-line);
+  border-radius: 999px;
+  box-shadow: 0 10px 30px rgba(38, 49, 38, .06);
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: clamp(24px, 4vw, 40px);
+  padding: 8px;
+}
+
+.portal-topnav a {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  box-shadow: none;
+  color: var(--portal-muted);
+  font-size: .88rem;
+  font-weight: 800;
+  letter-spacing: .01em;
+  padding: 10px 15px;
+}
+
+.portal-topnav a:hover {
+  background: #F4EFE4;
+  border-color: var(--portal-soft-line);
+  color: var(--portal-forest);
+  transform: none;
+}
+
+.portal-topnav a.is-active {
+  background: var(--portal-forest);
+  border-color: var(--portal-forest);
+  color: var(--portal-warm-white);
+}
+
+.portal-hero,
+.portal-card,
+.prestador-card,
+.prestador-card-premium,
+.portal-empty,
+.tourism-heading-card,
+.prestador-profile-hero,
+.alojamientos-filter-panel,
+.activity-subgroup-card,
+.activity-subgroup-reset,
+.destination-categories article,
+.destination-section,
+.destination-cta,
+.gallery-lightbox-panel,
+.legacy-compatible-card,
+.promo-highlight,
+.reviews-grid article,
+.rating-pill {
+  background: var(--portal-card);
+  border: 1px solid var(--portal-line);
+  box-shadow: var(--portal-shadow);
+  color: var(--portal-graphite);
+}
+
+.portal-hero,
+.tourism-heading-card,
+.destination-section,
+.destination-cta,
+.alojamientos-filter-panel,
+.portal-empty {
+  backdrop-filter: none;
+}
+
+.portal-hero {
+  border-radius: 34px;
+  padding: clamp(38px, 7vw, 84px) clamp(24px, 6vw, 72px);
+}
+
+.portal-hero h1,
+.tourism-heading-card h1,
+.destination-section h2,
+.destination-cta h2,
+.portal-card h2,
+.prestador-card h2,
+.portal-empty h2,
+.filter-heading h2 {
+  color: var(--portal-forest);
+  font-weight: 600;
+  letter-spacing: -.018em;
+  line-height: .98;
+}
+
+.portal-hero h1 { font-size: clamp(3rem, 8vw, 6.4rem); }
+.portal-card h2,
+.portal-empty h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); }
+
+.portal-subtitle {
+  color: var(--portal-muted);
+  font-size: clamp(1.05rem, 2vw, 1.32rem);
+  line-height: 1.72;
+  margin-top: 24px;
+}
+
+.portal-kicker,
+.portal-card-label,
+.prestador-theme,
+.destination-categories span,
+.portal-card-icon {
+  color: var(--portal-clay);
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+
+.portal-button,
+.gallery-lightbox-close,
+.menu-lightbox__close,
+.floating-whatsapp {
+  background: var(--portal-olive);
+  border: 1px solid var(--portal-olive);
+  border-radius: 999px;
+  box-shadow: 0 12px 26px rgba(93, 104, 68, .20), inset 0 1px 0 rgba(255, 255, 255, .18);
+  color: var(--portal-warm-white);
+  font-weight: 900;
+  letter-spacing: .01em;
+  padding: 14px 22px;
+  transform: translateY(0);
+}
+
+.portal-button:hover,
+.gallery-lightbox-close:hover,
+.menu-lightbox__close:hover,
+.floating-whatsapp:hover {
+  background: var(--portal-monte);
+  border-color: var(--portal-monte);
+  box-shadow: 0 16px 34px rgba(93, 104, 68, .24), inset 0 1px 0 rgba(255, 255, 255, .16);
+  color: var(--portal-warm-white);
+  transform: translateY(-1px);
+}
+
+.portal-button:focus-visible,
+.portal-topnav a:focus-visible,
+.portal-hero-tags a:focus-visible,
+.amenity-pill input:focus-visible + span {
+  outline: 3px solid rgba(185, 135, 90, .34);
+  outline-offset: 3px;
+}
+
+.portal-button-secondary,
+.portal-button-ghost,
+.gallery-see-all,
+.gallery-lightbox-nav,
+.legacy-catalog-link {
+  background: transparent;
+  border: 1px solid var(--portal-line);
+  box-shadow: none;
+  color: var(--portal-forest);
+}
+
+.portal-button-secondary:hover,
+.portal-button-ghost:hover,
+.gallery-see-all:hover,
+.gallery-lightbox-nav:hover,
+.legacy-catalog-link:hover {
+  background: #F2EBDD;
+  border-color: #CEC6B6;
+  color: var(--portal-forest);
+}
+
+.portal-hero-tags a,
+.prestador-chip-row span,
+.alojamiento-key-facts span,
+.tourism-heading-meta span,
+.quick-facts-grid div,
+.prestador-contact-lines span,
+.feature-chip,
+.amenity-pill span,
+.prestador-type-badge,
+.prestador-price-badge,
+.tourism-gallery-main figcaption,
+.destination-preview-art span,
+.portal-hero-visual span {
+  background: #F4EFE4;
+  border: 1px solid var(--portal-soft-line);
+  box-shadow: none;
+  color: var(--portal-monte);
+}
+
+.portal-hero-tags a:first-child {
+  background: var(--portal-forest);
+  border-color: var(--portal-forest);
+  color: var(--portal-warm-white);
+}
+
+.portal-card,
+.prestador-card-premium,
+.activity-subgroup-card,
+.destination-categories article {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.portal-card:hover,
+.prestador-card-premium:hover,
+.activity-subgroup-card:hover,
+.activity-subgroup-card.is-active,
+.destination-categories article:hover {
+  border-color: #CFC7B7;
+  box-shadow: var(--portal-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.portal-card::before,
+.portal-card::after,
+.prestador-card-premium::before,
+.activity-subgroup-card::before,
+.destination-categories article::before,
+.portal-hero-home::after,
+.prestador-media::after,
+.tourism-gallery-main::after {
+  display: none;
+}
+
+.portal-hero-visual,
+.destination-preview-art,
+.prestador-banner-abstract,
+.gallery-hero-placeholder,
+.gallery-empty-state,
+.tourism-gallery-main,
+.tourism-gallery-side img,
+.destination-hero,
+.destination-photo span {
+  background: var(--portal-card-alt);
+  border-color: var(--portal-line);
+  color: var(--portal-forest);
+}
+
+.destination-preview-art {
+  background-color: var(--portal-card-alt);
+  background-image: url('/static/img/no-image.jpg');
+  background-position: center;
+  background-size: cover;
+}
+
+.destination-hero {
+  background-color: var(--portal-card);
+  background-image: none;
+}
+
+.destination-photo span {
+  background: rgba(31, 43, 34, .72);
+  color: var(--portal-warm-white);
+}
+
+.tourism-gallery-main figcaption,
+.gallery-see-all {
+  backdrop-filter: none;
+}
+
+.alojamientos-filters select,
+.review-form input,
+.review-form select,
+.review-form textarea,
+.filter-control {
+  background-color: var(--portal-warm-white);
+  background-image: none;
+  border-color: var(--portal-line);
+  color: var(--portal-graphite);
+}
+
+.amenity-pill input:checked + span,
+.quick-facts-grid div.is-enabled,
+.feature-chip.is-enabled {
+  background: #EDF1E6;
+  border-color: #BFC8AF;
+  color: var(--portal-forest);
+}
+
+.promo-highlight span,
+.rating-pill strong,
+.prestador-video,
+.prestador-whatsapp {
+  color: var(--portal-olive);
+}
+
+.gallery-lightbox-backdrop,
+.menu-lightbox {
+  background: rgba(38, 49, 38, .72);
+}
+
+.gallery-lightbox-stage,
+.gallery-lightbox-footer,
+.menu-lightbox__header,
+.gallery-lightbox-header {
+  background: var(--portal-card);
+  border-color: var(--portal-line);
+}
+
+@media (max-width: 760px) {
+  .portal-mobile-header,
+  .portal-topnav {
+    background: var(--portal-warm-white);
+    border-color: var(--portal-line);
+  }
+
+  .portal-topnav {
+    border-radius: 26px;
+    padding: 10px;
+  }
+
+  .portal-topnav a.is-active {
+    background: var(--portal-forest);
+    color: var(--portal-warm-white);
+  }
+}
