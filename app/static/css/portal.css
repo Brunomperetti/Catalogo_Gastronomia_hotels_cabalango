@@ -2041,3 +2041,189 @@ button.portal-button { cursor: pointer; font: inherit; }
   .prestador-card-actions .portal-button { flex: 1 1 150px; }
   .floating-whatsapp { left: 14px; right: 14px; width: auto; }
 }
+
+/* Dirección visual final: Boutique natural serrano */
+:root {
+  --portal-ivory: #F7F3EA;
+  --portal-sand: #EDE4D6;
+  --portal-stone: #D9D0C2;
+  --portal-warm-white: #FFFCF5;
+  --portal-graphite: #25261F;
+  --portal-forest: #10251D;
+  --portal-olive-dark: #3E4935;
+  --portal-sage: #A8B29A;
+  --portal-olive: #687653;
+  --portal-monte: #4E6547;
+  --portal-clay: #B7865B;
+  --portal-gold-sand: #D7C29B;
+  --portal-river: #BFD6D0;
+  --portal-muted: #59614f;
+  --portal-line: rgba(62, 73, 53, .18);
+  --portal-card: rgba(255, 252, 245, .88);
+  --portal-shadow: 0 24px 70px rgba(37, 38, 31, .10);
+}
+
+.portal-body {
+  background:
+    radial-gradient(circle at 9% -8%, rgba(183, 134, 91, .18), transparent 30rem),
+    radial-gradient(circle at 88% 4%, rgba(191, 214, 208, .48), transparent 28rem),
+    linear-gradient(180deg, var(--portal-ivory) 0%, var(--portal-warm-white) 48%, var(--portal-sand) 100%);
+  color: var(--portal-graphite);
+  font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.portal-hero h1,
+.tourism-heading-card h1,
+.destination-section h2,
+.destination-cta h2,
+.portal-card h2,
+.portal-empty h2,
+.filter-heading h2 {
+  color: var(--portal-forest);
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 700;
+  letter-spacing: -.025em;
+}
+
+.portal-kicker,
+.portal-card-label,
+.prestador-theme {
+  color: var(--portal-clay);
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.portal-topnav,
+.portal-card,
+.prestador-card-premium,
+.portal-empty,
+.tourism-heading-card,
+.alojamientos-filter-panel,
+.activity-subgroup-card,
+.activity-subgroup-reset,
+.destination-categories article,
+.destination-section,
+.destination-cta {
+  background: var(--portal-card);
+  border-color: var(--portal-line);
+  box-shadow: var(--portal-shadow);
+}
+
+.portal-topnav a { color: var(--portal-olive-dark); }
+.portal-topnav a:hover,
+.portal-topnav a.is-active {
+  background: rgba(168, 178, 154, .22);
+  border-color: rgba(78, 101, 71, .22);
+  color: var(--portal-forest);
+}
+
+.portal-button {
+  background: var(--portal-olive);
+  border-color: var(--portal-olive);
+  color: var(--portal-warm-white);
+}
+.portal-button:hover { background: var(--portal-monte); border-color: var(--portal-monte); color: var(--portal-warm-white); }
+.portal-button-secondary,
+.portal-button-ghost {
+  background: rgba(255, 252, 245, .74);
+  border-color: rgba(104, 118, 83, .30);
+  color: var(--portal-forest);
+}
+
+.portal-hero {
+  background:
+    linear-gradient(135deg, rgba(255, 252, 245, .96), rgba(237, 228, 214, .72)),
+    radial-gradient(circle at 84% 18%, rgba(191, 214, 208, .44), transparent 18rem);
+  border-color: var(--portal-line);
+}
+.portal-subtitle,
+.portal-card p,
+.portal-empty p,
+.destination-categories p,
+.destination-section p,
+.destination-cta p,
+.prestador-summary,
+.prestador-card-meta,
+.prestador-location,
+.reviews-empty,
+.reviews-grid p { color: var(--portal-muted); }
+
+.portal-hero-visual,
+.destination-preview-art,
+.prestador-banner-abstract,
+.gallery-hero-placeholder,
+.gallery-empty-state {
+  background:
+    radial-gradient(circle at 22% 20%, rgba(191, 214, 208, .72), transparent 8rem),
+    radial-gradient(circle at 82% 18%, rgba(215, 194, 155, .60), transparent 9rem),
+    linear-gradient(145deg, rgba(168, 178, 154, .72), rgba(237, 228, 214, .96) 55%, rgba(183, 134, 91, .38));
+  color: var(--portal-forest);
+}
+.prestador-banner-abstract {
+  align-items: flex-end;
+  display: flex;
+  min-height: 100%;
+  padding: 18px;
+}
+.prestador-banner-abstract span {
+  background: rgba(255, 252, 245, .76);
+  border: 1px solid rgba(62, 73, 53, .16);
+  border-radius: 999px;
+  color: var(--portal-olive-dark);
+  font-weight: 900;
+  padding: 8px 12px;
+}
+
+.prestador-type-badge,
+.prestador-price-badge,
+.gallery-see-all,
+.tourism-gallery-main figcaption {
+  background: rgba(255, 252, 245, .92);
+  color: var(--portal-forest);
+}
+.prestador-chip-row span,
+.alojamiento-key-facts span,
+.tourism-heading-meta span,
+.quick-facts-grid div,
+.prestador-contact-lines span,
+.amenity-pill span {
+  background: rgba(168, 178, 154, .14);
+  border-color: rgba(104, 118, 83, .22);
+  color: var(--portal-olive-dark);
+}
+
+.alojamientos-filters select,
+.review-form input,
+.review-form select,
+.review-form textarea,
+.filter-control {
+  background: var(--portal-warm-white);
+  border-color: rgba(104, 118, 83, .24);
+  color: var(--portal-graphite);
+}
+.filter-control label { color: var(--portal-olive-dark); }
+.amenity-pill input:checked + span {
+  background: rgba(104, 118, 83, .18);
+  border-color: rgba(78, 101, 71, .46);
+  color: var(--portal-forest);
+}
+
+.destination-hero {
+  background:
+    radial-gradient(circle at 18% 20%, rgba(191, 214, 208, .42), transparent 18rem),
+    linear-gradient(135deg, rgba(255, 252, 245, .98), rgba(168, 178, 154, .20));
+}
+.destination-photo span { background: linear-gradient(180deg, transparent, rgba(16, 37, 29, .74)); }
+.floating-whatsapp { background: var(--portal-monte); color: var(--portal-warm-white); }
+.menu-photo-grid img,
+.gallery-lightbox-slide img { background: var(--portal-ivory); }
+
+@media (max-width: 760px) {
+  .portal-mobile-header { background: rgba(255, 252, 245, .90); border-color: var(--portal-line); }
+  .portal-topnav { background: rgba(255, 252, 245, .96); }
+  .portal-nav-toggle:checked + .portal-mobile-header + .portal-topnav { display: grid; grid-template-columns: 1fr 1fr; }
+  .portal-topnav a { color: var(--portal-olive-dark); }
+  .floating-whatsapp { background: var(--portal-monte); }
+}

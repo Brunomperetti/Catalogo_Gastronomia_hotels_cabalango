@@ -1935,13 +1935,17 @@ def normalize_actividad_subgrupo(value: str | None) -> str | None:
 
 
 def get_public_card_main_image(empresa: models.Empresa | None) -> str:
-    """Priority for tourism cards: real place photos first, logo never as main image."""
+    """Priority for tourism cards: real place photos first, logo never as main image.
+
+    Return an empty string when there is no real visual asset so public templates can
+    render the editorial Cabalango placeholder instead of the legacy product image.
+    """
     if not empresa:
-        return "/static/img/no-image.jpg"
+        return ""
     gallery = get_empresa_gallery_urls(empresa)
     if gallery:
         return gallery[0]
-    return get_empresa_banner_url(empresa) or "/static/img/no-image.jpg"
+    return get_empresa_banner_url(empresa) or ""
 
 
 def alojamiento_initials(nombre: str | None) -> str:
