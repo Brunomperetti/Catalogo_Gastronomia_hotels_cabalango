@@ -2,8 +2,8 @@
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 34rem),
-    radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.18), transparent 32rem),
+    transparent,
+    transparent,
     var(--background-color);
   color: var(--text-color);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -25,7 +25,7 @@
 .portal-topnav a,
 .portal-button {
   color: var(--button-text);
-  background: linear-gradient(135deg, var(--button-background), var(--secondary-color));
+  background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 999px;
   box-shadow: 0 0 22px rgba(56, 189, 248, 0.22);
@@ -50,7 +50,7 @@
 .portal-hero {
   border: 1px solid var(--border-color);
   border-radius: 28px;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(14, 165, 233, 0.12));
+  background: transparent;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
   padding: clamp(32px, 6vw, 72px);
   text-align: center;
@@ -88,7 +88,7 @@
 }
 
 .portal-card, .prestador-card, .portal-empty {
-  background: linear-gradient(180deg, rgba(11, 18, 32, 0.94), rgba(15, 23, 42, 0.86));
+  background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 24px;
   box-shadow: 0 18px 48px var(--shadow-color);
@@ -101,7 +101,7 @@
 .portal-card p, .portal-empty p { color: var(--muted-text-color); line-height: 1.6; }
 
 .prestador-banner {
-  background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(34,197,94,.16));
+  background: transparent;
   display: block;
   height: 180px;
   object-fit: cover;
@@ -144,7 +144,7 @@
 
 
 .prestador-profile-hero {
-  background: linear-gradient(180deg, rgba(11, 18, 32, 0.94), rgba(15, 23, 42, 0.86));
+  background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 30px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
@@ -175,7 +175,7 @@
 }
 
 .portal-hero-home::after {
-  background: radial-gradient(circle, rgba(34, 197, 94, .22), transparent 62%);
+  background: transparent;
   content: "";
   height: 220px;
   position: absolute;
@@ -213,7 +213,7 @@
 }
 
 .portal-card::before {
-  background: linear-gradient(90deg, var(--accent-color), transparent);
+  background: transparent;
   content: "";
   height: 3px;
   left: 0;
@@ -236,7 +236,7 @@
 
 .activity-subgroup-card,
 .activity-subgroup-reset {
-  background: linear-gradient(180deg, rgba(11, 18, 32, 0.94), rgba(15, 23, 42, 0.84));
+  background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 22px;
   color: var(--text-color);
@@ -293,7 +293,7 @@
 .tourism-gallery-main,
 .tourism-gallery-side img,
 .gallery-empty-state {
-  background: linear-gradient(135deg, rgba(34, 197, 94, .16), rgba(15, 23, 42, .92));
+  background: transparent;
   border: 1px solid var(--border-color);
   overflow: hidden;
 }
@@ -357,7 +357,7 @@
 }
 
 .tourism-heading-card {
-  background: linear-gradient(180deg, rgba(11, 18, 32, .96), rgba(15, 23, 42, .88));
+  background: transparent;
   border: 1px solid var(--border-color);
   border-radius: 30px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, .36);
@@ -423,7 +423,7 @@
 .prestador-media { aspect-ratio: 16 / 9; display: block; overflow: hidden; position: relative; text-decoration: none; }
 .prestador-card-premium .prestador-banner { height: 100%; transition: transform .28s ease; }
 .prestador-card-premium:hover .prestador-banner { transform: scale(1.045); }
-.prestador-media::after { background: linear-gradient(180deg, transparent 45%, rgba(2,6,23,.78)); content: ""; inset: 0; position: absolute; }
+.prestador-media::after { background: transparent; content: ""; inset: 0; position: absolute; }
 .prestador-logo-chip { border: 1px solid rgba(255,255,255,.5); border-radius: 16px; bottom: 12px; box-shadow: 0 12px 26px rgba(0,0,0,.35); height: 48px; left: 12px; max-width: 88px; padding: 6px; position: absolute; z-index: 2; }
 .prestador-price-badge { background: rgba(255,255,255,.94); border-radius: 999px; bottom: 14px; color: #0f172a; font-weight: 950; padding: 8px 11px; position: absolute; right: 12px; z-index: 2; }
 .prestador-card-premium .prestador-content { padding: 18px; }
@@ -437,7 +437,7 @@
 
 .tourism-hero { gap: 18px; }
 .tourism-gallery { min-height: 460px; }
-.tourism-gallery-main::after { background: linear-gradient(180deg, transparent 40%, rgba(2,6,23,.72)); content: ""; inset: 0; position: absolute; }
+.tourism-gallery-main::after { background: transparent; content: ""; inset: 0; position: absolute; }
 .tourism-heading-card { margin-top: -76px; position: relative; z-index: 4; }
 .tourism-heading-card .portal-subtitle { margin-left: 0; max-width: 820px; }
 .quick-facts-card { margin-top: 24px; }
@@ -555,7 +555,7 @@
 
 /* Sprint UX ficha pública: promoción, galería limpia y reputación */
 .promo-highlight {
-  background: linear-gradient(135deg, rgba(14, 165, 233, .18), rgba(217, 70, 239, .16));
+  background: transparent;
   border: 1px solid rgba(125, 211, 252, .42);
   border-radius: 22px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 18px 42px rgba(14, 165, 233, .12);
@@ -601,7 +601,7 @@
 }
 
 .gallery-lightbox-panel {
-  background: linear-gradient(180deg, rgba(15, 23, 42, .98), rgba(2, 6, 23, .96));
+  background: transparent;
   border: 1px solid rgba(226, 232, 240, .18);
   border-radius: 30px;
   box-shadow: 0 34px 100px rgba(0, 0, 0, .62);
@@ -696,7 +696,7 @@
 .tourism-gallery--empty .tourism-gallery-side { display: none; }
 .gallery-hero-placeholder {
   align-items: center;
-  background: radial-gradient(circle at 30% 20%, rgba(56,189,248,.22), transparent 34%), linear-gradient(135deg, rgba(15,23,42,.96), rgba(34,197,94,.12));
+  background: transparent, transparent;
   color: var(--text-color);
   display: flex;
   flex-direction: column;
@@ -797,8 +797,8 @@ button.portal-button { cursor: pointer; font: inherit; }
 /* Sprint alojamientos: filtros turísticos y cards de decisión */
 .alojamientos-filter-panel {
   background:
-    radial-gradient(circle at 12% 0%, rgba(56, 189, 248, .20), transparent 30%),
-    linear-gradient(180deg, rgba(11, 18, 32, .96), rgba(15, 23, 42, .86));
+    transparent,
+    transparent;
   border: 1px solid rgba(125, 211, 252, .18);
   border-radius: 30px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, .34), 0 0 34px rgba(56, 189, 248, .10);
@@ -956,7 +956,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 .filter-control { border-radius: 22px; gap: 10px; padding: 14px; }
 .filter-control label { min-height: 1.15em; }
 .alojamientos-filters select {
-  background-image: linear-gradient(45deg, transparent 50%, #67e8f9 50%), linear-gradient(135deg, #67e8f9 50%, transparent 50%);
+  background-image: transparent, transparent;
   background-position: calc(100% - 21px) 21px, calc(100% - 15px) 21px;
   background-repeat: no-repeat;
   background-size: 6px 6px, 6px 6px;
@@ -1010,7 +1010,7 @@ button.portal-button { cursor: pointer; font: inherit; }
   border: 1px solid rgba(56,189,248,.24);
   border-radius: 22px;
   overflow: hidden;
-  background: radial-gradient(circle at top, rgba(56,189,248,.14), rgba(15,23,42,.72));
+  background: transparent;
   cursor: zoom-in;
 }
 .menu-photo-grid img {
@@ -1048,14 +1048,14 @@ button.portal-button { cursor: pointer; font: inherit; }
 /* Identidad Cabalango: noche serrana, río, monte y tierra cálida */
 .portal-body {
   background:
-    radial-gradient(circle at 12% 8%, rgba(77, 124, 15, .24), transparent 30rem),
-    radial-gradient(circle at 88% 18%, rgba(45, 212, 191, .14), transparent 28rem),
-    linear-gradient(145deg, #071713 0%, #0b1f1c 44%, #1f160f 100%);
+    transparent,
+    transparent,
+    transparent;
 }
 .portal-topnav a,
 .portal-hero-tags a,
 .portal-button-secondary { background: rgba(11, 31, 28, .72); }
-.portal-button { background: linear-gradient(135deg, #d9a441, #5f8d4e); color: #112018; box-shadow: 0 14px 34px rgba(95, 141, 78, .22); }
+.portal-button { background: transparent; color: #112018; box-shadow: 0 14px 34px rgba(95, 141, 78, .22); }
 .portal-hero,
 .portal-card,
 .prestador-card,
@@ -1063,19 +1063,19 @@ button.portal-button { cursor: pointer; font: inherit; }
 .tourism-heading-card,
 .activity-subgroup-card,
 .activity-subgroup-reset {
-  background: linear-gradient(180deg, rgba(12, 34, 29, .94), rgba(31, 22, 15, .86));
+  background: transparent;
   border-color: rgba(214, 189, 142, .22);
   box-shadow: 0 24px 70px rgba(4, 12, 10, .44);
 }
 .portal-kicker, .portal-card-label, .prestador-theme { color: #d9c99d; }
 .portal-hero h1 { text-shadow: 0 18px 46px rgba(0,0,0,.36); letter-spacing: -.055em; }
-.portal-card::before { background: linear-gradient(90deg, #5f8d4e, #2dd4bf, transparent); }
+.portal-card::before { background: transparent; }
 .prestador-chip-row span, .feature-chip { background: rgba(11, 31, 28, .72); color: #e9dec1; }
 
 .destination-preview { align-items: center; display: grid; gap: 24px; grid-template-columns: 1.35fr .9fr; margin-top: 28px; }
-.destination-preview-art { background: linear-gradient(135deg, rgba(95,141,78,.82), rgba(45,212,191,.28)), url('/static/img/no-image.jpg') center/cover; border: 1px solid rgba(214,189,142,.22); border-radius: 24px; display: grid; gap: 10px; min-height: 230px; padding: 18px; place-content: end start; }
+.destination-preview-art { background: transparent, url('/static/img/no-image.jpg') center/cover; border: 1px solid rgba(214,189,142,.22); border-radius: 24px; display: grid; gap: 10px; min-height: 230px; padding: 18px; place-content: end start; }
 .destination-preview-art span { background: rgba(7,23,19,.78); border: 1px solid rgba(255,255,255,.18); border-radius: 999px; color: #f5ead2; font-weight: 900; padding: 9px 13px; width: max-content; }
-.destination-hero { background: linear-gradient(135deg, rgba(7, 23, 19, .86), rgba(32, 64, 44, .68)), url('/static/img/no-image.jpg') center/cover; min-height: 360px; display: grid; place-content: center; }
+.destination-hero { background: transparent, url('/static/img/no-image.jpg') center/cover; min-height: 360px; display: grid; place-content: center; }
 .destination-categories { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 26px; }
 .destination-categories article { background: rgba(12,34,29,.78); border: 1px solid rgba(214,189,142,.20); border-radius: 22px; padding: 20px; }
 .destination-categories span { color: #f3d58b; font-weight: 950; }
@@ -1087,10 +1087,10 @@ button.portal-button { cursor: pointer; font: inherit; }
 .destination-photo.is-featured { grid-column: span 2; grid-row: span 2; min-height: 496px; }
 .destination-photo img { height: 100%; object-fit: cover; transition: transform .28s ease; width: 100%; }
 .destination-photo:hover img { transform: scale(1.045); }
-.destination-photo::after { background: linear-gradient(180deg, transparent 45%, rgba(7,23,19,.82)); content: ""; inset: 0; position: absolute; }
+.destination-photo::after { background: transparent; content: ""; inset: 0; position: absolute; }
 .destination-photo span { bottom: 16px; font-weight: 950; left: 16px; position: absolute; z-index: 1; }
 .video-card-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.destination-cta { background: linear-gradient(135deg, rgba(95,141,78,.26), rgba(217,164,65,.18)); border: 1px solid rgba(214,189,142,.24); border-radius: 30px; padding: clamp(24px, 5vw, 48px); }
+.destination-cta { background: transparent; border: 1px solid rgba(214,189,142,.24); border-radius: 30px; padding: clamp(24px, 5vw, 48px); }
 .gallery-lightbox-panel > img { display: block; max-height: 74vh; object-fit: contain; width: 100%; }
 .gallery-lightbox-panel > p { color: var(--muted-text-color); margin: 0; padding: 0 22px 22px; }
 .destination-admin-grid { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1117,9 +1117,9 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-body {
   background:
-    radial-gradient(circle at 12% 8%, rgba(155, 171, 139, .24), transparent 28rem),
-    radial-gradient(circle at 88% 22%, rgba(233, 220, 200, .74), transparent 30rem),
-    linear-gradient(180deg, var(--portal-bg-soft), var(--portal-bg));
+    transparent,
+    transparent,
+    transparent;
   color: var(--portal-graphite);
   font-family: var(--portal-sans);
   letter-spacing: -.01em;
@@ -1204,7 +1204,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 }
 
 .portal-hero {
-  background: linear-gradient(135deg, rgba(255,253,247,.94), rgba(233,220,200,.58));
+  background: transparent;
   border: 1px solid var(--portal-border);
   border-radius: clamp(26px, 4vw, 42px);
   box-shadow: var(--portal-shadow);
@@ -1221,7 +1221,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 }
 
 .portal-hero-home::after {
-  background: linear-gradient(160deg, rgba(155,171,139,.28), rgba(233,220,200,.24));
+  background: transparent;
   border-radius: 999px;
   filter: blur(1px);
   height: 320px;
@@ -1289,9 +1289,9 @@ button.portal-button { cursor: pointer; font: inherit; }
 .portal-hero-visual {
   align-self: stretch;
   background:
-    linear-gradient(180deg, rgba(47,52,46,.02), rgba(47,52,46,.14)),
-    radial-gradient(circle at 42% 24%, rgba(255,253,247,.58), transparent 9rem),
-    linear-gradient(145deg, #c8b69d, #8f9c7d 55%, #5f6b4b);
+    transparent,
+    transparent,
+    transparent;
   border: 1px solid rgba(255,253,247,.62);
   border-radius: 36px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 28px 70px rgba(74,63,48,.16);
@@ -1306,7 +1306,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 }
 
 .portal-hero-visual::before {
-  background: linear-gradient(115deg, transparent 0 34%, rgba(255,253,247,.22) 34% 35%, transparent 35% 100%);
+  background: transparent;
   content: "";
   inset: 0;
   position: absolute;
@@ -1372,7 +1372,7 @@ button.portal-button { cursor: pointer; font: inherit; }
   margin-top: clamp(26px, 4vw, 42px);
 }
 .destination-preview-art {
-  background: linear-gradient(145deg, rgba(155,171,139,.24), rgba(233,220,200,.68));
+  background: transparent;
   border: 1px solid rgba(102,114,79,.16);
   border-radius: 28px;
   display: grid;
@@ -1388,7 +1388,7 @@ button.portal-button { cursor: pointer; font: inherit; }
   padding: 11px 14px;
 }
 
-.prestador-media::after { background: linear-gradient(180deg, transparent 50%, rgba(47,52,46,.52)); }
+.prestador-media::after { background: transparent; }
 .prestador-card-premium:hover,
 .activity-subgroup-card:hover,
 .activity-subgroup-card.is-active { border-color: rgba(102,114,79,.34); box-shadow: 0 28px 76px rgba(74,63,48,.14); }
@@ -1402,13 +1402,13 @@ button.portal-button { cursor: pointer; font: inherit; }
 .alojamientos-filters select,
 .filter-control { background: rgba(255,253,247,.68); border-color: rgba(102,114,79,.18); color: var(--portal-graphite); }
 .filter-control label { color: var(--portal-olive); }
-.alojamientos-filters select { background-image: linear-gradient(45deg, transparent 50%, var(--portal-olive) 50%), linear-gradient(135deg, var(--portal-olive) 50%, transparent 50%); }
+.alojamientos-filters select { background-image: transparent, transparent; }
 .amenity-pill input:checked + span { background: rgba(155,171,139,.20); border-color: rgba(102,114,79,.38); color: var(--portal-graphite); box-shadow: none; }
 
 .prestador-banner-placeholder,
 .gallery-hero-placeholder,
 .promo-highlight {
-  background: linear-gradient(135deg, rgba(155,171,139,.22), rgba(233,220,200,.55));
+  background: transparent;
   color: var(--portal-olive);
 }
 .prestador-whatsapp,
@@ -1496,7 +1496,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 }
 
 .amenity-pill input:checked + span {
-  background: linear-gradient(135deg, rgba(34, 197, 94, .26), rgba(14, 165, 233, .14));
+  background: transparent;
   border-color: rgba(134, 239, 172, .76);
   color: #ecfdf5;
 }
@@ -1778,7 +1778,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 
   .floating-whatsapp {
     align-items: center;
-    background: linear-gradient(135deg, #22c55e, #86efac);
+    background: transparent;
     border: 1px solid rgba(255, 255, 255, .38);
     border-radius: 18px;
     bottom: calc(10px + env(safe-area-inset-bottom));
@@ -1821,9 +1821,9 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-body {
   background:
-    radial-gradient(circle at 10% -10%, rgba(159, 134, 91, .18), transparent 34rem),
-    radial-gradient(circle at 92% 8%, rgba(112, 135, 102, .20), transparent 30rem),
-    linear-gradient(180deg, #f7efe2 0%, #fbf7ee 52%, #f1eadc 100%);
+    transparent,
+    transparent,
+    transparent;
   color: var(--portal-ink);
   font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 16px;
@@ -1884,7 +1884,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 .gallery-lightbox-close,
 .menu-lightbox__close {
   align-items: center;
-  background: linear-gradient(135deg, #465c43, #78906f);
+  background: transparent;
   border: 1px solid rgba(16, 32, 24, .12);
   border-radius: 999px;
   box-shadow: 0 14px 28px rgba(64, 85, 63, .20);
@@ -1943,7 +1943,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-hero-visual,
 .destination-preview-art {
-  background: linear-gradient(145deg, rgba(112, 135, 102, .24), rgba(255, 250, 241, .82)), url('/static/img/no-image.jpg') center/cover;
+  background: transparent, url('/static/img/no-image.jpg') center/cover;
   border: 1px solid rgba(64, 85, 63, .18);
   border-radius: 30px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 24px 50px rgba(73,58,36,.13);
@@ -1962,7 +1962,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-grid { gap: 24px; }
 .portal-card { border-radius: 28px; padding: clamp(24px, 3vw, 34px); }
-.portal-card::before { background: linear-gradient(90deg, rgba(154,111,67,.75), rgba(112,135,102,.55), transparent); }
+.portal-card::before { background: transparent; }
 .portal-card p, .portal-empty p, .prestador-summary, .prestador-card-meta, .prestador-location { color: var(--portal-muted); font-size: .98rem; }
 .portal-card-icon { color: var(--portal-olive); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; }
 .destination-preview { align-items: center; display: grid; gap: 24px; grid-template-columns: 1fr .75fr; margin-top: 26px; }
@@ -1989,18 +1989,18 @@ button.portal-button { cursor: pointer; font: inherit; }
 .prestadores-grid-premium { gap: 24px; }
 .prestador-card-premium { background: #fffaf1; border-color: rgba(64,85,63,.16); box-shadow: var(--portal-shadow); }
 .prestador-card-premium:hover { border-color: rgba(64,85,63,.30); box-shadow: 0 28px 70px rgba(55,44,28,.16); }
-.prestador-media::after { background: linear-gradient(180deg, rgba(16,32,24,0) 38%, rgba(16,32,24,.62)); }
+.prestador-media::after { background: transparent; }
 .prestador-type-badge { background: rgba(255,250,241,.92); color: var(--portal-ink); }
 .prestador-price-badge { color: var(--portal-ink-strong); font-size: .96rem; padding: 9px 13px; }
 .prestador-card-premium h2 { color: var(--portal-ink-strong); font-size: 1.28rem; line-height: 1.18; }
 .prestador-chip-row span, .alojamiento-key-facts span { background: rgba(93,112,86,.10); border-color: rgba(64,85,63,.18); color: var(--portal-ink); }
 
-.tourism-gallery-main, .tourism-gallery-side img, .gallery-empty-state, .gallery-hero-placeholder { background: linear-gradient(135deg, rgba(112,135,102,.22), rgba(255,250,241,.86)); border-color: var(--portal-line); color: var(--portal-ink); }
+.tourism-gallery-main, .tourism-gallery-side img, .gallery-empty-state, .gallery-hero-placeholder { background: transparent; border-color: var(--portal-line); color: var(--portal-ink); }
 .tourism-gallery-main figcaption, .gallery-see-all { background: rgba(255,250,241,.92); color: var(--portal-ink); }
 .quick-facts-grid div, .tourism-heading-meta span, .prestador-contact-lines span, .feature-chip { border-color: rgba(64,85,63,.18); color: var(--portal-muted); }
 .floating-whatsapp { background: #2f7d46; box-shadow: 0 18px 40px rgba(47,125,70,.26); color: #fff; min-height: 48px; }
 
-.destination-hero { background: linear-gradient(135deg, rgba(255,250,241,.96), rgba(112,135,102,.16)); text-align: center; }
+.destination-hero { background: transparent; text-align: center; }
 .destination-hero .portal-subtitle { margin-left: auto; }
 .destination-categories { display: grid; gap: 16px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 24px; }
 .destination-categories article { background: rgba(255,250,241,.88); border: 1px solid var(--portal-line); border-radius: 24px; box-shadow: 0 14px 36px rgba(55,44,28,.08); padding: 20px; }
@@ -2010,7 +2010,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 .destination-masonry, .video-card-grid { display: grid; gap: 18px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .destination-photo { border-radius: 24px; color: #fff; min-height: 240px; overflow: hidden; position: relative; text-decoration: none; }
 .destination-photo img { display: block; height: 100%; object-fit: cover; width: 100%; }
-.destination-photo span { background: linear-gradient(180deg, transparent, rgba(16,32,24,.72)); bottom: 0; font-weight: 950; left: 0; padding: 42px 16px 16px; position: absolute; right: 0; }
+.destination-photo span { background: transparent; bottom: 0; font-weight: 950; left: 0; padding: 42px 16px 16px; position: absolute; right: 0; }
 .destination-photo.is-featured { grid-column: span 2; grid-row: span 2; }
 .destination-cta { text-align: center; }
 .destination-cta .prestador-actions { justify-content: center; }
@@ -2065,9 +2065,9 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-body {
   background:
-    radial-gradient(circle at 9% -8%, rgba(183, 134, 91, .18), transparent 30rem),
-    radial-gradient(circle at 88% 4%, rgba(191, 214, 208, .48), transparent 28rem),
-    linear-gradient(180deg, var(--portal-ivory) 0%, var(--portal-warm-white) 48%, var(--portal-sand) 100%);
+    transparent,
+    transparent,
+    transparent;
   color: var(--portal-graphite);
   font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -2134,8 +2134,8 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-hero {
   background:
-    linear-gradient(135deg, rgba(255, 252, 245, .96), rgba(237, 228, 214, .72)),
-    radial-gradient(circle at 84% 18%, rgba(191, 214, 208, .44), transparent 18rem);
+    transparent,
+    transparent;
   border-color: var(--portal-line);
 }
 .portal-subtitle,
@@ -2156,9 +2156,9 @@ button.portal-button { cursor: pointer; font: inherit; }
 .gallery-hero-placeholder,
 .gallery-empty-state {
   background:
-    radial-gradient(circle at 22% 20%, rgba(191, 214, 208, .72), transparent 8rem),
-    radial-gradient(circle at 82% 18%, rgba(215, 194, 155, .60), transparent 9rem),
-    linear-gradient(145deg, rgba(168, 178, 154, .72), rgba(237, 228, 214, .96) 55%, rgba(183, 134, 91, .38));
+    transparent,
+    transparent,
+    transparent;
   color: var(--portal-forest);
 }
 .prestador-banner-abstract {
@@ -2212,10 +2212,10 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .destination-hero {
   background:
-    radial-gradient(circle at 18% 20%, rgba(191, 214, 208, .42), transparent 18rem),
-    linear-gradient(135deg, rgba(255, 252, 245, .98), rgba(168, 178, 154, .20));
+    transparent,
+    transparent;
 }
-.destination-photo span { background: linear-gradient(180deg, transparent, rgba(16, 37, 29, .74)); }
+.destination-photo span { background: transparent; }
 .floating-whatsapp { background: var(--portal-monte); color: var(--portal-warm-white); }
 .menu-photo-grid img,
 .gallery-lightbox-slide img { background: var(--portal-ivory); }
@@ -2247,9 +2247,9 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-body {
   background:
-    radial-gradient(circle at 10% -8%, rgba(174, 184, 160, .26), transparent 30rem),
-    radial-gradient(circle at 92% 4%, rgba(185, 130, 90, .12), transparent 24rem),
-    linear-gradient(180deg, var(--portal-ivory) 0%, var(--portal-warm-white) 54%, var(--portal-sand) 100%);
+    transparent,
+    transparent,
+    transparent;
   color: var(--portal-graphite);
 }
 
@@ -2320,8 +2320,8 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .portal-hero {
   background:
-    radial-gradient(circle at 88% 12%, rgba(174, 184, 160, .30), transparent 18rem),
-    linear-gradient(135deg, rgba(255, 253, 247, .96), rgba(234, 226, 211, .70));
+    transparent,
+    transparent;
 }
 
 .portal-hero h1,
@@ -2367,8 +2367,8 @@ button.portal-button { cursor: pointer; font: inherit; }
 .tourism-gallery-main,
 .tourism-gallery-side img {
   background:
-    radial-gradient(circle at 24% 18%, rgba(174, 184, 160, .58), transparent 9rem),
-    linear-gradient(145deg, rgba(246, 241, 232, .96), rgba(234, 226, 211, .88) 50%, rgba(111, 123, 82, .22));
+    transparent,
+    transparent;
   border-color: var(--portal-soft-line);
   color: var(--portal-graphite);
 }
@@ -2414,14 +2414,14 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .filter-control label { color: var(--portal-monte); }
 .amenity-pill input:checked + span { background: rgba(111, 123, 82, .18); border-color: rgba(78, 92, 69, .48); color: var(--portal-graphite); }
-.alojamientos-filters select { background-image: linear-gradient(45deg, transparent 50%, var(--portal-monte) 50%), linear-gradient(135deg, var(--portal-monte) 50%, transparent 50%); }
+.alojamientos-filters select { background-image: transparent, transparent; }
 
 .portal-card::before { display: none; }
 .prestador-card-premium:hover,
 .activity-subgroup-card:hover,
 .activity-subgroup-card.is-active { border-color: rgba(78, 92, 69, .34); box-shadow: 0 30px 78px rgba(47, 53, 45, .13); }
 .prestador-media::after,
-.destination-photo span { background: linear-gradient(180deg, transparent 44%, rgba(47, 53, 45, .68)); }
+.destination-photo span { background: transparent; }
 .floating-whatsapp { background: var(--portal-monte); color: var(--portal-warm-white); }
 
 @media (max-width: 760px) {
@@ -2507,13 +2507,13 @@ button.portal-button { cursor: pointer; font: inherit; }
 
 .destination-cta {
   background:
-    radial-gradient(circle at 12% 10%, rgba(174, 184, 160, .26), transparent 16rem),
-    linear-gradient(135deg, rgba(255, 253, 247, .94), rgba(234, 226, 211, .74));
+    transparent,
+    transparent;
 }
 
 .portal-empty {
   background:
-    radial-gradient(circle at 50% 0%, rgba(174, 184, 160, .20), transparent 18rem),
+    transparent,
     rgba(255, 253, 247, .88);
 }
 
@@ -2885,4 +2885,420 @@ button.portal-button { cursor: pointer; font: inherit; }
     background: var(--portal-forest);
     color: var(--portal-warm-white);
   }
+}
+
+/* Corrección puntual UI Cabalango: paleta tierra, botones seguros y superficies planas */
+:root {
+  --color-bg: #F6F1E8;
+  --color-surface: #FBF8F2;
+  --color-surface-alt: #EFE6D8;
+  --color-text: #4E3A2D;
+  --color-text-soft: #6E6257;
+  --color-text-deep: #263126;
+  --color-border: #D9CEBF;
+  --color-border-strong: #C7B9A6;
+  --color-olive: #7A845C;
+  --color-olive-dark: #596344;
+  --color-earth: #A87449;
+  --color-earth-dark: #7C573A;
+  --color-sage: #AEB8A0;
+  --color-white-warm: #FFF9EF;
+
+  --portal-ivory: var(--color-bg);
+  --portal-warm-white: var(--color-surface);
+  --portal-sand: var(--color-surface-alt);
+  --portal-graphite: var(--color-text);
+  --portal-forest: var(--color-text-deep);
+  --portal-muted: var(--color-text-soft);
+  --portal-olive: var(--color-olive);
+  --portal-monte: var(--color-olive-dark);
+  --portal-clay: var(--color-earth);
+  --portal-soft-clay: #E8D8C5;
+  --portal-sage: var(--color-sage);
+  --portal-line: var(--color-border);
+  --portal-soft-line: var(--color-border-strong);
+  --portal-card: var(--color-surface);
+  --portal-card-alt: var(--color-surface-alt);
+  --background-color: var(--color-bg);
+  --card-background: var(--color-surface);
+  --text-color: var(--color-text);
+  --muted-text-color: var(--color-text-soft);
+  --accent-color: var(--color-earth);
+  --button-background: var(--color-olive-dark);
+  --button-text: var(--color-white-warm);
+  --border-color: var(--color-border);
+  --shadow-color: rgba(78, 58, 45, .10);
+  --portal-shadow: 0 16px 42px rgba(78, 58, 45, .08);
+  --portal-shadow-hover: 0 20px 52px rgba(78, 58, 45, .12);
+}
+
+.portal-body {
+  background: var(--color-bg) !important;
+  color: var(--color-text) !important;
+  font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.portal-shell { padding-top: clamp(18px, 3vw, 34px); }
+
+.portal-body a { color: var(--color-olive-dark); }
+.portal-body a:visited { color: var(--color-olive-dark); }
+
+.portal-topnav {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+  background: rgba(251, 248, 242, .94) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(78, 58, 45, .07) !important;
+  gap: 4px;
+  padding: 7px;
+}
+
+.portal-topnav a,
+.portal-topnav a:visited,
+.portal-topnav a span,
+.portal-topnav a strong,
+.nav-link,
+.nav-link:visited {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: var(--color-text-soft) !important;
+  min-height: 40px;
+  padding: 9px 14px;
+}
+
+.portal-topnav a:hover,
+.portal-topnav a:focus,
+.portal-topnav a:active {
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-deep) !important;
+  transform: none;
+}
+
+.portal-topnav a.is-active,
+.portal-topnav a.is-active:visited,
+.portal-topnav a.is-active:hover,
+.portal-topnav a.is-active:focus,
+.portal-topnav a.is-active:active,
+.portal-topnav a.is-active * {
+  background: var(--color-olive-dark) !important;
+  border-color: var(--color-olive-dark) !important;
+  color: var(--color-white-warm) !important;
+}
+
+.portal-button,
+.btn,
+.btn-primary,
+.cta,
+.card-cta,
+a.button,
+button.portal-button,
+.gallery-see-all,
+.gallery-lightbox-close,
+.menu-lightbox__close,
+.floating-whatsapp {
+  align-items: center;
+  background: var(--color-olive-dark) !important;
+  border: 1px solid var(--color-olive-dark) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 10px 22px rgba(89, 99, 68, .18) !important;
+  color: var(--color-white-warm) !important;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  letter-spacing: -.01em;
+  min-height: 44px;
+  padding: 12px 22px;
+  text-decoration: none;
+}
+
+.portal-button:visited,
+.btn:visited,
+.btn-primary:visited,
+.cta:visited,
+.card-cta:visited,
+a.button:visited,
+.gallery-see-all:visited,
+.gallery-lightbox-close:visited,
+.floating-whatsapp:visited,
+.portal-button *,
+.btn *,
+.btn-primary *,
+.cta *,
+.card-cta *,
+a.button *,
+.gallery-see-all *,
+.gallery-lightbox-close *,
+.floating-whatsapp * {
+  color: var(--color-white-warm) !important;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.portal-button:hover,
+.portal-button:focus,
+.portal-button:active,
+.btn:hover,
+.btn:focus,
+.btn:active,
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.cta:hover,
+.cta:focus,
+.cta:active,
+.card-cta:hover,
+.card-cta:focus,
+.card-cta:active,
+a.button:hover,
+a.button:focus,
+a.button:active,
+.gallery-see-all:hover,
+.gallery-see-all:focus,
+.gallery-see-all:active,
+.gallery-lightbox-close:hover,
+.gallery-lightbox-close:focus,
+.gallery-lightbox-close:active,
+.floating-whatsapp:hover,
+.floating-whatsapp:focus,
+.floating-whatsapp:active {
+  background: var(--color-text-deep) !important;
+  border-color: var(--color-text-deep) !important;
+  color: var(--color-white-warm) !important;
+  transform: translateY(-1px);
+}
+
+.portal-button-secondary,
+.portal-button-ghost,
+.btn-secondary,
+button[type="reset"] {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border-strong) !important;
+  box-shadow: none !important;
+  color: var(--color-text) !important;
+  font-weight: 650;
+  min-height: 42px;
+  padding: 11px 20px;
+}
+
+.portal-button-secondary:visited,
+.portal-button-ghost:visited,
+.btn-secondary:visited,
+.portal-button-secondary *,
+.portal-button-ghost *,
+.btn-secondary * { color: var(--color-text) !important; }
+
+.portal-button-secondary:hover,
+.portal-button-secondary:focus,
+.portal-button-secondary:active,
+.portal-button-ghost:hover,
+.portal-button-ghost:focus,
+.portal-button-ghost:active,
+.btn-secondary:hover,
+.btn-secondary:focus,
+.btn-secondary:active {
+  background: var(--color-surface-alt) !important;
+  border-color: var(--color-olive) !important;
+  color: var(--color-text-deep) !important;
+}
+
+.portal-button:disabled,
+.portal-button[aria-disabled="true"],
+button:disabled {
+  background: var(--color-border) !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text-soft) !important;
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+.portal-hero,
+.portal-card,
+.prestador-card,
+.prestador-card-premium,
+.portal-empty,
+.tourism-heading-card,
+.prestador-profile-hero,
+.alojamientos-filter-panel,
+.activity-subgroup-card,
+.activity-subgroup-reset,
+.destination-categories article,
+.destination-section,
+.destination-cta,
+.gallery-lightbox-panel,
+.legacy-compatible-card,
+.promo-highlight,
+.reviews-grid article,
+.rating-pill,
+.filter-control,
+.menu-photo-grid a,
+.menu-photo-grid .menu-photo-button {
+  background: var(--color-surface) !important;
+  background-image: none !important;
+  border-color: var(--color-border) !important;
+  color: var(--color-text) !important;
+}
+
+.portal-hero,
+.destination-section,
+.destination-cta,
+.alojamientos-filter-panel { border-radius: clamp(26px, 4vw, 34px); }
+.portal-card,
+.prestador-card-premium,
+.portal-empty { border-radius: 28px; }
+.portal-card { padding: clamp(24px, 3vw, 34px); }
+
+.portal-hero h1,
+.tourism-heading-card h1,
+.destination-section h2,
+.destination-cta h2,
+.portal-card h2,
+.prestador-card h2,
+.portal-empty h2,
+.filter-heading h2 { color: var(--color-text) !important; }
+.portal-subtitle,
+.portal-card p,
+.portal-empty p,
+.filter-heading p:not(.portal-kicker),
+.prestador-summary,
+.destination-categories p,
+.destination-section p,
+.destination-cta p,
+.reviews-grid p,
+.reviews-empty { color: var(--color-text-soft) !important; }
+.portal-kicker,
+.portal-card-label,
+.prestador-theme,
+.destination-categories span,
+.portal-card-icon { color: var(--color-earth) !important; }
+
+.portal-hero-tags a,
+.portal-hero-tags a:visited,
+.prestador-chip-row span,
+.alojamiento-key-facts span,
+.tourism-heading-meta span,
+.quick-facts-grid div,
+.prestador-contact-lines span,
+.feature-chip,
+.amenity-pill span,
+.prestador-type-badge,
+.prestador-price-badge,
+.destination-preview-art span,
+.portal-hero-visual span,
+.chip,
+.pill {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 999px;
+  box-shadow: none !important;
+  color: var(--color-text-soft) !important;
+  font-weight: 600;
+}
+
+.portal-hero-tags a:first-child,
+.portal-hero-tags a:first-child:visited,
+.portal-hero-tags a:first-child *,
+.amenity-pill input:checked + span,
+.activity-subgroup-card.is-active {
+  background: #E6EBDD !important;
+  border-color: var(--color-sage) !important;
+  color: var(--color-text) !important;
+}
+
+.portal-hero-visual,
+.destination-preview-art,
+.prestador-banner-abstract,
+.gallery-hero-placeholder,
+.gallery-empty-state,
+.tourism-gallery-main,
+.tourism-gallery-side img,
+.destination-hero {
+  background: var(--color-surface-alt) !important;
+  background-image: none !important;
+  border: 1px solid var(--color-border) !important;
+  color: var(--color-text-soft) !important;
+}
+
+.prestador-banner-placeholder,
+.gallery-hero-placeholder strong,
+.gallery-empty-state {
+  color: var(--color-text-soft) !important;
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.alojamientos-filters select,
+.review-form input,
+.review-form select,
+.review-form textarea {
+  appearance: none;
+  background: var(--color-surface) !important;
+  background-image: none !important;
+  border: 1px solid var(--color-border-strong) !important;
+  border-radius: 16px;
+  color: var(--color-text) !important;
+  min-height: 46px;
+}
+.filter-control label { color: var(--color-text) !important; }
+.filter-actions { align-items: center; }
+
+.destination-preview { grid-template-columns: minmax(0, 1.25fr) minmax(260px, .75fr); }
+.destination-preview-art { min-height: 210px; place-content: center; }
+.destination-cta { text-align: center; }
+.destination-cta .prestador-actions { justify-content: center; }
+
+.gallery-lightbox-backdrop,
+.menu-lightbox { background: rgba(38, 49, 38, .76) !important; }
+.gallery-lightbox-nav,
+.gallery-thumb { color: var(--color-text) !important; }
+
+@media (max-width: 760px) {
+  .portal-shell { width: min(100% - 24px, 1120px); padding-top: 12px; padding-bottom: 96px; }
+  .portal-mobile-header {
+    background: rgba(251, 248, 242, .96) !important;
+    border-color: var(--color-border) !important;
+    border-radius: 20px;
+    box-shadow: 0 10px 26px rgba(78, 58, 45, .08);
+    top: 8px;
+  }
+  .portal-mobile-brand { color: var(--color-text) !important; }
+  .portal-mobile-menu span { background: var(--color-text) !important; }
+  .portal-topnav {
+    display: none;
+    position: sticky;
+    top: 68px;
+    width: 100%;
+    border-radius: 22px;
+    grid-template-columns: 1fr 1fr;
+    margin-bottom: 18px;
+    padding: 8px;
+  }
+  .portal-nav-toggle:checked + .portal-mobile-header + .portal-topnav { display: grid; }
+  .portal-topnav a { justify-content: center; min-height: 42px; padding: 9px 10px; text-align: center; }
+  .portal-hero { padding: 30px 20px; }
+  .portal-hero h1 { font-size: clamp(2.45rem, 16vw, 4rem); }
+  .portal-grid,
+  .prestador-detail-grid,
+  .prestadores-grid-premium,
+  .activity-subgroups,
+  .destination-categories,
+  .destination-masonry,
+  .video-card-grid,
+  .destination-preview { grid-template-columns: 1fr !important; }
+  .portal-hero-tags,
+  .prestador-actions,
+  .filter-actions { align-items: stretch; flex-direction: column; }
+  .portal-hero-tags a,
+  .prestador-actions .portal-button,
+  .filter-actions .portal-button { width: 100%; }
+  .floating-whatsapp { left: 16px; right: 16px; text-align: center; }
 }
