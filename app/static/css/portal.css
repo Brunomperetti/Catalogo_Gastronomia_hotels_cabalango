@@ -3559,3 +3559,36 @@ button:disabled {
     width: 100%;
   }
 }
+
+/* Home destination preview: clean editorial image frame */
+.destination-preview .destination-preview-art {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, #fbf8f2 0%, #f2eadc 100%) !important;
+  border: 1px solid rgba(101, 88, 68, .14) !important;
+  border-radius: 28px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .62), 0 18px 42px rgba(78, 58, 45, .10);
+  display: block;
+  min-height: 220px;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+
+.destination-preview .destination-preview-art img {
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.destination-preview .destination-preview-art span {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .destination-preview .destination-preview-art {
+    aspect-ratio: 16 / 10;
+    min-height: 180px;
+  }
+}
