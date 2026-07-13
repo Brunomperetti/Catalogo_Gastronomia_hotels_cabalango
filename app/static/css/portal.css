@@ -2434,3 +2434,114 @@ button.portal-button { cursor: pointer; font: inherit; }
   .portal-hero { padding: 28px 22px; }
   .portal-hero-tags a, .portal-button { width: 100%; }
 }
+
+/* Ajuste director creativo: sistema boutique sobrio, sin paleta multicolor */
+.portal-body::selection {
+  background: rgba(185, 130, 90, .24);
+  color: var(--portal-graphite);
+}
+
+.portal-hero,
+.destination-preview,
+.destination-section,
+.destination-cta,
+.alojamientos-filter-panel,
+.portal-empty {
+  backdrop-filter: blur(18px);
+}
+
+.portal-topnav a,
+.portal-hero-tags a,
+.portal-button,
+.prestador-chip-row span,
+.alojamiento-key-facts span,
+.amenity-pill span,
+.activity-subgroup-card {
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, color .18s ease, transform .18s ease;
+}
+
+.portal-card,
+.prestador-card-premium,
+.activity-subgroup-card,
+.destination-categories article {
+  position: relative;
+}
+
+.portal-card::after,
+.prestador-card-premium::before,
+.activity-subgroup-card::before,
+.destination-categories article::before {
+  background: var(--portal-clay);
+  border-radius: 999px;
+  content: "";
+  height: 5px;
+  left: 24px;
+  opacity: .55;
+  position: absolute;
+  top: 22px;
+  width: 34px;
+}
+
+.portal-card h2,
+.prestador-card-premium h2,
+.activity-subgroup-card strong,
+.destination-categories span {
+  margin-top: 10px;
+}
+
+.portal-card:hover,
+.destination-categories article:hover {
+  border-color: rgba(111, 123, 82, .28);
+  box-shadow: 0 30px 78px rgba(47, 53, 45, .12);
+  transform: translateY(-2px);
+}
+
+.portal-button-secondary:hover,
+.portal-button-ghost:hover,
+.portal-hero-tags a:hover,
+.gallery-see-all:hover {
+  background: rgba(174, 184, 160, .22);
+  border-color: rgba(78, 92, 69, .30);
+  color: var(--portal-graphite);
+}
+
+.destination-cta {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(174, 184, 160, .26), transparent 16rem),
+    linear-gradient(135deg, rgba(255, 253, 247, .94), rgba(234, 226, 211, .74));
+}
+
+.portal-empty {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(174, 184, 160, .20), transparent 18rem),
+    rgba(255, 253, 247, .88);
+}
+
+@media (max-width: 760px) {
+  .portal-topnav {
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .portal-topnav a {
+    justify-content: center;
+    min-height: 46px;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .portal-card::after,
+  .prestador-card-premium::before,
+  .activity-subgroup-card::before,
+  .destination-categories article::before {
+    left: 20px;
+    top: 18px;
+  }
+
+  .portal-card,
+  .destination-section,
+  .destination-cta,
+  .portal-empty {
+    border-radius: 24px;
+  }
+}
