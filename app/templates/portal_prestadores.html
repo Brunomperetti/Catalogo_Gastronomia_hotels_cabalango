@@ -15,7 +15,7 @@
         <input class="portal-nav-toggle" id="portal-nav-toggle" type="checkbox" aria-hidden="true">
         <header class="portal-mobile-header">
             <a class="portal-mobile-brand" href="/">Cabalango</a>
-            <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú"><span></span><span></span><span></span></label>
+            <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú" tabindex="0"><span></span><span></span><span></span></label>
         </header>
         <nav class="portal-topnav" aria-label="Navegación pública">
             <a href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a><a href="/descubri-cabalango">Descubrí Cabalango</a>
@@ -121,7 +121,7 @@
             {% endfor %}
         </section>
         {% else %}
-        <section class="portal-empty"><h2>{% if section == 'alojamientos' %}No encontramos alojamientos con esos filtros{% else %}Próximamente{% endif %}</h2><p>{% if section == 'alojamientos' %}Probá ajustar la búsqueda o limpiar los filtros para ver más opciones.{% else %}Todavía no hay prestadores, lugares o propuestas cargadas en esta sección.{% endif %}</p><a class="portal-button" href="{% if section == 'alojamientos' %}/alojamientos{% else %}/{% endif %}">{% if section == 'alojamientos' %}Limpiar filtros{% else %}Volver al inicio{% endif %}</a></section>
+        <section class="portal-empty"><h2>{% if section == 'alojamientos' %}No encontramos alojamientos con esos filtros{% else %}Estamos preparando esta sección{% endif %}</h2><p>{% if section == 'alojamientos' %}Probá ajustar la búsqueda o limpiar los filtros para ver más opciones.{% else %}Muy pronto vas a encontrar propuestas locales acá. Esta sección está lista para recibir prestadores de Cabalango.{% endif %}</p><div class="empty-actions"><a class="portal-button" href="{% if section == 'alojamientos' %}/alojamientos{% else %}/{% endif %}">{% if section == 'alojamientos' %}Limpiar filtros{% else %}Volver al inicio{% endif %}</a>{% if section != 'alojamientos' %}<a class="portal-button portal-button-secondary" href="/descubri-cabalango">Ver fotos y videos</a>{% endif %}</div></section>
         {% endif %}
     </main>
 </body>
