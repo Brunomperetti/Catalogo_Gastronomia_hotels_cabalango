@@ -33,12 +33,13 @@ from app import models
 
 app = FastAPI()
 APP_BUILD = "2026-07-01-descubri-cabalango-v1"
-STORAGE_DIR = Path(os.getenv("STORAGE_DIR", "app/storage")).resolve()
+MEDIA_ROOT_ENV = os.getenv("MEDIA_ROOT")
+MEDIA_URL_PREFIX = (os.getenv("MEDIA_URL", "/media").strip() or "/media").rstrip("/") or "/media"
+STORAGE_DIR = Path(MEDIA_ROOT_ENV or os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
-MEDIA_URL_PREFIX = "/media"
 PRODUCTOS_MEDIA_TYPE = "productos"
-ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif"}
-ALLOWED_MENU_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
+ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
+ALLOWED_MENU_IMAGE_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS
 PRICE_POLICY_VALUES = {"mostrar", "consultar", "automatico"}
 STOCK_POLICY_VALUES = {"mostrar", "ocultar", "automatico"}
 THEME_VALUES = {"default", "autopartes", "comida", "gastronomia", "alojamiento", "servicios", "actividades", "farmacia", "ferreteria", "petshop"}
@@ -108,7 +109,9 @@ def on_startup():
 # Static & Templates
 # ---------------------------------------------------
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
-app.mount(MEDIA_URL_PREFIX, StaticFiles(directory=str(STORAGE_DIR)), name="media")
+if STORAGE_DIR.exists() or MEDIA_ROOT_ENV:
+    STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+    app.mount(MEDIA_URL_PREFIX, StaticFiles(directory=str(STORAGE_DIR)), name="media")
 templates = Jinja2Templates(directory="app/templates")
 _startup_db_maintenance_started = False
 _startup_db_maintenance_lock = threading.Lock()
@@ -480,10 +483,10 @@ def normalize_destino_tipo(value: str) -> str:
     return "video" if clean_text(value, default="foto").lower() == "video" else "foto"
 
 def get_destino_media_dir() -> Path:
-    return STORAGE_DIR / "destino" / "cabalango"
+    return STORAGE_DIR / "destino" / "fotos"
 
 def build_destino_media_url(filename: str) -> str:
-    return f"{MEDIA_URL_PREFIX}/destino/cabalango/{filename}"
+    return f"{MEDIA_URL_PREFIX}/destino/fotos/{filename}"
 
 async def save_destino_image(upload: UploadFile) -> str:
     target_dir = get_destino_media_dir()
@@ -1124,7 +1127,10 @@ def get_empresa_media_dir(slug: str, media_type: str) -> Path:
 
 
 def build_media_url(slug: str, media_type: str, filename: str) -> str:
-    return f"{MEDIA_URL_PREFIX}/empresas/{slug}/{media_type}/{filename}"
+    safe_slug = re.sub(r"[^a-z0-9\-]", "-", (slug or "").strip().lower())
+    safe_slug = re.sub(r"-+", "-", safe_slug).strip("-")
+    safe_filename = Path(filename).name
+    return f"{MEDIA_URL_PREFIX}/empresas/{safe_slug}/{media_type}/{safe_filename}"
 
 
 def get_productos_media_dir(slug: str) -> Path:
@@ -1230,9 +1236,10 @@ def _copy_zip_prefix(zip_ref: zipfile.ZipFile, prefix: str, target_dir: Path):
 def safe_unique_filename(upload: UploadFile, prefix: str) -> str:
     ext = Path(upload.filename or "").suffix.lower()
     ext = re.sub(r"[^a-z0-9.]", "", ext)
-    if ext not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
         ext = ".jpg"
-    return f"{prefix}-{uuid.uuid4().hex}{ext}"
+    safe_prefix = re.sub(r"[^a-zA-Z0-9_-]", "-", (prefix or "archivo")).strip("-_") or "archivo"
+    return f"{safe_prefix}-{uuid.uuid4().hex}{ext}"
 
 
 def has_uploaded_file(upload: UploadFile | None) -> bool:
@@ -1240,6 +1247,9 @@ def has_uploaded_file(upload: UploadFile | None) -> bool:
 
 
 async def replace_empresa_media(empresa: models.Empresa, media_type: str, upload: UploadFile) -> str:
+    ext = Path(upload.filename or "").suffix.lower()
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        return getattr(empresa, f"{media_type}_url", "") or ""
     target_dir = get_empresa_media_dir(empresa.slug, media_type)
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1291,7 +1301,7 @@ async def append_empresa_gallery_images(empresa: models.Empresa, uploads: list[U
         added += 1
     empresa.galeria_urls = json.dumps(current[:7], ensure_ascii=False)
     if skipped and not added:
-        return current, "Formato inválido. Usá PNG, JPG, WEBP o GIF."
+        return current, "Formato inválido. Usá JPG, JPEG, PNG o WEBP."
     if skipped:
         return current, f"Se agregaron {added} fotos. Algunas se omitieron por formato inválido."
     return current, f"Se agregaron {added} fotos a la galería." if added else "No se seleccionaron fotos nuevas."
@@ -1836,7 +1846,7 @@ async def actualizar_producto(
     producto.activo = activo
 
     # actualizar imagen individual
-    if imagen:
+    if has_uploaded_file(imagen) and Path(imagen.filename).suffix.lower() in ALLOWED_IMAGE_EXTENSIONS:
         empresa = producto.empresa
         img_path = get_productos_media_dir(empresa.slug)
         img_path.mkdir(parents=True, exist_ok=True)
@@ -1850,8 +1860,6 @@ async def actualizar_producto(
 
         # guardar nueva imagen
         ext = Path(imagen.filename).suffix.lower()
-        if ext not in ALLOWED_IMAGE_EXTENSIONS:
-            ext = ".jpg"
         filename = f"{codigo_safe}{ext}"
 
         with open(img_path / filename, "wb") as f:
