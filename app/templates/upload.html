@@ -77,7 +77,7 @@
             <a id="tab-empresa" class="admin-tab {% if active_tab == 'prestadores' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'prestadores' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=prestadores" aria-controls="panel-prestadores" data-tab-target="prestadores">Prestadores / lugares</a>
             <a id="tab-ficha" class="admin-tab {% if active_tab == 'ficha' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'ficha' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=ficha" aria-controls="panel-ficha" data-tab-target="ficha">Ficha</a>
             <a id="tab-fotos" class="admin-tab {% if active_tab == 'fotos' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'fotos' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=fotos" aria-controls="panel-fotos" data-tab-target="fotos">Fotos y video</a>
-            <a id="tab-cabalango" class="admin-tab {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'cabalango' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=cabalango" aria-controls="panel-cabalango" data-tab-target="cabalango">Descubrí Cabalango</a>
+            <span class="admin-tabs-divider" aria-hidden="true"></span><a id="tab-cabalango" class="admin-tab admin-tab--global {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'cabalango' else 'false' }}" href="/admin?tab=cabalango" aria-controls="panel-cabalango" data-tab-target="cabalango">Descubrí Cabalango</a>
             <a id="tab-contacto" class="admin-tab {% if active_tab == 'contacto' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'contacto' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=contacto" aria-controls="panel-contacto" data-tab-target="contacto">Contacto / ubicación</a>
             <a id="tab-rubro" class="admin-tab {% if active_tab == 'rubro' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'rubro' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=rubro" aria-controls="panel-rubro" data-tab-target="rubro">Datos por rubro</a>
             <a id="tab-leads" class="admin-tab {% if active_tab == 'leads' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'leads' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=leads" aria-controls="panel-leads" data-tab-target="leads">Consultas / leads</a>
@@ -170,8 +170,34 @@
 
 
         <section id="panel-cabalango" class="admin-tab-panel {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-cabalango" data-tab-panel="cabalango" {% if active_tab != 'cabalango' %}hidden{% endif %}>
+            <section class="admin-global-banner">
+                <div>
+                    <span class="global-eyebrow">Contenido general del destino</span>
+                    <h2>Descubrí Cabalango</h2>
+                    <p>Fotos, videos e información turística de Cabalango. No pertenece a un prestador específico y se publica en la guía pública del destino.</p>
+                </div>
+                <a class="btn-secondary-custom" href="/descubri-cabalango" target="_blank" rel="noopener">Ver página pública</a>
+            </section>
+
             <section class="admin-card admin-card--wide">
-                <div class="card-header-custom"><h2 class="card-title-custom">Contenido del destino</h2><p class="card-subtitle-custom">Cargá fotos y videos generales de Cabalango: río, monte, ferias, paisajes y vida local. No pertenecen a un prestador.</p></div>
+                <div class="card-header-custom"><h2 class="card-title-custom">Texto editorial del destino</h2><p class="card-subtitle-custom">Editá la bajada turística, historia, ubicación, naturaleza, vida local y recomendaciones generales de Cabalango.</p></div>
+                <form action="/admin/cabalango/contenido" method="post" class="stack-form">
+                    <div class="form-grid">
+                        <div class="full-width"><label class="field-label">Introducción / bajada general</label><textarea class="input-custom" name="introduccion" rows="3">{{ destino_content.introduccion or '' }}</textarea></div>
+                        <div><label class="field-label">Historia de Cabalango</label><textarea class="input-custom" name="historia" rows="5">{{ destino_content.historia or '' }}</textarea></div>
+                        <div><label class="field-label">Ubicación / cómo llegar</label><textarea class="input-custom" name="ubicacion" rows="5">{{ destino_content.ubicacion or '' }}</textarea></div>
+                        <div><label class="field-label">Naturaleza / río</label><textarea class="input-custom" name="naturaleza" rows="5">{{ destino_content.naturaleza or '' }}</textarea></div>
+                        <div><label class="field-label">Vida local</label><textarea class="input-custom" name="vida_local" rows="5">{{ destino_content.vida_local or '' }}</textarea></div>
+                        <div class="full-width"><label class="field-label">Recomendaciones</label><textarea class="input-custom" name="recomendaciones" rows="4">{{ destino_content.recomendaciones or '' }}</textarea></div>
+                        <div class="full-width"><label class="field-label">Video destacado del destino</label><input class="input-custom" name="video_url" value="{{ destino_content.video_url or '' }}" placeholder="YouTube, Instagram, Drive o Vimeo"></div>
+                        <label class="feature-chip is-enabled"><input type="checkbox" name="visible" value="1" {% if destino_content.visible %}checked{% endif %}> Visible en la página pública</label>
+                    </div>
+                    <button class="btn-primary-custom w-100">Guardar texto editorial</button>
+                </form>
+            </section>
+
+            <section class="admin-card admin-card--wide mt-4">
+                <div class="card-header-custom"><h2 class="card-title-custom">Fotos y videos del destino</h2><p class="card-subtitle-custom">Gestor visual global para postales del río, monte, ferias, paisajes y vida local.</p></div>
                 <form action="/admin/cabalango/media" method="post" enctype="multipart/form-data" class="stack-form">
                     <div class="form-grid">
                         <div><label class="field-label">Tipo</label><select class="input-custom" name="tipo"><option value="foto">Fotos</option><option value="video">Video / link</option></select></div>
@@ -188,8 +214,8 @@
                 </form>
             </section>
             <section class="admin-card admin-card--wide mt-4">
-                <div class="card-header-custom"><h2 class="card-title-custom">Contenido cargado</h2><p class="card-subtitle-custom">Primera versión simple: permite publicar/ocultar y preparar el orden editorial.</p></div>
-                <div class="destination-admin-grid">{% for item in destino_media %}<article class="gallery-admin-preview"><strong>{{ item.titulo or destino_categories.get(item.categoria, item.categoria) }}</strong><p>{{ item.tipo }} · {{ destino_categories.get(item.categoria, item.categoria) }} · orden {{ item.orden }} · {% if item.visible %}visible{% else %}oculto{% endif %}</p>{% if item.image_path %}<img class="admin-gallery-thumb" src="{{ item.image_path }}?ts={{ time }}" alt="{{ item.titulo or 'Foto Cabalango' }}">{% endif %}{% if item.video_url %}<p><a href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir video</a></p>{% endif %}<form method="post" action="/admin/cabalango/media/{{ item.id }}/toggle"><button class="btn-secondary-custom">{% if item.visible %}Ocultar{% else %}Publicar{% endif %}</button></form></article>{% else %}<p class="small text-white-50">Todavía no hay contenido cargado.</p>{% endfor %}</div>
+                <div class="card-header-custom"><h2 class="card-title-custom">Contenido cargado</h2><p class="card-subtitle-custom">Cards editoriales con estado, categoría, orden y acciones rápidas. El orden queda preparado para jerarquizar la página pública.</p></div>
+                <div class="destination-admin-grid">{% for item in destino_media %}<article class="destination-admin-card"><div class="destination-admin-thumb">{% if item.image_path %}<img src="{{ item.image_path }}?ts={{ time }}" alt="{{ item.titulo or 'Foto Cabalango' }}">{% elif item.video_url %}<span class="video-preview-mark">▶</span>{% else %}<span>Sin imagen</span>{% endif %}</div><div class="destination-admin-content"><div class="destination-admin-meta"><span>{{ item.tipo|upper }}</span><span>{{ destino_categories.get(item.categoria, item.categoria) }}</span></div><h3>{{ item.titulo or destino_categories.get(item.categoria, item.categoria) }}</h3><p>{{ item.descripcion or 'Sin descripción cargada.' }}</p><div class="destination-admin-badges"><span>Orden {{ item.orden }}</span><span class="{% if item.visible %}is-visible{% else %}is-hidden{% endif %}">{% if item.visible %}Visible{% else %}Oculto{% endif %}</span>{% if item.destacado %}<span>Destacada</span>{% endif %}</div>{% if item.video_url %}<a href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir video</a>{% endif %}<div class="destination-admin-actions"><button class="btn-outline-custom" type="button" disabled>Editar</button><button class="btn-outline-custom" type="button" disabled>↑↓ Orden</button><form method="post" action="/admin/cabalango/media/{{ item.id }}/toggle"><button class="btn-secondary-custom">{% if item.visible %}Ocultar{% else %}Mostrar{% endif %}</button></form></div></div></article>{% else %}<div class="gallery-empty-state">Todavía no hay contenido cargado para el destino.</div>{% endfor %}</div>
             </section>
         </section>
 
