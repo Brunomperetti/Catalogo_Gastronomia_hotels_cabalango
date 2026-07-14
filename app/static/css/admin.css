@@ -387,3 +387,15 @@
 .destination-admin-actions form { display: inline; }
 .destination-admin-actions button { padding-inline: 14px; }
 @media (max-width: 720px) { .admin-global-banner { align-items: stretch; flex-direction: column; } .admin-tabs-divider { display: none; } }
+
+/* Admin navigation split by ownership: provider vs global portal */
+.admin-nav-groups { display: grid; gap: 16px; margin-bottom: 24px; }
+.admin-nav-group { background: rgba(255,249,241,.86); border: 1px solid var(--admin-border); border-radius: 26px; box-shadow: 0 14px 34px rgba(78,58,45,.07); padding: 16px; }
+.admin-nav-group--portal { background: linear-gradient(135deg, rgba(255,249,241,.92), rgba(238,243,231,.9)); border-color: #C9D4B8; }
+.admin-nav-group__heading { align-items: baseline; border-bottom: 1px solid rgba(216,204,188,.72); display: flex; flex-wrap: wrap; gap: 10px 14px; margin-bottom: 12px; padding: 0 4px 12px; }
+.admin-nav-group__heading strong { color: var(--admin-text-deep); font-family: Georgia, serif; font-size: 1.1rem; }
+.admin-nav-eyebrow { color: var(--admin-earth-dark); font-size: .72rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
+.admin-nav-groups .admin-tabs { background: transparent; border: 0; box-shadow: none; margin: 0; padding: 0; }
+.admin-tabs--portal .admin-tab--global { background: #EEF3E7 !important; border-color: #AEBF96 !important; color: #38452B; }
+.admin-tabs--portal .admin-tab.is-active { box-shadow: 0 10px 22px rgba(124,134,96,.16); }
+@media (max-width: 720px) { .admin-nav-group { border-radius: 20px; padding: 12px; } .admin-nav-group__heading { align-items: flex-start; flex-direction: column; } }
