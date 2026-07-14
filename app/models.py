@@ -197,3 +197,18 @@ class DestinoMedia(Base):
     orden = Column(Integer, nullable=False, default=0, index=True)
     visible = Column(Boolean, nullable=False, default=True, index=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+
+
+class DestinoContenido(Base):
+    __tablename__ = "destino_contenido"
+
+    id = Column(Integer, primary_key=True, index=True)
+    introduccion = Column(Text, nullable=True)
+    historia = Column(Text, nullable=True)
+    ubicacion = Column(Text, nullable=True)
+    naturaleza = Column(Text, nullable=True)
+    recomendaciones = Column(Text, nullable=True)
+    vida_local = Column(Text, nullable=True)
+    video_url = Column(String, nullable=True)
+    visible = Column(Boolean, nullable=False, default=True, index=True)
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))

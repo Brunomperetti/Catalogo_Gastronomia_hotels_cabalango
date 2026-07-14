@@ -19,10 +19,11 @@ import hashlib
 import hmac
 import secrets
 import threading
-from urllib.parse import quote, urlparse
+import urllib.request
+from urllib.parse import quote, urlparse, urlencode
 from pathlib import Path
 from io import BytesIO
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # PDF
 from reportlab.pdfgen import canvas
@@ -70,6 +71,7 @@ def run_startup_db_maintenance():
         ensure_catalog_lead_columns()
         ensure_review_columns()
         ensure_destino_media_table()
+        ensure_destino_contenido_table()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
     except Exception as exc:
@@ -273,6 +275,31 @@ def ensure_review_columns():
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_prestador_id ON reviews(prestador_id)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_estado ON reviews(estado)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_reviews_visible ON reviews(visible)"))
+
+
+def ensure_destino_contenido_table():
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "destino_contenido" not in tables:
+        Base.metadata.create_all(bind=engine, tables=[models.DestinoContenido.__table__])
+        return
+
+    columns = {col["name"] for col in inspector.get_columns("destino_contenido")}
+    optional_columns = {
+        "introduccion": "TEXT",
+        "historia": "TEXT",
+        "ubicacion": "TEXT",
+        "naturaleza": "TEXT",
+        "recomendaciones": "TEXT",
+        "vida_local": "TEXT",
+        "video_url": "VARCHAR",
+        "visible": "BOOLEAN DEFAULT TRUE",
+        "updated_at": "TIMESTAMP",
+    }
+    with engine.begin() as conn:
+        for column_name, column_type in optional_columns.items():
+            if column_name not in columns:
+                conn.execute(text(f"ALTER TABLE destino_contenido ADD COLUMN {column_name} {column_type}"))
 
 
 def ensure_destino_media_table():
@@ -501,6 +528,66 @@ def get_public_destino_media(db: Session, tipo: str | None = None) -> list[model
     if tipo:
         query = query.filter(models.DestinoMedia.tipo == tipo)
     return query.order_by(models.DestinoMedia.destacado.desc(), models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc(), models.DestinoMedia.id.desc()).all()
+
+
+DESTINO_DEFAULT_CONTENT = {
+    "introduccion": "Cabalango combina río, monte, sierras y vida local en un entorno tranquilo para descansar y recorrer.",
+    "historia": "Un destino serrano de ritmo pausado, memoria local y paisajes que invitan a volver a lo simple.",
+    "ubicacion": "Cabalango se encuentra en el Valle de Punilla, Córdoba, cerca de Villa Carlos Paz y conectado por caminos serranos.",
+    "naturaleza": "Río, balnearios, senderos, monte nativo y paisajes serranos forman parte de la experiencia cotidiana.",
+    "recomendaciones": "Traé calzado cómodo, abrigo liviano para la tarde y revisá el clima antes de planificar caminatas o río.",
+    "vida_local": "Ferias, sabores caseros, prestadores familiares y encuentros comunitarios muestran la identidad del pueblo.",
+    "video_url": "",
+}
+
+def get_destino_content(db: Session) -> models.DestinoContenido:
+    ensure_destino_contenido_table()
+    content = db.query(models.DestinoContenido).order_by(models.DestinoContenido.id.asc()).first()
+    if content:
+        return content
+    content = models.DestinoContenido(**DESTINO_DEFAULT_CONTENT, visible=True, updated_at=utc_now())
+    db.add(content)
+    db.commit()
+    db.refresh(content)
+    return content
+
+_weather_cache = {"expires_at": None, "data": None}
+WEATHER_CODE_LABELS = {0: "Despejado", 1: "Mayormente despejado", 2: "Parcialmente nublado", 3: "Nublado", 45: "Neblina", 48: "Neblina", 51: "Llovizna", 53: "Llovizna", 55: "Llovizna", 61: "Lluvia", 63: "Lluvia", 65: "Lluvia intensa", 80: "Chaparrones", 95: "Tormenta"}
+
+def get_cabalango_weather() -> dict:
+    now = utc_now()
+    if _weather_cache["data"] and _weather_cache["expires_at"] and _weather_cache["expires_at"] > now:
+        return _weather_cache["data"]
+    params = urlencode({
+        "latitude": -31.395,
+        "longitude": -64.562,
+        "current": "temperature_2m,weather_code,wind_speed_10m",
+        "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+        "timezone": "America/Argentina/Cordoba",
+        "forecast_days": 1,
+    })
+    fallback = {"available": False, "message": "Clima no disponible por el momento."}
+    try:
+        with urllib.request.urlopen(f"https://api.open-meteo.com/v1/forecast?{params}", timeout=2.5) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        current = payload.get("current") or {}
+        daily = payload.get("daily") or {}
+        temp = current.get("temperature_2m")
+        rain = (daily.get("precipitation_probability_max") or [None])[0]
+        weather = {
+            "available": temp is not None,
+            "temperature": temp,
+            "condition": WEATHER_CODE_LABELS.get(current.get("weather_code"), "Clima serrano"),
+            "min": (daily.get("temperature_2m_min") or [None])[0],
+            "max": (daily.get("temperature_2m_max") or [None])[0],
+            "rain_probability": rain,
+            "wind": current.get("wind_speed_10m"),
+            "advice": "Posible lluvia: llevá abrigo impermeable." if (rain or 0) >= 45 else ("Llevá abrigo para la tarde." if (temp or 20) < 16 else "Ideal para recorrer y disfrutar al aire libre."),
+        }
+    except Exception:
+        weather = fallback
+    _weather_cache.update({"data": weather, "expires_at": now + timedelta(minutes=25)})
+    return weather
 
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -2173,6 +2260,7 @@ def portal_actividades(request: Request, subgrupo: str = "", db: Session = Depen
 @app.get("/cabalango", response_class=HTMLResponse)
 def descubri_cabalango(request: Request, db: Session = Depends(get_db)):
     ensure_destino_media_table()
+    content = get_destino_content(db)
     fotos = get_public_destino_media(db, "foto")
     videos = get_public_destino_media(db, "video")
     return templates.TemplateResponse(
@@ -2183,6 +2271,8 @@ def descubri_cabalango(request: Request, db: Session = Depends(get_db)):
             "videos": videos,
             "categories": DESTINO_MEDIA_CATEGORIES,
             "category_descriptions": DESTINO_MEDIA_CATEGORY_DESCRIPTIONS,
+            "content": content,
+            "weather": get_cabalango_weather(),
         },
     )
 
@@ -2213,6 +2303,7 @@ def admin_panel(
     # This keeps tabs like Contacto / ubicación from failing on older Render databases.
     ensure_empresa_media_columns()
     ensure_destino_media_table()
+    ensure_destino_contenido_table()
 
     empresas = db.query(models.Empresa).order_by(models.Empresa.nombre).all()
     empresa_activa = get_empresa_by_slug(db, empresa) or get_default_empresa(db)
@@ -2322,6 +2413,7 @@ def admin_panel(
             "lead_timeline": lead_timeline,
             "lead_status_labels": LEAD_STATUS_LABELS,
             "leads_kpis": leads_kpis if empresa_activa else [],
+            "destino_content": get_destino_content(db),
             "destino_media": db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc()).all(),
             "destino_categories": DESTINO_MEDIA_CATEGORIES,
         },
@@ -2468,6 +2560,36 @@ async def cliente_actualizar_imagenes_empresa(
 
 
 
+
+@app.post("/admin/cabalango/contenido")
+def actualizar_destino_contenido(
+    request: Request,
+    introduccion: str = Form(""),
+    historia: str = Form(""),
+    ubicacion: str = Form(""),
+    naturaleza: str = Form(""),
+    recomendaciones: str = Form(""),
+    vida_local: str = Form(""),
+    video_url: str = Form(""),
+    visible: str = Form(""),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    content = get_destino_content(db)
+    content.introduccion = clean_text(introduccion, default="") or None
+    content.historia = clean_text(historia, default="") or None
+    content.ubicacion = clean_text(ubicacion, default="") or None
+    content.naturaleza = clean_text(naturaleza, default="") or None
+    content.recomendaciones = clean_text(recomendaciones, default="") or None
+    content.vida_local = clean_text(vida_local, default="") or None
+    content.video_url = normalize_external_url(video_url) or (clean_text(video_url, default="") or None)
+    content.visible = str(visible) == "1"
+    content.updated_at = utc_now()
+    db.add(content)
+    db.commit()
+    return RedirectResponse(url="/admin?tab=cabalango&msg=Contenido editorial actualizado", status_code=303)
 
 @app.post("/admin/cabalango/media")
 async def crear_destino_media(
