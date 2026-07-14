@@ -1484,3 +1484,270 @@ img[src*="no-image"] {
 .field-help { color: rgba(226, 232, 240, .68); font-size: .9rem; font-weight: 700; margin: -4px 0 8px; }
 .media-priority-block { background: rgba(15, 23, 42, .38); border: 1px solid rgba(125, 211, 252, .16); border-radius: 22px; padding: 16px; }
 .admin-preview-img--logo { object-fit: contain; padding: 10px; }
+
+/* =========================================================
+   ADMIN WARM IDENTITY OVERRIDE
+   Visual pass only: aligns admin with public Cabalango palette.
+========================================================= */
+
+.admin-body {
+    --admin-bg: #F6F1E8;
+    --admin-surface: #FBF8F2;
+    --admin-surface-soft: #FFF9EF;
+    --admin-text: #4E3A2D;
+    --admin-muted: #6E6257;
+    --admin-deep: #263126;
+    --admin-border: #D9CEBF;
+    --admin-border-strong: #C7B9A6;
+    --admin-cta: #596344;
+    --admin-cta-alt: #66724D;
+    --admin-cta-hover: #4E563A;
+    --admin-earth: #A87449;
+    --admin-light: #FFF9EF;
+    --admin-sage-soft: #EEF3E7;
+    --admin-clay-soft: #F6E9DF;
+    --admin-shadow: 0 18px 46px rgba(78, 58, 45, .10);
+    background: var(--admin-bg);
+    color: var(--admin-text);
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.admin-body a { color: var(--admin-cta); }
+.admin-body code { color: var(--admin-deep); background: rgba(199, 185, 166, .28); border-radius: 6px; padding: 1px 5px; }
+.admin-body .text-white-50 { color: rgba(110, 98, 87, .72) !important; }
+
+.hero-card,
+.toolbar-card,
+.admin-card {
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    box-shadow: var(--admin-shadow);
+    backdrop-filter: none;
+}
+
+.hero-card { border-color: var(--admin-border-strong); }
+.hero-card::before { content: none; }
+.hero-badge {
+    background: var(--admin-sage-soft);
+    border-color: rgba(89, 99, 68, .25);
+    color: var(--admin-cta-hover);
+}
+.hero-title,
+.card-title-custom,
+.section-header-title,
+.subsection-heading h3,
+.step-content h3,
+.leads-kpi-title,
+.lead-card-title strong,
+.lead-detail-head h4,
+.lead-summary-card strong,
+.lead-timeline-item strong {
+    color: var(--admin-text);
+}
+.hero-subtitle,
+.card-subtitle-custom,
+.form-help,
+.field-help,
+.section-header-subtitle,
+.subsection-heading p,
+.step-content p,
+.leads-kpi-subtitle,
+.lead-card-title small,
+.lead-card-contact span:last-child,
+.lead-card-dates,
+.lead-row-link small,
+.leads-table small,
+.lead-summary-card span,
+.lead-timeline-item time,
+.lead-tech-debug summary,
+.empty-preview,
+.copy-feedback {
+    color: var(--admin-muted);
+}
+.section-eyebrow { color: var(--admin-earth); }
+
+.admin-tabs {
+    background: rgba(251, 248, 242, .82);
+    border-color: var(--admin-border);
+    box-shadow: 0 12px 30px rgba(78, 58, 45, .07);
+}
+.admin-tab {
+    background: var(--admin-surface-soft);
+    border-color: var(--admin-border);
+    color: var(--admin-text);
+    text-decoration: none;
+}
+.admin-tab:hover {
+    background: #EFE6D8;
+    border-color: var(--admin-border-strong);
+    color: var(--admin-deep);
+}
+.admin-tab.is-active {
+    background: var(--admin-cta);
+    color: var(--admin-light);
+    border-color: var(--admin-cta);
+    box-shadow: 0 8px 20px rgba(89, 99, 68, .18);
+}
+.admin-tab--warning { color: #7A4A2F; }
+.admin-tab.is-active.admin-tab--warning {
+    background: #7A4A2F;
+    border-color: #7A4A2F;
+    color: var(--admin-light);
+    box-shadow: 0 8px 20px rgba(122, 74, 47, .16);
+}
+
+.empresa-subsection,
+.preview-block,
+.step-card,
+.leads-kpi-card,
+.lead-card-row,
+.lead-detail-head,
+.lead-summary-card,
+.lead-timeline-item,
+.media-priority-block,
+.admin-create-card details,
+.admin-collapsible,
+.gallery-admin-preview,
+.empty-state-custom {
+    background: var(--admin-surface-soft);
+    border-color: var(--admin-border);
+    color: var(--admin-text);
+}
+.empresa-divider { background: var(--admin-border); }
+.admin-card--danger,
+.danger-zone-card {
+    background: var(--admin-clay-soft);
+    border-color: #D7A083;
+}
+.danger-note { color: #7A3E2C; }
+.section-header-card,
+.share-actions-panel,
+.tutorial-box {
+    background: #F3EBDD;
+    border-color: var(--admin-border);
+}
+.tutorial-text { color: var(--admin-text); }
+.tutorial-link { color: var(--admin-cta); }
+.step-number {
+    background: var(--admin-sage-soft);
+    border-color: rgba(89, 99, 68, .25);
+    color: var(--admin-cta-hover);
+}
+
+.field-label,
+.admin-create-card summary,
+.admin-collapsible summary { color: var(--admin-text); }
+.admin-create-card summary small { color: var(--admin-muted); }
+.input-custom,
+.select-custom,
+.input-file-custom {
+    background: var(--admin-surface-soft);
+    border-color: var(--admin-border);
+    color: var(--admin-text);
+    box-shadow: inset 0 1px 0 rgba(255, 249, 239, .8);
+}
+.input-custom::placeholder { color: rgba(110, 98, 87, .62); }
+.input-custom:focus,
+.select-custom:focus,
+.input-file-custom:focus {
+    border-color: var(--admin-cta-alt);
+    box-shadow: 0 0 0 4px rgba(102, 114, 77, .16);
+    background: #FFFDF8;
+}
+.input-file-custom::file-selector-button {
+    background: #EFE6D8;
+    border-color: var(--admin-border-strong);
+    color: var(--admin-text);
+}
+.input-file-custom::file-selector-button:hover { background: #E7DAC8; border-color: var(--admin-earth); }
+.form-check-input:checked { background-color: var(--admin-cta); border-color: var(--admin-cta); }
+
+.btn-primary-custom,
+.btn-secondary-custom,
+.btn-outline-custom,
+.btn-danger-soft,
+.btn-whatsapp-custom,
+.btn-danger-custom { min-height: 44px; }
+.btn-primary-custom {
+    background: var(--admin-cta);
+    border: 1px solid var(--admin-cta);
+    color: var(--admin-light);
+    box-shadow: 0 12px 26px rgba(89, 99, 68, .18);
+}
+.btn-primary-custom:hover { background: var(--admin-cta-hover); color: var(--admin-light); box-shadow: 0 14px 28px rgba(78, 86, 58, .22); }
+.btn-secondary-custom,
+.btn-outline-custom {
+    background: var(--admin-surface-soft);
+    border: 1px solid var(--admin-border-strong);
+    color: var(--admin-text);
+}
+.btn-secondary-custom:hover,
+.btn-outline-custom:hover { background: #EFE6D8; color: var(--admin-deep); border-color: var(--admin-earth); }
+.btn-whatsapp-custom { background: var(--admin-sage-soft); border-color: rgba(89, 99, 68, .36); color: var(--admin-cta-hover); }
+.btn-whatsapp-custom:hover { background: #E3EBD8; color: var(--admin-deep); }
+.btn-danger-soft,
+.btn-danger-custom {
+    background: #8D4E37;
+    border-color: #8D4E37;
+    color: var(--admin-light);
+}
+.btn-danger-soft:hover,
+.btn-danger-custom:hover { background: #743C2C; color: var(--admin-light); }
+
+.image-preview,
+.admin-preview-img,
+.admin-gallery-thumb {
+    background: #F3EBDD;
+    border-color: var(--admin-border-strong);
+}
+.image-preview { border-style: dashed; }
+.gallery-empty-state,
+.empty-state-custom { color: var(--admin-muted); }
+
+.alert-warning,
+.alert-custom-error,
+.alert-custom-success {
+    border-radius: 14px;
+    font-size: .92rem;
+}
+.alert-warning {
+    background: #F4E7D5;
+    border-color: #D0A77A;
+    color: #6D4228;
+}
+.alert-custom-success {
+    background: var(--admin-sage-soft);
+    border-color: #B8C7A5;
+    color: #38452B;
+}
+.alert-custom-error {
+    background: var(--admin-clay-soft);
+    border-color: #D9A085;
+    color: #743C2C;
+}
+
+.leads-kpi-card:hover,
+.leads-kpi-card.is-active,
+.lead-card-row:hover,
+.lead-card-row.is-selected,
+.leads-table tbody tr:hover,
+.leads-table tbody tr.is-selected {
+    border-color: var(--admin-cta-alt);
+    background: #F1E9DD;
+}
+.lead-badge,
+.lead-kpis-inline span {
+    background: #F3EBDD;
+    border-color: var(--admin-border);
+    color: var(--admin-text);
+}
+.leads-table thead th { color: var(--admin-muted); border-bottom-color: var(--admin-border); }
+.leads-table tbody td { color: var(--admin-text); border-bottom-color: var(--admin-border); }
+.lead-tech-debug pre { background: #EFE6D8; color: var(--admin-text); }
+.leads-filter-actions .btn-outline-custom.is-active { border-color: var(--admin-cta); color: var(--admin-cta-hover); background: var(--admin-sage-soft); }
+
+@media (max-width: 720px) {
+    .admin-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+    .admin-tab { flex: 0 0 auto; min-width: max-content; }
+    .media-preview-grid { grid-template-columns: 1fr; }
+}
