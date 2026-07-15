@@ -3656,3 +3656,27 @@ button:disabled {
 @media (max-width: 1020px) { .destination-river-block, .destination-river-media { grid-template-columns: 1fr; } .destination-river-media > img, .destination-river-media > .destination-hero-placeholder { aspect-ratio: 16/10; } }
 @media (max-width: 900px) { .destination-photo-card, .destination-photo-card.is-primary { aspect-ratio: 4/3; } }
 @media (max-width: 620px) { .destination-guide { padding-inline: 14px; } .destination-editorial-hero { border-radius: 26px; } .destination-photo-card, .destination-photo-card.is-primary { aspect-ratio: 1 / .82; } .destination-weather-card dl { grid-template-columns: 1fr; } }
+
+/* Premium destination refinements */
+.destination-editorial-hero { grid-template-columns: minmax(0,1.2fr) minmax(300px,.88fr); }
+.destination-hero-image { aspect-ratio: 4 / 3; min-height: 0; }
+.destination-hero-image::after { background: linear-gradient(180deg,rgba(63,47,37,0) 45%,rgba(63,47,37,.34)); content: ""; inset: 0; position: absolute; }
+.destination-hero-image figcaption { background: rgba(63,47,37,.48); color: #FFF9F1; display: grid; gap: 2px; z-index: 1; }
+.destination-hero-image figcaption span { color: #EFE5D6; font-size: .68rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
+.destination-hero-image figcaption strong { font-weight: 850; }
+.destination-hero-placeholder { background: radial-gradient(circle at 24% 18%, rgba(255,249,241,.9), transparent 34%), linear-gradient(135deg,#EFE5D6,#EEF3E7); min-height: 100%; }
+.destination-editorial-gallery { grid-template-columns: minmax(0,1.12fr) minmax(0,.56fr) minmax(0,.56fr); }
+.destination-photo-card { box-shadow: 0 14px 34px rgba(78,58,45,.1); }
+.destination-photo-card.is-primary { aspect-ratio: 4 / 3; grid-column: span 1; grid-row: span 2; }
+.destination-photo-card::after { display: none; }
+.destination-photo-card figcaption { background: linear-gradient(180deg,rgba(63,47,37,0),rgba(63,47,37,.74)); }
+.weather-advice { background: #EEF3E7; border: 1px solid rgba(124,134,96,.2); border-radius: 16px; color: #38452B; font-weight: 850; padding: 12px 14px; }
+.weather-forecast { display: grid; gap: 8px; }
+.weather-day, .season-grid div { background: rgba(255,249,241,.78); border: 1px solid rgba(216,204,188,.78); border-radius: 14px; display: grid; gap: 3px; padding: 10px 12px; }
+.weather-day span, .season-grid span { color: #A5633F; font-size: .7rem; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+.weather-day strong, .season-grid strong { color: #3F2F25; }
+.weather-day small, .season-grid small { color: #6F5B4D; font-weight: 700; }
+.season-grid { display: grid; gap: 8px; }
+.season-grid p { color: #3F2F25; font-weight: 950; margin: 4px 0 0; }
+@media (max-width: 900px) { .destination-editorial-hero, .destination-editorial-gallery { grid-template-columns: 1fr; } .destination-photo-card.is-primary { grid-row: span 1; } }
+@media (max-width: 620px) { .destination-hero-image { aspect-ratio: 16 / 11; } .destination-photo-card, .destination-photo-card.is-primary { aspect-ratio: 4 / 3; } }
