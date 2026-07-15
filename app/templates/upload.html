@@ -87,6 +87,7 @@
                     <a id="tab-rubro" class="admin-tab {% if active_tab == 'rubro' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'rubro' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=rubro" aria-controls="panel-rubro" data-tab-target="rubro">Datos por rubro</a>
                     <a id="tab-leads" class="admin-tab {% if active_tab == 'leads' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'leads' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=leads" aria-controls="panel-leads" data-tab-target="leads">Consultas / leads</a>
                     <a id="tab-opiniones" class="admin-tab {% if active_tab == 'opiniones' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'opiniones' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=opiniones" aria-controls="panel-opiniones" data-tab-target="opiniones">Opiniones</a>
+                    <a id="tab-usuarios" class="admin-tab {% if active_tab == 'usuarios' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'usuarios' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=usuarios" aria-controls="panel-usuarios" data-tab-target="usuarios">Usuarios</a>
                 </nav>
             </section>
             <section class="admin-nav-group admin-nav-group--portal" aria-labelledby="admin-nav-portal-title">
@@ -96,7 +97,6 @@
                 </div>
                 <nav class="admin-tabs admin-tabs--portal" role="tablist" aria-label="Portal y destino">
                     <a id="tab-cabalango" class="admin-tab admin-tab--global {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'cabalango' else 'false' }}" href="/admin?tab=cabalango" aria-controls="panel-cabalango" data-tab-target="cabalango">Descubrí Cabalango</a>
-                    <a id="tab-usuarios" class="admin-tab {% if active_tab == 'usuarios' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'usuarios' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=usuarios" aria-controls="panel-usuarios" data-tab-target="usuarios">Usuarios</a>
                     <a id="tab-configuracion" class="admin-tab {% if active_tab == 'configuracion' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'configuracion' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=configuracion" aria-controls="panel-configuracion" data-tab-target="configuracion">Configuración</a>
                     <a id="tab-avanzado" class="admin-tab admin-tab--warning {% if active_tab == 'tecnico' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'tecnico' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=tecnico" aria-controls="panel-tecnico" data-tab-target="tecnico">Técnico</a>
                 </nav>

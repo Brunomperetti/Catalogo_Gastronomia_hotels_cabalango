@@ -562,9 +562,9 @@ def get_cabalango_weather() -> dict:
         "latitude": -31.395,
         "longitude": -64.562,
         "current": "temperature_2m,weather_code,wind_speed_10m",
-        "daily": "temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+        "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
         "timezone": "America/Argentina/Cordoba",
-        "forecast_days": 1,
+        "forecast_days": 4,
     })
     fallback = {"available": False, "message": "Clima no disponible por el momento."}
     try:
@@ -574,6 +574,29 @@ def get_cabalango_weather() -> dict:
         daily = payload.get("daily") or {}
         temp = current.get("temperature_2m")
         rain = (daily.get("precipitation_probability_max") or [None])[0]
+        times = daily.get("time") or []
+        maxs = daily.get("temperature_2m_max") or []
+        mins = daily.get("temperature_2m_min") or []
+        rains = daily.get("precipitation_probability_max") or []
+        codes = daily.get("weather_code") or []
+        labels = ["Mañana", "En 2 días", "En 3 días"]
+        forecast = []
+        for idx in range(1, min(4, len(times))):
+            forecast.append({
+                "label": labels[idx - 1],
+                "min": mins[idx] if idx < len(mins) else None,
+                "max": maxs[idx] if idx < len(maxs) else None,
+                "rain_probability": rains[idx] if idx < len(rains) else 0,
+                "condition": WEATHER_CODE_LABELS.get(codes[idx] if idx < len(codes) else None, "Clima serrano"),
+            })
+        if (rain or 0) >= 45:
+            advice = "Posible lluvia, revisá antes de salir."
+        elif (temp or 20) >= 26 and (rain or 0) < 35:
+            advice = "Buen día para río y caminatas."
+        elif (temp or 20) < 16:
+            advice = "Llevá abrigo liviano."
+        else:
+            advice = "Ideal para recorrer."
         weather = {
             "available": temp is not None,
             "temperature": temp,
@@ -582,7 +605,8 @@ def get_cabalango_weather() -> dict:
             "max": (daily.get("temperature_2m_max") or [None])[0],
             "rain_probability": rain,
             "wind": current.get("wind_speed_10m"),
-            "advice": "Posible lluvia: llevá abrigo impermeable." if (rain or 0) >= 45 else ("Llevá abrigo para la tarde." if (temp or 20) < 16 else "Ideal para recorrer y disfrutar al aire libre."),
+            "advice": advice,
+            "forecast": forecast,
         }
     except Exception:
         weather = fallback
