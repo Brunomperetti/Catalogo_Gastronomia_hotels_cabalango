@@ -3680,3 +3680,319 @@ button:disabled {
 .season-grid p { color: #3F2F25; font-weight: 950; margin: 4px 0 0; }
 @media (max-width: 900px) { .destination-editorial-hero, .destination-editorial-gallery { grid-template-columns: 1fr; } .destination-photo-card.is-primary { grid-row: span 1; } }
 @media (max-width: 620px) { .destination-hero-image { aspect-ratio: 16 / 11; } .destination-photo-card, .destination-photo-card.is-primary { aspect-ratio: 4 / 3; } }
+
+/* Descubrí Cabalango urgent layout reset: simple, premium and overlap-safe */
+.destination-guide {
+  max-width: 1180px;
+  padding-block: 18px 54px;
+}
+
+.destination-guide .destination-section,
+.destination-river-block,
+.destination-cta {
+  margin-bottom: 34px;
+}
+
+.destination-editorial-hero {
+  align-items: center;
+  gap: clamp(24px, 4vw, 46px);
+  grid-template-columns: minmax(0, 1.08fr) minmax(300px, .72fr);
+  margin-top: 28px;
+}
+
+.destination-hero-image {
+  aspect-ratio: 4 / 5;
+  min-height: 0;
+}
+
+.destination-hero-image img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  position: static;
+  width: 100%;
+}
+
+.destination-hero-placeholder {
+  background: radial-gradient(circle at 24% 18%, rgba(255,249,241,.92), transparent 34%), linear-gradient(135deg, #EFE5D6, #EEF3E7);
+  min-height: 100%;
+}
+
+.destination-river-block {
+  align-items: stretch;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: 1fr;
+  padding: clamp(24px, 4vw, 44px);
+}
+
+.destination-river-layout {
+  align-items: center;
+  display: grid;
+  gap: clamp(22px, 4vw, 38px);
+  grid-template-columns: minmax(0, .95fr) minmax(360px, 1.05fr);
+}
+
+.destination-river-copy {
+  align-self: center;
+}
+
+.destination-river-copy > p:not(.portal-kicker),
+.destination-hero-copy > p,
+.destination-section p {
+  line-height: 1.68;
+}
+
+.destination-river-media {
+  margin: 0;
+  min-width: 0;
+}
+
+.destination-river-media > img,
+.destination-river-media > .destination-hero-placeholder {
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(216,204,188,.78);
+  border-radius: 26px;
+  box-shadow: 0 18px 38px rgba(78,58,45,.10);
+  display: block;
+  height: auto;
+  min-height: 0;
+  object-fit: cover;
+  overflow: hidden;
+  width: 100%;
+}
+
+.destination-weather-card {
+  align-items: stretch;
+  background: linear-gradient(135deg, #FFF9F1, #F3EBDD);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr;
+  margin: 0;
+  padding: clamp(20px, 3vw, 28px);
+}
+
+.destination-weather-card h3 {
+  color: #3F2F25;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(1.9rem, 3vw, 2.7rem);
+  line-height: 1;
+  margin: 0 0 10px;
+}
+
+.weather-main {
+  align-items: stretch;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(240px, .95fr) minmax(180px, .62fr) minmax(280px, 1.1fr);
+}
+
+.weather-current,
+.weather-summary,
+.weather-day,
+.season-grid div {
+  min-width: 0;
+}
+
+.weather-temp {
+  color: #66724D;
+  font-size: clamp(2.7rem, 6vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: .9;
+  margin: 2px 0 14px;
+}
+
+.weather-temp span {
+  color: #5C4332;
+  display: block;
+  font-size: 1rem;
+  letter-spacing: 0;
+  line-height: 1.25;
+  margin-top: 8px;
+}
+
+.weather-summary,
+.weather-forecast {
+  display: grid;
+  gap: 10px;
+}
+
+.weather-summary {
+  grid-template-columns: 1fr;
+}
+
+.weather-summary div,
+.weather-day,
+.season-grid div {
+  background: rgba(255,249,241,.78);
+  border: 1px solid rgba(216,204,188,.78);
+  border-radius: 16px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+}
+
+.weather-summary span,
+.weather-day span,
+.season-grid span {
+  color: #A5633F;
+  font-size: .7rem;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.weather-summary strong,
+.weather-day strong,
+.season-grid strong {
+  color: #3F2F25;
+}
+
+.weather-day small,
+.season-grid small {
+  color: #6F5B4D;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.season-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.season-grid p {
+  color: #3F2F25;
+  font-weight: 950;
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+}
+
+.destination-editorial-gallery {
+  align-items: stretch;
+  display: grid;
+  gap: 18px;
+  grid-auto-flow: row;
+  grid-template-columns: 2fr 1fr 1fr;
+  margin-top: 20px;
+}
+
+.destination-photo-card,
+.destination-photo-card.is-primary {
+  aspect-ratio: auto;
+  border-radius: 24px;
+  margin: 0;
+  min-height: 220px;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+
+.destination-photo-card.is-primary {
+  grid-column: span 1;
+  grid-row: span 2;
+  min-height: 460px;
+}
+
+.destination-photo-card a {
+  color: #FFF9F1;
+  display: block;
+  height: 100%;
+  position: relative;
+  text-decoration: none;
+  width: 100%;
+}
+
+.destination-photo-card img {
+  display: block;
+  height: 100%;
+  inset: auto;
+  object-fit: cover;
+  position: static;
+  width: 100%;
+}
+
+.destination-photo-card figcaption {
+  background: linear-gradient(180deg, rgba(63,47,37,0), rgba(63,47,37,.78));
+  bottom: 0;
+  display: grid;
+  gap: 5px;
+  left: 0;
+  padding: 58px 18px 18px;
+  position: absolute;
+  right: 0;
+  z-index: 2;
+}
+
+.destination-photo-card span,
+.destination-photo-card strong {
+  position: static;
+}
+
+.destination-photo-card strong {
+  display: block;
+  font-size: 1.08rem;
+  line-height: 1.18;
+}
+
+@media (max-width: 1020px) {
+  .weather-main,
+  .destination-river-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .weather-summary,
+  .weather-forecast {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .destination-editorial-hero,
+  .destination-editorial-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .destination-hero-image {
+    aspect-ratio: 16 / 11;
+  }
+
+  .destination-photo-card,
+  .destination-photo-card.is-primary {
+    grid-column: auto;
+    grid-row: auto;
+    min-height: 280px;
+  }
+
+  .season-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .destination-guide {
+    padding-inline: 14px;
+  }
+
+  .destination-editorial-hero,
+  .destination-river-block {
+    border-radius: 26px;
+  }
+
+  .destination-river-media > img,
+  .destination-river-media > .destination-hero-placeholder {
+    aspect-ratio: 4 / 3;
+  }
+
+  .weather-summary,
+  .weather-forecast,
+  .season-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .destination-photo-card,
+  .destination-photo-card.is-primary {
+    min-height: 240px;
+  }
+}
