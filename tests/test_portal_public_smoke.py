@@ -21,6 +21,13 @@ PUBLIC_SECTIONS = [
     ("/actividades", "Actividades", "Actividades y comunidad en Cabalango"),
 ]
 
+SECTION_ILLUSTRATIONS = [
+    ("/gastronomia", "gastronomia"),
+    ("/alojamientos", "alojamientos"),
+    ("/servicios", "servicios"),
+    ("/actividades", "actividades"),
+]
+
 
 def _nav_markup(html: str) -> str:
     match = re.search(r'<nav class="portal-topnav"[^>]*>(.*?)</nav>', html, re.S)
@@ -38,10 +45,25 @@ def test_portal_home_smoke():
 
     assert response.status_code == 200
     assert "Descubrí Cabalango" in response.text
-    assert "Historia" in response.text
-    assert "Ubicación" in response.text
-    assert "Naturaleza" in response.text
-    assert "Vida local" in response.text
+    for label in ["Historia", "Ubicación", "Naturaleza", "Vida local"]:
+        assert label in response.text
+    assert response.text.count("Leer más") == 4
+    for dialog_id in [
+        "destination-dialog-historia",
+        "destination-dialog-ubicacion",
+        "destination-dialog-naturaleza",
+        "destination-dialog-vida-local",
+    ]:
+        assert f'id="{dialog_id}"' in response.text
+    assert "/static/js/portal-dialogs.js" in response.text
+    assert "destination-dialog-content" in response.text
+    for full_text in [
+        "Un destino serrano de ritmo pausado",
+        "Cabalango se encuentra en el Valle de Punilla",
+        "Río, balnearios, senderos",
+        "Ferias, sabores caseros",
+    ]:
+        assert full_text in response.text
     assert "Logo_Cabalango.png" in response.text
 
 
@@ -75,3 +97,15 @@ def test_public_sections_smoke_and_active_navigation(path, active_label, expecte
     assert expected_text in response.text
     assert "Logo_Cabalango.png" in response.text
     assert _active_nav_labels(response.text) == [active_label]
+
+
+@pytest.mark.parametrize(("path", "variant"), SECTION_ILLUSTRATIONS)
+def test_public_sections_render_editorial_illustrations(path, variant):
+    response = TestClient(app).get(path)
+
+    assert response.status_code == 200
+    assert "portal-section-hero-art" in response.text
+    assert "portal-section-illustration" in response.text
+    assert f'data-section-illustration="{variant}"' in response.text
+    assert _active_nav_labels(response.text)
+    assert len(_active_nav_labels(response.text)) == 1

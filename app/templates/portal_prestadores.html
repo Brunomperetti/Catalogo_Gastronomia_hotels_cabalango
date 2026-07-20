@@ -15,10 +15,15 @@
         {% set active_section = section %}
         {% include "partials/portal_nav.html" %}
 
-        <section class="portal-hero portal-hero-compact">
-            <p class="portal-kicker">{{ eyebrow }}</p>
-            <h1>{{ title }}</h1>
-            <p class="portal-subtitle">{{ description }}</p>
+        <section class="portal-hero portal-hero-compact portal-section-hero">
+            <div class="portal-section-hero-copy">
+                <p class="portal-kicker">{{ eyebrow }}</p>
+                <h1>{{ title }}</h1>
+                <p class="portal-subtitle">{{ description }}</p>
+            </div>
+            <div class="portal-section-hero-art">
+                {% include "partials/section_hero_illustration.html" %}
+            </div>
         </section>
 
 
