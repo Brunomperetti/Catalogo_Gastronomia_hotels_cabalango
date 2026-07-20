@@ -4110,3 +4110,47 @@ button:disabled {
     width: auto;
   }
 }
+
+/* Destination story dialogs and illustrated section heroes */
+.destination-story-card { display: flex; flex-direction: column; min-height: 238px; }
+.destination-story-summary { flex: 1 1 auto; }
+.destination-story-more { align-self: flex-start; margin-top: 18px; }
+.destination-dialog { background: #FBF7F0; border: 1px solid #D8C7AE; border-radius: 26px; box-shadow: 0 28px 70px rgba(47, 36, 28, .22); color: #4D3527; margin: auto; max-height: min(82vh, 720px); max-width: 680px; overflow: hidden; padding: 0; width: calc(100% - 48px); }
+.destination-dialog::backdrop { background: rgba(37, 30, 24, .46); }
+.destination-dialog-panel { display: flex; flex-direction: column; max-height: min(82vh, 720px); padding: clamp(26px, 5vw, 42px); position: relative; }
+.destination-dialog h2 { color: #3F2F25; font-family: var(--portal-serif); font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: .96; margin: 0 52px 16px 0; }
+.destination-dialog-content { color: #5C4332; line-height: 1.75; overflow-y: auto; padding-right: 6px; }
+.destination-dialog-content p { margin: 0; white-space: pre-line; }
+.destination-dialog-close { align-items: center; background: #FFF9F1; border: 1px solid #D8C7AE; border-radius: 999px; color: #4E5C45; cursor: pointer; display: inline-flex; font: inherit; font-size: 1.5rem; font-weight: 700; height: 42px; justify-content: center; position: absolute; right: 22px; top: 22px; width: 42px; }
+.destination-dialog-action { align-self: flex-start; margin-top: 26px; }
+.destination-dialog button:focus-visible, .destination-story-more:focus-visible { outline: 3px solid rgba(120, 170, 189, .55); outline-offset: 3px; }
+.portal-section-hero { align-items: center; display: grid; gap: clamp(24px, 5vw, 54px); grid-template-columns: minmax(0, 1.38fr) minmax(280px, .92fr); overflow: hidden; }
+.portal-section-hero-copy { min-width: 0; }
+.portal-section-hero-art { align-items: center; display: flex; justify-content: center; min-width: 0; }
+.portal-section-illustration { max-width: 360px; width: 100%; }
+.portal-section-illustration svg { display: block; height: auto; width: 100%; }
+.portal-section-illustration--gastronomia { color: #9A6545; }
+.portal-section-illustration--alojamientos { color: #4E5C45; }
+.portal-section-illustration--servicios { color: #78AABD; }
+.portal-section-illustration--actividades { color: #D8C7AE; }
+
+@media (max-width: 900px) {
+  .portal-section-hero { gap: 22px; grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr); }
+  .portal-section-illustration { max-width: 300px; }
+}
+
+@media (max-width: 760px) {
+  .destination-story-card { min-height: 0; }
+  .destination-story-more { align-self: stretch; justify-content: center; }
+  .destination-dialog { max-height: calc(100dvh - 28px); width: calc(100% - 28px); }
+  .destination-dialog-panel { max-height: calc(100dvh - 28px); padding: 26px 20px 22px; }
+  .destination-dialog-content { max-height: 54vh; }
+  .destination-dialog-action { align-self: stretch; justify-content: center; }
+  .portal-section-hero { grid-template-columns: 1fr; }
+  .portal-section-hero-art { margin-top: -4px; }
+  .portal-section-illustration { max-width: 280px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destination-dialog, .destination-dialog::backdrop, .portal-section-illustration * { animation: none !important; transition: none !important; }
+}

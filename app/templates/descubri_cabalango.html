@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
+    <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
 </head>
 <body class="catalog-theme-default portal-body">
 {% set hero_photo = (fotos|selectattr('destacado')|list|first) or (fotos|first) %}
@@ -30,7 +31,22 @@
 
     <section class="destination-section destination-about">
         <div class="section-heading-row"><div><p class="portal-kicker">Sobre Cabalango</p><h2>Una pausa serrana con identidad propia</h2></div></div>
-        <div class="destination-story-grid"><article><span>Historia</span><p>{{ content.historia }}</p></article><article><span>Ubicación</span><p>{{ content.ubicacion }}</p></article><article><span>Naturaleza</span><p>{{ content.naturaleza }}</p></article><article><span>Vida local</span><p>{{ content.vida_local }}</p></article></div>
+        {% set destination_stories = [
+            ('historia', 'Historia', content.historia),
+            ('ubicacion', 'Ubicación', content.ubicacion),
+            ('naturaleza', 'Naturaleza', content.naturaleza),
+            ('vida-local', 'Vida local', content.vida_local)
+        ] %}
+        <div class="destination-story-grid">
+            {% for key, label, text in destination_stories %}
+            {% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}
+            <article class="destination-story-card">
+                <span>{{ label }}</span>
+                <p class="destination-story-summary">{{ story_text|truncate(145, False, '…') }}</p>
+                <button class="portal-button portal-button-secondary destination-story-more" type="button" data-dialog-open="destination-dialog-{{ key }}" aria-haspopup="dialog">Leer más</button>
+            </article>
+            {% endfor %}
+        </div>
     </section>
 
     <section class="destination-river-block" id="clima">
@@ -73,6 +89,18 @@
 
     <section class="destination-cta"><p class="portal-kicker">Armá tu recorrido</p><h2>Organizá tu visita a tu ritmo</h2><p>Elegí dónde dormir, dónde comer y qué hacer en un entorno serrano único.</p><div class="prestador-actions"><a class="portal-button" href="/alojamientos">Ver alojamientos</a><a class="portal-button portal-button-secondary" href="/gastronomia">Ver gastronomía</a><a class="portal-button portal-button-secondary" href="/actividades">Ver actividades</a></div></section>
 </main>
+{% for key, label, text in destination_stories %}
+{% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}
+<dialog class="destination-dialog" id="destination-dialog-{{ key }}" data-portal-dialog aria-labelledby="destination-dialog-{{ key }}-title" aria-describedby="destination-dialog-{{ key }}-description">
+    <div class="destination-dialog-panel">
+        <button class="destination-dialog-close" type="button" data-dialog-close aria-label="Cerrar {{ label }}">×</button>
+        <p class="portal-kicker">Sobre Cabalango · {{ label }}</p>
+        <h2 id="destination-dialog-{{ key }}-title">{{ label }}</h2>
+        <div class="destination-dialog-content" id="destination-dialog-{{ key }}-description"><p>{{ story_text }}</p></div>
+        <button class="portal-button destination-dialog-action" type="button" data-dialog-close>Cerrar</button>
+    </div>
+</dialog>
+{% endfor %}
 {% for foto in fotos %}<aside id="foto-{{ foto.id }}" class="gallery-lightbox"><a class="gallery-lightbox-backdrop" href="#"></a><div class="gallery-lightbox-panel"><div class="gallery-lightbox-header"><strong>{{ foto.titulo or 'Postal de Cabalango' }}</strong><a href="#" class="portal-button portal-button-secondary">Cerrar</a></div><img src="{{ foto.image_path }}" alt="{{ foto.titulo or 'Foto de Cabalango' }}"><p>{{ foto.descripcion or categories.get(foto.categoria) }}</p></div></aside>{% endfor %}
 </body>
 </html>
