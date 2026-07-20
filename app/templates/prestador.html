@@ -20,18 +20,8 @@
     {% set review_count = review_count|default(0) %}
     {% set review_submitted = review_submitted|default(false) %}
     <main class="portal-shell prestador-page">
-        <input class="portal-nav-toggle" id="portal-nav-toggle" type="checkbox" aria-hidden="true">
-        <header class="portal-mobile-header">
-            <a class="portal-mobile-brand" href="/">Cabalango</a>
-            <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú"><span></span><span></span><span></span></label>
-        </header>
-        <nav class="portal-topnav" aria-label="Navegación pública">
-            <a href="/">Inicio</a>
-            <a href="/gastronomia">Gastronomía</a>
-            <a href="/alojamientos">Alojamientos</a>
-            <a href="/servicios">Servicios útiles</a>
-            <a href="/actividades">Actividades</a>
-        </nav>
+        {% set active_section = 'alojamientos' if kind == 'alojamiento' else kind if kind in ['gastronomia', 'servicios', 'actividades'] else '' %}
+        {% include "partials/portal_nav.html" %}
 
         <section class="tourism-hero">
             <div class="tourism-gallery {% if not has_real_photos %}tourism-gallery--empty{% endif %}" id="fotos" aria-label="Galería de fotos de {{ empresa.nombre }}">

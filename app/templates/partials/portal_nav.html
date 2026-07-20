@@ -1,0 +1,14 @@
+{% set active_section = active_section or '' %}
+<input class="portal-nav-toggle" id="portal-nav-toggle" type="checkbox" aria-hidden="true">
+<header class="portal-mobile-header">
+    <a class="portal-mobile-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo portal-brand-logo-mobile" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a>
+    <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú" tabindex="0"><span></span><span></span><span></span></label>
+</header>
+<nav class="portal-topnav" aria-label="Navegación pública">
+    <a class="portal-desktop-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a>
+    <a class="{% if active_section == 'inicio' %}is-active{% endif %}" href="/">Inicio</a>
+    <a class="{% if active_section == 'gastronomia' %}is-active{% endif %}" href="/gastronomia">Gastronomía</a>
+    <a class="{% if active_section == 'alojamientos' %}is-active{% endif %}" href="/alojamientos">Alojamientos</a>
+    <a class="{% if active_section == 'servicios' %}is-active{% endif %}" href="/servicios">Servicios útiles</a>
+    <a class="{% if active_section == 'actividades' %}is-active{% endif %}" href="/actividades">Actividades</a>
+</nav>

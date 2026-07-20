@@ -4039,3 +4039,74 @@ button:disabled {
     display: none !important;
   }
 }
+
+/* Public navigation active state and official logo sizing */
+.portal-topnav {
+  align-items: center;
+  justify-content: center;
+}
+
+.portal-topnav a.is-active,
+.portal-topnav a.is-active:visited,
+.portal-topnav a.is-active:hover,
+.portal-topnav a.is-active:focus,
+.portal-topnav a.is-active:active {
+  background: #4e5c45 !important;
+  border-color: #4e5c45 !important;
+  box-shadow: 0 8px 18px rgba(47, 53, 45, .14) !important;
+  color: #fffaf1 !important;
+}
+
+.portal-topnav .portal-desktop-brand,
+.portal-topnav .portal-desktop-brand:hover,
+.portal-topnav .portal-desktop-brand:focus {
+  align-self: center;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  min-height: 68px;
+  padding: 0 8px !important;
+  transform: none !important;
+}
+
+.portal-topnav .portal-desktop-brand .portal-brand-logo {
+  height: 68px;
+  max-height: 68px;
+  max-width: 68px;
+  object-fit: contain;
+  width: 68px;
+}
+
+.portal-mobile-header {
+  align-items: center;
+}
+
+.portal-mobile-header .portal-mobile-brand,
+.portal-mobile-header .portal-mobile-brand:hover,
+.portal-mobile-header .portal-mobile-brand:focus {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.portal-mobile-header .portal-brand-logo-mobile {
+  height: 52px;
+  max-height: 52px;
+  max-width: 52px;
+  object-fit: contain;
+  width: 52px;
+}
+
+@media (max-width: 760px) {
+  .portal-topnav {
+    grid-template-columns: 1fr !important;
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .portal-topnav a {
+    white-space: normal;
+    width: auto;
+  }
+}
