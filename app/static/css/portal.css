@@ -4115,11 +4115,11 @@ button:disabled {
 .destination-story-card { display: flex; flex-direction: column; min-height: 238px; }
 .destination-story-summary { flex: 1 1 auto; }
 .destination-story-more { align-self: flex-start; margin-top: 18px; }
-.destination-dialog { background: #FBF7F0; border: 1px solid #D8C7AE; border-radius: 26px; box-shadow: 0 28px 70px rgba(47, 36, 28, .22); color: #4D3527; margin: auto; max-height: min(82vh, 720px); max-width: 680px; overflow: hidden; padding: 0; width: calc(100% - 48px); }
+.destination-dialog { background: #FBF7F0; border: 1px solid #D8C7AE; border-radius: 26px; box-shadow: 0 28px 70px rgba(47, 36, 28, .22); box-sizing: border-box; color: #4D3527; margin: auto; max-height: min(82vh, 720px); max-width: 680px; overflow: hidden; padding: 0; width: calc(100% - 48px); }
 .destination-dialog::backdrop { background: rgba(37, 30, 24, .46); }
-.destination-dialog-panel { display: flex; flex-direction: column; max-height: min(82vh, 720px); padding: clamp(26px, 5vw, 42px); position: relative; }
-.destination-dialog h2 { color: #3F2F25; font-family: var(--portal-serif); font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: .96; margin: 0 52px 16px 0; }
-.destination-dialog-content { color: #5C4332; line-height: 1.75; overflow-y: auto; padding-right: 6px; }
+.destination-dialog-panel { box-sizing: border-box; display: flex; flex-direction: column; max-height: min(82vh, 720px); padding: clamp(26px, 5vw, 42px); position: relative; }
+.destination-dialog h2 { color: #3F2F25; font-family: "Cormorant Garamond", Georgia, serif; font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: .96; margin: 0 52px 16px 0; }
+.destination-dialog-content { color: #5C4332; line-height: 1.75; min-height: 0; overflow-y: auto; padding-right: 6px; }
 .destination-dialog-content p { margin: 0; white-space: pre-line; }
 .destination-dialog-close { align-items: center; background: #FFF9F1; border: 1px solid #D8C7AE; border-radius: 999px; color: #4E5C45; cursor: pointer; display: inline-flex; font: inherit; font-size: 1.5rem; font-weight: 700; height: 42px; justify-content: center; position: absolute; right: 22px; top: 22px; width: 42px; }
 .destination-dialog-action { align-self: flex-start; margin-top: 26px; }
