@@ -14,10 +14,11 @@
     <main class="portal-shell">
         <input class="portal-nav-toggle" id="portal-nav-toggle" type="checkbox" aria-hidden="true">
         <header class="portal-mobile-header">
-            <a class="portal-mobile-brand" href="/">Cabalango</a>
+            <a class="portal-mobile-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo portal-brand-logo-mobile" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a>
             <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú" tabindex="0"><span></span><span></span><span></span></label>
         </header>
-        <nav class="portal-topnav" aria-label="Navegación pública"><a class="is-active" href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a><a href="/descubri-cabalango">Descubrí Cabalango</a></nav>
+        <nav class="portal-topnav" aria-label="Navegación pública">
+            <a class="portal-desktop-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a><a class="is-active" href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a><a href="/descubri-cabalango">Descubrí Cabalango</a></nav>
         <section class="portal-hero portal-hero-home">
             <div class="portal-hero-copy">
                 <p class="portal-kicker">Cabalango • Valle de Punilla</p>

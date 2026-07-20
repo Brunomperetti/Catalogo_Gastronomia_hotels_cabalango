@@ -15,6 +15,7 @@ def test_portal_home_smoke():
     assert "Alojamientos" in response.text
     assert "Servicios útiles" in response.text
     assert "Actividades y comunidad" in response.text
+    assert "Logo_Cabalango.png" in response.text
 
 
 def test_portal_gastronomia_smoke():
@@ -23,6 +24,7 @@ def test_portal_gastronomia_smoke():
 
     assert response.status_code == 200
     assert "Gastronomía en Cabalango" in response.text
+    assert "Logo_Cabalango.png" in response.text
 
 
 def test_portal_alojamientos_smoke():
