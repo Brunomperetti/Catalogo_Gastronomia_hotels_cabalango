@@ -2221,9 +2221,28 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
     )
 
 
+def render_destino_home(request: Request, db: Session):
+    content = get_destino_content(db)
+    fotos = get_public_destino_media(db, "foto")
+    videos = get_public_destino_media(db, "video")
+    return templates.TemplateResponse(
+        "descubri_cabalango.html",
+        {
+            "request": request,
+            "fotos": fotos,
+            "videos": videos,
+            "categories": DESTINO_MEDIA_CATEGORIES,
+            "category_descriptions": DESTINO_MEDIA_CATEGORY_DESCRIPTIONS,
+            "content": content,
+            "weather": get_cabalango_weather(),
+            "active_section": "inicio",
+        },
+    )
+
+
 @app.get("/", response_class=HTMLResponse)
-def portal_home(request: Request):
-    return templates.TemplateResponse("portal_home.html", {"request": request})
+def portal_home(request: Request, db: Session = Depends(get_db)):
+    return render_destino_home(request, db)
 
 
 @app.get("/gastronomia", response_class=HTMLResponse)
@@ -2280,25 +2299,14 @@ def portal_actividades(request: Request, subgrupo: str = "", db: Session = Depen
     )
 
 
-@app.get("/descubri-cabalango", response_class=HTMLResponse)
+@app.get("/descubri-cabalango", include_in_schema=False)
+def redirect_descubri_cabalango():
+    return RedirectResponse(url="/", status_code=308)
+
+
 @app.get("/cabalango", response_class=HTMLResponse)
-def descubri_cabalango(request: Request, db: Session = Depends(get_db)):
-    ensure_destino_media_table()
-    content = get_destino_content(db)
-    fotos = get_public_destino_media(db, "foto")
-    videos = get_public_destino_media(db, "video")
-    return templates.TemplateResponse(
-        "descubri_cabalango.html",
-        {
-            "request": request,
-            "fotos": fotos,
-            "videos": videos,
-            "categories": DESTINO_MEDIA_CATEGORIES,
-            "category_descriptions": DESTINO_MEDIA_CATEGORY_DESCRIPTIONS,
-            "content": content,
-            "weather": get_cabalango_weather(),
-        },
-    )
+def cabalango_legacy(request: Request, db: Session = Depends(get_db)):
+    return render_destino_home(request, db)
 
 
 @app.get("/admin", response_class=HTMLResponse)

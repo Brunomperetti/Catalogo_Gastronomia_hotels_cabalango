@@ -12,13 +12,8 @@
 </head>
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
-        <input class="portal-nav-toggle" id="portal-nav-toggle" type="checkbox" aria-hidden="true">
-        <header class="portal-mobile-header">
-            <a class="portal-mobile-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo portal-brand-logo-mobile" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a>
-            <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú" tabindex="0"><span></span><span></span><span></span></label>
-        </header>
-        <nav class="portal-topnav" aria-label="Navegación pública">
-            <a class="portal-desktop-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a><a class="is-active" href="/">Inicio</a><a href="/gastronomia">Gastronomía</a><a href="/alojamientos">Alojamientos</a><a href="/servicios">Servicios útiles</a><a href="/actividades">Actividades</a><a href="/descubri-cabalango">Descubrí Cabalango</a></nav>
+        {% set active_section = "inicio" %}
+        {% include "partials/portal_nav.html" %}
         <section class="portal-hero portal-hero-home">
             <div class="portal-hero-copy">
                 <p class="portal-kicker">Cabalango • Valle de Punilla</p>
@@ -28,7 +23,7 @@
                     <a href="/alojamientos">Dónde dormir</a>
                     <a href="/gastronomia">Dónde comer</a>
                     <a href="/actividades">Qué hacer</a>
-                    <a href="/descubri-cabalango">Ver fotos y videos</a>
+                    <a href="/#fotos">Ver fotos y videos</a>
                 </div>
             </div>
             <div class="portal-hero-visual" aria-hidden="true">
@@ -44,7 +39,7 @@
                 <p class="portal-kicker">Galería del destino</p>
                 <h2>Postales para imaginar la visita</h2>
                 <p>Río, monte, ferias y rincones cotidianos reunidos con una mirada serena del lugar.</p>
-                <a class="portal-button" href="/descubri-cabalango">Ver fotos y videos</a>
+                <a class="portal-button" href="/#fotos">Ver fotos y videos</a>
             </div>
             <div class="destination-preview-art" aria-hidden="true"></div>
         </section>

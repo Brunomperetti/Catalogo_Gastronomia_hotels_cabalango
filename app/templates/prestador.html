@@ -20,17 +20,19 @@
     {% set review_count = review_count|default(0) %}
     {% set review_submitted = review_submitted|default(false) %}
     <main class="portal-shell prestador-page">
+        {% set active_section = 'alojamientos' if kind == 'alojamiento' else kind if kind in ['gastronomia', 'servicios', 'actividades'] else '' %}
         <input class="portal-nav-toggle" id="portal-nav-toggle" type="checkbox" aria-hidden="true">
         <header class="portal-mobile-header">
-            <a class="portal-mobile-brand" href="/">Cabalango</a>
+            <a class="portal-mobile-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo portal-brand-logo-mobile" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a>
             <label class="portal-mobile-menu" for="portal-nav-toggle" aria-label="Abrir menú"><span></span><span></span><span></span></label>
         </header>
         <nav class="portal-topnav" aria-label="Navegación pública">
-            <a href="/">Inicio</a>
-            <a href="/gastronomia">Gastronomía</a>
-            <a href="/alojamientos">Alojamientos</a>
-            <a href="/servicios">Servicios útiles</a>
-            <a href="/actividades">Actividades</a>
+            <a class="portal-desktop-brand" href="/" aria-label="Inicio Cabalango"><img class="portal-brand-logo" src="{{ url_for('static', path='images/Logo_Cabalango.png') }}" alt="Cabalango"></a>
+            <a class="{% if active_section == 'inicio' %}is-active{% endif %}" href="/">Inicio</a>
+            <a class="{% if active_section == 'gastronomia' %}is-active{% endif %}" href="/gastronomia">Gastronomía</a>
+            <a class="{% if active_section == 'alojamientos' %}is-active{% endif %}" href="/alojamientos">Alojamientos</a>
+            <a class="{% if active_section == 'servicios' %}is-active{% endif %}" href="/servicios">Servicios útiles</a>
+            <a class="{% if active_section == 'actividades' %}is-active{% endif %}" href="/actividades">Actividades</a>
         </nav>
 
         <section class="tourism-hero">
