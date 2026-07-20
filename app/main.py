@@ -2304,9 +2304,9 @@ def redirect_descubri_cabalango():
     return RedirectResponse(url="/", status_code=308)
 
 
-@app.get("/cabalango", response_class=HTMLResponse)
-def cabalango_legacy(request: Request, db: Session = Depends(get_db)):
-    return render_destino_home(request, db)
+@app.get("/cabalango", include_in_schema=False)
+def redirect_cabalango_legacy():
+    return RedirectResponse(url="/", status_code=308)
 
 
 @app.get("/admin", response_class=HTMLResponse)

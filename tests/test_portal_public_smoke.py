@@ -5,7 +5,12 @@ import pytest
 pytest.importorskip("httpx", reason="FastAPI TestClient requires httpx")
 from fastapi.testclient import TestClient
 
-from app.main import app
+from app.main import app, run_startup_db_maintenance
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _prepare_public_portal_database():
+    run_startup_db_maintenance()
 
 
 PUBLIC_SECTIONS = [
@@ -29,8 +34,7 @@ def _active_nav_labels(html: str) -> list[str]:
 
 
 def test_portal_home_smoke():
-    with TestClient(app) as client:
-        response = client.get("/", follow_redirects=False)
+    response = TestClient(app).get("/", follow_redirects=False)
 
     assert response.status_code == 200
     assert "Descubrí Cabalango" in response.text
@@ -42,16 +46,21 @@ def test_portal_home_smoke():
 
 
 def test_descubri_cabalango_redirects_to_home():
-    with TestClient(app) as client:
-        response = client.get("/descubri-cabalango", follow_redirects=False)
+    response = TestClient(app).get("/descubri-cabalango", follow_redirects=False)
+
+    assert response.status_code == 308
+    assert response.headers["location"] == "/"
+
+
+def test_cabalango_legacy_redirects_to_home():
+    response = TestClient(app).get("/cabalango", follow_redirects=False)
 
     assert response.status_code == 308
     assert response.headers["location"] == "/"
 
 
 def test_public_navigation_has_no_independent_descubri_link():
-    with TestClient(app) as client:
-        response = client.get("/")
+    response = TestClient(app).get("/")
 
     nav = _nav_markup(response.text)
     assert 'href="/descubri-cabalango"' not in nav
@@ -60,8 +69,7 @@ def test_public_navigation_has_no_independent_descubri_link():
 
 @pytest.mark.parametrize(("path", "active_label", "expected_text"), PUBLIC_SECTIONS)
 def test_public_sections_smoke_and_active_navigation(path, active_label, expected_text):
-    with TestClient(app) as client:
-        response = client.get(path)
+    response = TestClient(app).get(path)
 
     assert response.status_code == 200
     assert expected_text in response.text

@@ -1,7 +1,5 @@
 from types import SimpleNamespace
-from pathlib import Path
-
-from jinja2 import Environment
+from jinja2 import Environment, FileSystemLoader
 
 
 class UrlForStub:
@@ -12,8 +10,7 @@ class UrlForStub:
 
 
 def render_prestador(theme="alojamiento", galeria_urls=None):
-    template_src = Path("app/templates/prestador.html").read_text(encoding="utf-8")
-    template = Environment().from_string(template_src)
+    template = Environment(loader=FileSystemLoader("app/templates")).get_template("prestador.html")
     empresa = SimpleNamespace(
         nombre="Cabañas Demo",
         slug="cabanas-demo",
@@ -88,8 +85,7 @@ def test_prestador_template_empty_gallery_does_not_break():
 
 
 def test_prestador_template_uses_normalized_external_contact_links():
-    template_src = Path("app/templates/prestador.html").read_text(encoding="utf-8")
-    template = Environment().from_string(template_src)
+    template = Environment(loader=FileSystemLoader("app/templates")).get_template("prestador.html")
     empresa = SimpleNamespace(
         nombre="Cabañas Demo", slug="cabanas-demo", theme="alojamiento", whatsapp="5493510000000",
         telefono="3541000000", instagram="@cabanas_demo", facebook="facebook.com/cabanas",
