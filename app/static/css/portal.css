@@ -3998,37 +3998,44 @@ button:disabled {
 }
 
 /* Official Cabalango brand integration */
-.portal-desktop-brand,
-.portal-mobile-brand {
+.portal-topnav .portal-desktop-brand {
   align-items: center;
-  background: rgba(255, 255, 255, .94) !important;
-  border-color: rgba(15, 23, 42, .12) !important;
-  box-shadow: 0 16px 42px rgba(15, 23, 42, .16) !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
   display: inline-flex;
+  flex: 0 0 auto;
   justify-content: center;
-  overflow: hidden;
-  padding: 7px 14px !important;
+  padding: 2px 6px !important;
 }
 
-.portal-brand-logo {
+.portal-topnav .portal-desktop-brand .portal-brand-logo {
   display: block;
-  height: 42px;
-  max-width: 168px;
+  height: 60px;
+  width: 60px;
+  max-height: 60px;
+  max-width: 60px;
   object-fit: contain;
-  width: auto;
 }
 
-.portal-brand-logo-mobile {
-  height: 36px;
-  max-width: 144px;
+.portal-mobile-header .portal-brand-logo-mobile {
+  display: block;
+  height: 48px;
+  width: 48px;
+  max-height: 48px;
+  max-width: 48px;
+  object-fit: contain;
 }
 
 .portal-mobile-header .portal-mobile-brand {
-  min-height: 48px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 2px 4px !important;
 }
 
 @media (max-width: 760px) {
   .portal-topnav .portal-desktop-brand {
-    display: none;
+    display: none !important;
   }
 }
