@@ -4177,7 +4177,7 @@ button:disabled {
 .accommodation-card-media > a { display: block; height: 100%; }
 .accommodation-card-image { border-radius: 20px; display: block; height: 100%; object-fit: cover; width: 100%; }
 .accommodation-card-placeholder { align-items: center; color: var(--portal-muted); display: flex; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.35rem; justify-content: center; }
-.accommodation-card-type { background: rgba(255,250,241,.94); border-radius: 999px; color: var(--portal-olive-dark); font-size: .7rem; font-weight: 800; left: 12px; letter-spacing: .07em; padding: 6px 9px; position: absolute; text-transform: uppercase; top: 12px; }
+.accommodation-card-type { background: rgba(255,250,241,.94); border-radius: 999px; color: var(--portal-olive-dark); font-size: .7rem; font-weight: 800; left: 12px; letter-spacing: .07em; padding: 6px 9px; pointer-events: none; position: absolute; text-transform: uppercase; top: 12px; }
 .accommodation-card-body { display: flex; flex: 1; flex-direction: column; padding: 15px 14px 0; }
 .accommodation-card-kicker { color: var(--portal-olive); font-size: .72rem; font-weight: 800; letter-spacing: .1em; margin: 0 0 5px; text-transform: uppercase; }
 .accommodation-card-title { font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; line-height: 1.05; margin: 0; }

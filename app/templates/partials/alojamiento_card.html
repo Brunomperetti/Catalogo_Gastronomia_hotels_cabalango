@@ -13,7 +13,6 @@
         {% if accommodation_type %}<span class="accommodation-card-type">{{ accommodation_type }}</span>{% endif %}
     </div>
     <div class="accommodation-card-body">
-        <p class="accommodation-card-kicker">{{ accommodation_type }}</p>
         <h3 class="accommodation-card-title"><a href="/prestador/{{ empresa.slug }}">{{ empresa.nombre }}</a></h3>
         {% if empresa.direccion %}<p class="accommodation-card-location">{{ empresa.direccion }}</p>{% endif %}
         {% if key_facts %}<ul class="accommodation-facts" aria-label="Datos principales">{% for fact in key_facts[:3] %}<li>{{ fact }}</li>{% endfor %}</ul>{% endif %}
