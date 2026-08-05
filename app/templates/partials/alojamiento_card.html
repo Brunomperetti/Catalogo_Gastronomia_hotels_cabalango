@@ -1,0 +1,34 @@
+{% set accommodation_type = empresa.subtipo or theme_display_label(empresa.theme) %}
+{% set visible_chips = card_chips[:3] %}
+{% set remaining_chips = (card_chips|length) - (visible_chips|length) %}
+<article class="accommodation-card">
+    <div class="accommodation-card-media">
+        <a href="/prestador/{{ empresa.slug }}" aria-label="Ver alojamiento {{ empresa.nombre }}">
+            {% if card_image %}
+            <img class="accommodation-card-image" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">
+            {% else %}
+            <div class="accommodation-card-image accommodation-card-placeholder" role="img" aria-label="Sin fotografía disponible de {{ empresa.nombre }}"><span>{{ accommodation_type }}</span></div>
+            {% endif %}
+        </a>
+        {% if accommodation_type %}<span class="accommodation-card-type">{{ accommodation_type }}</span>{% endif %}
+    </div>
+    <div class="accommodation-card-body">
+        <p class="accommodation-card-kicker">{{ accommodation_type }}</p>
+        <h3 class="accommodation-card-title"><a href="/prestador/{{ empresa.slug }}">{{ empresa.nombre }}</a></h3>
+        {% if empresa.direccion %}<p class="accommodation-card-location">{{ empresa.direccion }}</p>{% endif %}
+        {% if key_facts %}<ul class="accommodation-facts" aria-label="Datos principales">{% for fact in key_facts[:3] %}<li>{{ fact }}</li>{% endfor %}</ul>{% endif %}
+        {% if visible_chips %}
+        <div class="accommodation-amenities" aria-label="Servicios destacados">
+            {% for chip in visible_chips %}<span>{{ chip }}</span>{% endfor %}
+            {% if remaining_chips > 0 %}<span class="accommodation-more-amenities">+{{ remaining_chips }} servicio{% if remaining_chips != 1 %}s{% endif %}</span>{% endif %}
+        </div>
+        {% endif %}
+        <footer class="accommodation-card-footer">
+            {% if empresa.precio_desde %}<p class="accommodation-card-price">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</p>{% endif %}
+            <div class="accommodation-card-actions">
+                <a class="accommodation-primary-action" href="/prestador/{{ empresa.slug }}">Ver alojamiento</a>
+                {% if clean_whatsapp %}<a class="accommodation-secondary-action" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>{% endif %}
+            </div>
+        </footer>
+    </div>
+</article>
