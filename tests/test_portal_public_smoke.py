@@ -109,3 +109,48 @@ def test_public_sections_render_editorial_illustrations(path, variant):
     assert f'data-section-illustration="{variant}"' in response.text
     assert _active_nav_labels(response.text)
     assert len(_active_nav_labels(response.text)) == 1
+
+
+def test_accommodation_browsing_grid_and_filters_smoke():
+    response = TestClient(app).get("/alojamientos")
+
+    assert response.status_code == 200
+    assert "accommodation-results-header" in response.text
+    assert "alojamiento" in response.text and "encontrado" in response.text
+    assert 'class="accommodation-more-filters"' in response.text
+    assert "<summary>Más filtros" in response.text
+    for parameter in [
+        "tipo",
+        "capacidad",
+        "habitaciones",
+        "precio_max",
+        "orden",
+        "pileta",
+        "rio",
+        "mascotas",
+        "cochera",
+        "wifi",
+        "parrilla",
+    ]:
+        assert f'name="{parameter}"' in response.text
+    assert _active_nav_labels(response.text) == ["Alojamientos"]
+    assert "Logo_Cabalango.png" in response.text
+
+    if "accommodation-grid" in response.text:
+        assert "accommodation-card" in response.text
+        assert 'href="/prestador/' in response.text
+        assert (
+            "accommodation-card-image" in response.text
+            or "accommodation-card-placeholder" in response.text
+        )
+
+
+def test_accommodation_card_template_limits_visible_amenities():
+    template = (
+        __import__("pathlib").Path("app/templates/partials/alojamiento_card.html").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert "card_chips[:3]" in template
+    assert "accommodation-more-amenities" in template
