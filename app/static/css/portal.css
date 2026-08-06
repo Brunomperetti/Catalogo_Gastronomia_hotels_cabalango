@@ -4392,21 +4392,49 @@ body,
   color: var(--portal-white) !important;
 }
 
-.portal-button-secondary,
-.portal-button-ghost {
-  background: transparent;
-  border-color: var(--portal-border);
-  box-shadow: none;
+.portal-body .portal-button-secondary:not([disabled]):not([aria-disabled="true"]):not(.gallery-lightbox-close),
+.portal-body .portal-button-secondary:link:not([aria-disabled="true"]):not(.gallery-lightbox-close),
+.portal-body .portal-button-secondary:visited:not([aria-disabled="true"]):not(.gallery-lightbox-close),
+.portal-body .portal-button-ghost:not([disabled]):not([aria-disabled="true"]),
+.portal-body .portal-button-ghost:link:not([aria-disabled="true"]),
+.portal-body .portal-button-ghost:visited:not([aria-disabled="true"]) {
+  background: transparent !important;
+  border: 1px solid var(--portal-primary) !important;
   color: var(--portal-primary) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
 }
 
-.portal-button-secondary:hover,
-.portal-button-secondary:focus-visible,
-.portal-button-ghost:hover,
-.portal-button-ghost:focus-visible {
-  background: rgba(168, 179, 154, .16);
-  border-color: rgba(110, 123, 82, .25);
-  color: var(--portal-text-strong) !important;
+.portal-body .portal-button-secondary:hover:not([disabled]):not([aria-disabled="true"]):not(.gallery-lightbox-close),
+.portal-body .portal-button-secondary:focus-visible:not([disabled]):not([aria-disabled="true"]):not(.gallery-lightbox-close),
+.portal-body .portal-button-secondary:active:not([disabled]):not([aria-disabled="true"]):not(.gallery-lightbox-close),
+.portal-body .portal-button-ghost:hover:not([disabled]):not([aria-disabled="true"]),
+.portal-body .portal-button-ghost:focus-visible:not([disabled]):not([aria-disabled="true"]),
+.portal-body .portal-button-ghost:active:not([disabled]):not([aria-disabled="true"]) {
+  background: var(--portal-primary) !important;
+  border-color: var(--portal-primary) !important;
+  color: var(--portal-white) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.portal-body .portal-hero-tags .portal-button:not(.portal-button-secondary),
+.portal-body .portal-hero-tags .portal-button:not(.portal-button-secondary):link,
+.portal-body .portal-hero-tags .portal-button:not(.portal-button-secondary):visited {
+  background: var(--portal-primary) !important;
+  border-color: var(--portal-primary) !important;
+  color: var(--portal-white) !important;
+}
+
+.portal-body .portal-hero-tags .portal-button:not(.portal-button-secondary):hover,
+.portal-body .portal-hero-tags .portal-button:not(.portal-button-secondary):focus-visible,
+.portal-body .portal-hero-tags .portal-button:not(.portal-button-secondary):active {
+  background: var(--portal-primary-hover) !important;
+  border-color: var(--portal-primary-hover) !important;
+  color: var(--portal-white) !important;
 }
 
 .filter-actions .portal-button,
@@ -4677,25 +4705,6 @@ body,
   background: var(--portal-primary-hover) !important;
   border-color: var(--portal-primary-hover) !important;
   color: var(--portal-white) !important;
-}
-
-.portal-body main.prestador-page .prestador-detail-grid .portal-button-secondary,
-.portal-body main.prestador-page .prestador-detail-grid .portal-button-secondary:link,
-.portal-body main.prestador-page .prestador-detail-grid .portal-button-secondary:visited {
-  background: transparent !important;
-  border: 1px solid var(--portal-primary) !important;
-  color: var(--portal-primary) !important;
-  box-shadow: none !important;
-  opacity: 1 !important;
-}
-
-.portal-body main.prestador-page .prestador-detail-grid .portal-button-secondary:hover,
-.portal-body main.prestador-page .prestador-detail-grid .portal-button-secondary:focus-visible,
-.portal-body main.prestador-page .prestador-detail-grid .portal-button-secondary:active {
-  background: var(--portal-primary) !important;
-  border-color: var(--portal-primary) !important;
-  color: var(--portal-white) !important;
-  transform: translateY(-1px);
 }
 
 .portal-body main.prestador-page .prestador-detail-grid > article.portal-card {

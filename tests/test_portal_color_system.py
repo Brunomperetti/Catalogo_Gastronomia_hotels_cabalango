@@ -50,7 +50,51 @@ def test_provider_profile_uses_editorial_colors_and_legible_promotion():
     assert "color: var(--portal-primary) !important;" in color_system
 
 
-def test_provider_profile_invalidates_cached_portal_styles():
-    template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
+def test_public_templates_invalidate_cached_portal_styles():
+    expected_version = "?v=20260806-secondary-buttons-1"
 
-    assert "{{ url_for('static', path='css/portal.css') }}?v=20260806-profile-2" in template
+    for template_path in Path("app/templates").glob("*.html"):
+        template = template_path.read_text(encoding="utf-8")
+        if "path='css/portal.css'" in template:
+            assert expected_version in template
+
+
+def test_public_secondary_buttons_use_approved_outline_system():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    color_system = css.split("/* Cabalango global color system 2026 */", 1)[1]
+
+    assert ".portal-button-secondary:visited" in color_system
+    assert ".portal-button-secondary:hover" in color_system
+    assert "background: transparent !important;" in color_system
+    assert "border: 1px solid var(--portal-primary) !important;" in color_system
+    assert "color: var(--portal-primary) !important;" in color_system
+    assert "background: var(--portal-primary) !important;" in color_system
+    assert "color: var(--portal-white) !important;" in color_system
+
+
+def test_public_ctas_have_semantic_primary_and_secondary_classes():
+    templates = {
+        path.name: path.read_text(encoding="utf-8")
+        for path in Path("app/templates").glob("*.html")
+    }
+
+    for label in ("Cómo llegar", "Ver fotos"):
+        assert f'portal-button-secondary"' in templates["prestador.html"].split(label, 1)[0].rsplit("<", 1)[1]
+
+    for label in ("Dónde comer", "Qué hacer", "Ver gastronomía", "Ver actividades"):
+        matching_markup = [
+            markup.split(label, 1)[0].rsplit("<", 1)[1]
+            for markup in templates.values()
+            if label in markup
+        ]
+        assert any("portal-button-secondary" in tag for tag in matching_markup)
+
+    primary_contexts = (
+        (templates["prestador.html"], "Consultar por WhatsApp"),
+        (templates["descubri_cabalango.html"], "Dónde dormir"),
+        (templates["descubri_cabalango.html"], "Ver alojamientos"),
+    )
+    for template, label in primary_contexts:
+        tag = template.split(label, 1)[0].rsplit("<", 1)[1]
+        assert 'class="portal-button"' in tag
+        assert "portal-button-secondary" not in tag

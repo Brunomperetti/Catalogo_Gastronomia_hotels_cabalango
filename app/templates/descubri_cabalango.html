@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260806-secondary-buttons-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
 </head>
 <body class="catalog-theme-default portal-body">
@@ -101,6 +101,6 @@
     </div>
 </dialog>
 {% endfor %}
-{% for foto in fotos %}<aside id="foto-{{ foto.id }}" class="gallery-lightbox"><a class="gallery-lightbox-backdrop" href="#"></a><div class="gallery-lightbox-panel"><div class="gallery-lightbox-header"><strong>{{ foto.titulo or 'Postal de Cabalango' }}</strong><a href="#" class="portal-button portal-button-secondary">Cerrar</a></div><img src="{{ foto.image_path }}" alt="{{ foto.titulo or 'Foto de Cabalango' }}"><p>{{ foto.descripcion or categories.get(foto.categoria) }}</p></div></aside>{% endfor %}
+{% for foto in fotos %}<aside id="foto-{{ foto.id }}" class="gallery-lightbox"><a class="gallery-lightbox-backdrop" href="#"></a><div class="gallery-lightbox-panel"><div class="gallery-lightbox-header"><strong>{{ foto.titulo or 'Postal de Cabalango' }}</strong><a href="#" class="portal-button portal-button-secondary gallery-lightbox-close">Cerrar</a></div><img src="{{ foto.image_path }}" alt="{{ foto.titulo or 'Foto de Cabalango' }}"><p>{{ foto.descripcion or categories.get(foto.categoria) }}</p></div></aside>{% endfor %}
 </body>
 </html>
