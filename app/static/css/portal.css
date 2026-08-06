@@ -4362,7 +4362,6 @@ body,
 }
 
 .portal-button,
-.filter-actions .portal-button,
 .destination-dialog-action,
 .accommodation-primary-action,
 .accommodation-primary-action:link,
@@ -4375,8 +4374,6 @@ body,
 
 .portal-button:hover,
 .portal-button:focus-visible,
-.filter-actions .portal-button:hover,
-.filter-actions .portal-button:focus-visible,
 .accommodation-primary-action:hover,
 .accommodation-primary-action:focus-visible,
 .accommodation-primary-action:active {
@@ -4386,8 +4383,7 @@ body,
 }
 
 .portal-button-secondary,
-.portal-button-ghost,
-.filter-actions .portal-button-secondary {
+.portal-button-ghost {
   background: transparent;
   border-color: var(--portal-border);
   box-shadow: none;
@@ -4397,11 +4393,41 @@ body,
 .portal-button-secondary:hover,
 .portal-button-secondary:focus-visible,
 .portal-button-ghost:hover,
-.portal-button-ghost:focus-visible,
-.filter-actions .portal-button-secondary:hover,
-.filter-actions .portal-button-secondary:focus-visible {
+.portal-button-ghost:focus-visible {
   background: rgba(168, 179, 154, .16);
   border-color: rgba(110, 123, 82, .25);
+  color: var(--portal-text-strong) !important;
+}
+
+.filter-actions .portal-button,
+.filter-actions .portal-button:link,
+.filter-actions .portal-button:visited {
+  background: var(--portal-primary) !important;
+  border-color: var(--portal-primary) !important;
+  color: var(--portal-white) !important;
+}
+
+.filter-actions .portal-button:hover,
+.filter-actions .portal-button:focus-visible,
+.filter-actions .portal-button:active {
+  background: var(--portal-primary-hover) !important;
+  border-color: var(--portal-primary-hover) !important;
+  color: var(--portal-white) !important;
+}
+
+.filter-actions .portal-button-secondary,
+.filter-actions .portal-button-secondary:link,
+.filter-actions .portal-button-secondary:visited {
+  background: transparent !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-primary) !important;
+}
+
+.filter-actions .portal-button-secondary:hover,
+.filter-actions .portal-button-secondary:focus-visible,
+.filter-actions .portal-button-secondary:active {
+  background: rgba(168, 179, 154, .16) !important;
+  border-color: rgba(110, 123, 82, .25) !important;
   color: var(--portal-text-strong) !important;
 }
 
