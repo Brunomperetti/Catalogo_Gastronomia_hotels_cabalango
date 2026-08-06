@@ -4189,7 +4189,7 @@ button:disabled {
 .accommodation-amenities { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 12px; }
 .accommodation-amenities span { color: var(--portal-muted); font-size: .8rem; }
 .accommodation-more-amenities { color: var(--portal-olive-dark) !important; font-weight: 800; }
-.accommodation-card-footer { border-top: 1px solid rgba(64,85,63,.14); margin-top: 18px; padding-top: 14px; }
+.accommodation-card-footer { border-top: 1px solid rgba(64,85,63,.14); margin-top: auto; padding-top: 14px; }
 .accommodation-card-price { color: var(--portal-ink-strong); font-size: .95rem; font-weight: 800; margin: 0 0 12px; }
 .accommodation-card-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px 14px; }
 .accommodation-primary-action, .accommodation-secondary-action { border-radius: 999px; font-size: .82rem; font-weight: 800; padding: 8px 12px; text-decoration: none; }
