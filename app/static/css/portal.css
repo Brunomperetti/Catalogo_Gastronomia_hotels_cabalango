@@ -4610,21 +4610,14 @@ body,
 
 /* Individual provider profile: warm editorial hierarchy and accessible actions. */
 .portal-body .prestador-page .tourism-heading-card,
-.portal-body .prestador-page .quick-facts-card,
-.portal-body .prestador-page .prestador-detail-grid > .portal-card,
-.portal-body .prestador-profile-card,
-.portal-body .prestador-description,
-.portal-body .prestador-contact {
+.portal-body .prestador-page .quick-facts-card {
   background: var(--portal-white) !important;
   border: 1px solid var(--portal-border) !important;
   box-shadow: 0 10px 26px var(--portal-shadow) !important;
 }
 
 .portal-body .prestador-page .tourism-heading-card h1,
-.portal-body .prestador-page .portal-card h2,
-.portal-body .prestador-page .quick-facts-grid span,
-.portal-body .prestador-profile-card h1,
-.portal-body .prestador-promo-card h2 {
+.portal-body .prestador-page .portal-card h2 {
   color: var(--portal-heading) !important;
 }
 
@@ -4632,22 +4625,25 @@ body,
 .portal-body .prestador-page .portal-subtitle,
 .portal-body .prestador-page .prestador-contact-lines,
 .portal-body .prestador-page .prestador-contact-lines span,
-.portal-body .prestador-page .prestador-detail-grid p,
-.portal-body .prestador-page .quick-facts-grid strong,
-.portal-body .prestador-description,
-.portal-body .prestador-contact {
+.portal-body .prestador-page .prestador-detail-grid p {
   color: var(--portal-muted) !important;
 }
 
-.portal-body .prestador-page .quick-facts-grid div {
+.portal-body main.prestador-page .quick-facts-grid > div {
   background: var(--portal-surface-soft) !important;
-  border-color: var(--portal-border) !important;
+  border: 1px solid var(--portal-border) !important;
   color: var(--portal-text) !important;
 }
 
-.portal-body .prestador-page .quick-facts-grid div.is-enabled span,
-.portal-body .prestador-page .quick-facts-grid div.is-prepared span {
-  color: var(--portal-primary) !important;
+.portal-body main.prestador-page .quick-facts-grid > div > strong {
+  color: var(--portal-muted) !important;
+}
+
+.portal-body main.prestador-page .quick-facts-grid > div > span,
+.portal-body main.prestador-page .quick-facts-grid > div.is-enabled > span,
+.portal-body main.prestador-page .quick-facts-grid > div.is-prepared > span {
+  color: var(--portal-heading) !important;
+  opacity: 1 !important;
 }
 
 .portal-body .prestador-page .prestador-detail-grid a:not(.portal-button),
@@ -4683,34 +4679,49 @@ body,
   color: var(--portal-white) !important;
 }
 
-.portal-body .prestador-page .promo-highlight,
-.portal-body .prestador-promo,
-.portal-body .prestador-promo-card {
+.portal-body main.prestador-page .prestador-detail-grid > article.portal-card {
+  background: var(--portal-white) !important;
+  border: 1px solid var(--portal-border) !important;
+  box-shadow: 0 10px 26px var(--portal-shadow) !important;
+}
+
+.portal-body main.prestador-page .prestador-detail-grid > article.portal-card > h2 {
+  color: var(--portal-heading) !important;
+}
+
+.portal-body main.prestador-page .prestador-detail-grid > article.portal-card > p:not(.portal-card-label) {
+  color: var(--portal-text) !important;
+}
+
+.portal-body main.prestador-page .prestador-detail-grid .portal-card-label {
+  color: var(--portal-muted) !important;
+}
+
+.portal-body main.prestador-page .prestador-detail-grid .promo-highlight {
   background: var(--portal-surface) !important;
+  background-color: var(--portal-surface) !important;
   background-image: none !important;
   border: 1px solid var(--portal-border) !important;
   box-shadow: none !important;
   color: var(--portal-text) !important;
+  opacity: 1 !important;
 }
 
-.portal-body .prestador-page .promo-highlight span,
-.portal-body .prestador-promo .prestador-theme,
-.portal-body .prestador-promo-card .prestador-theme {
+.portal-body main.prestador-page .prestador-detail-grid .promo-highlight > span {
   color: var(--portal-primary) !important;
+  opacity: 1 !important;
 }
 
-.portal-body .prestador-page .promo-highlight strong,
-.portal-body .prestador-promo strong,
-.portal-body .prestador-promo-card strong {
+.portal-body main.prestador-page .prestador-detail-grid .promo-highlight > strong {
   color: var(--portal-heading) !important;
-  font-weight: 800;
+  opacity: 1 !important;
+  text-shadow: none !important;
 }
 
-.portal-body .prestador-page .promo-highlight small,
-.portal-body .prestador-promo small,
-.portal-body .prestador-promo-card small {
+.portal-body main.prestador-page .prestador-detail-grid .promo-highlight > small {
   color: var(--portal-muted) !important;
-  opacity: 1;
+  opacity: 1 !important;
+  text-shadow: none !important;
 }
 
 .season-grid span { color: var(--portal-primary); }

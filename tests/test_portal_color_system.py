@@ -40,9 +40,17 @@ def test_provider_profile_uses_editorial_colors_and_legible_promotion():
     css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
     color_system = css.split("/* Cabalango global color system 2026 */", 1)[1]
 
-    assert ".portal-body .prestador-promo" in color_system
-    assert ".portal-body .prestador-page .promo-highlight" in color_system
+    assert "main.prestador-page .quick-facts-grid > div > span" in color_system
+    assert "main.prestador-page .prestador-detail-grid .promo-highlight > strong" in color_system
+    assert "main.prestador-page .prestador-detail-grid .promo-highlight > small" in color_system
+    assert ".prestador-promo" not in color_system
     assert "background: var(--portal-surface) !important;" in color_system
     assert "color: var(--portal-heading) !important;" in color_system
     assert "color: var(--portal-muted) !important;" in color_system
     assert "color: var(--portal-primary) !important;" in color_system
+
+
+def test_provider_profile_invalidates_cached_portal_styles():
+    template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
+
+    assert "{{ url_for('static', path='css/portal.css') }}?v=20260806-profile-2" in template
