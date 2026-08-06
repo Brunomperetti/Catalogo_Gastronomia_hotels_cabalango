@@ -4608,6 +4608,111 @@ body,
 .weather-day strong,
 .season-grid strong { color: var(--portal-text-strong); }
 
+/* Individual provider profile: warm editorial hierarchy and accessible actions. */
+.portal-body .prestador-page .tourism-heading-card,
+.portal-body .prestador-page .quick-facts-card,
+.portal-body .prestador-page .prestador-detail-grid > .portal-card,
+.portal-body .prestador-profile-card,
+.portal-body .prestador-description,
+.portal-body .prestador-contact {
+  background: var(--portal-white) !important;
+  border: 1px solid var(--portal-border) !important;
+  box-shadow: 0 10px 26px var(--portal-shadow) !important;
+}
+
+.portal-body .prestador-page .tourism-heading-card h1,
+.portal-body .prestador-page .portal-card h2,
+.portal-body .prestador-page .quick-facts-grid span,
+.portal-body .prestador-profile-card h1,
+.portal-body .prestador-promo-card h2 {
+  color: var(--portal-heading) !important;
+}
+
+.portal-body .prestador-page .portal-card-label,
+.portal-body .prestador-page .portal-subtitle,
+.portal-body .prestador-page .prestador-contact-lines,
+.portal-body .prestador-page .prestador-contact-lines span,
+.portal-body .prestador-page .prestador-detail-grid p,
+.portal-body .prestador-page .quick-facts-grid strong,
+.portal-body .prestador-description,
+.portal-body .prestador-contact {
+  color: var(--portal-muted) !important;
+}
+
+.portal-body .prestador-page .quick-facts-grid div {
+  background: var(--portal-surface-soft) !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-text) !important;
+}
+
+.portal-body .prestador-page .quick-facts-grid div.is-enabled span,
+.portal-body .prestador-page .quick-facts-grid div.is-prepared span {
+  color: var(--portal-primary) !important;
+}
+
+.portal-body .prestador-page .prestador-detail-grid a:not(.portal-button),
+.portal-body .prestador-page .prestador-detail-grid a:not(.portal-button):link,
+.portal-body .prestador-page .prestador-detail-grid a:not(.portal-button):visited,
+.portal-body .prestador-page .prestador-contact-lines a,
+.portal-body .prestador-page .prestador-contact-lines a:visited {
+  color: var(--portal-primary) !important;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.portal-body .prestador-page .prestador-detail-grid a:not(.portal-button):hover,
+.portal-body .prestador-page .prestador-detail-grid a:not(.portal-button):focus-visible,
+.portal-body .prestador-page .prestador-detail-grid a:not(.portal-button):active,
+.portal-body .prestador-page .prestador-contact-lines a:hover {
+  color: var(--portal-primary-hover) !important;
+}
+
+.portal-body .prestador-page .portal-button:not(.portal-button-secondary):not(.portal-button-ghost),
+.portal-body .prestador-page .portal-button:not(.portal-button-secondary):not(.portal-button-ghost):link,
+.portal-body .prestador-page .portal-button:not(.portal-button-secondary):not(.portal-button-ghost):visited {
+  background: var(--portal-primary) !important;
+  border-color: var(--portal-primary) !important;
+  color: var(--portal-white) !important;
+}
+
+.portal-body .prestador-page .portal-button:not(.portal-button-secondary):not(.portal-button-ghost):hover,
+.portal-body .prestador-page .portal-button:not(.portal-button-secondary):not(.portal-button-ghost):focus-visible,
+.portal-body .prestador-page .portal-button:not(.portal-button-secondary):not(.portal-button-ghost):active {
+  background: var(--portal-primary-hover) !important;
+  border-color: var(--portal-primary-hover) !important;
+  color: var(--portal-white) !important;
+}
+
+.portal-body .prestador-page .promo-highlight,
+.portal-body .prestador-promo,
+.portal-body .prestador-promo-card {
+  background: var(--portal-surface) !important;
+  background-image: none !important;
+  border: 1px solid var(--portal-border) !important;
+  box-shadow: none !important;
+  color: var(--portal-text) !important;
+}
+
+.portal-body .prestador-page .promo-highlight span,
+.portal-body .prestador-promo .prestador-theme,
+.portal-body .prestador-promo-card .prestador-theme {
+  color: var(--portal-primary) !important;
+}
+
+.portal-body .prestador-page .promo-highlight strong,
+.portal-body .prestador-promo strong,
+.portal-body .prestador-promo-card strong {
+  color: var(--portal-heading) !important;
+  font-weight: 800;
+}
+
+.portal-body .prestador-page .promo-highlight small,
+.portal-body .prestador-promo small,
+.portal-body .prestador-promo-card small {
+  color: var(--portal-muted) !important;
+  opacity: 1;
+}
+
 .season-grid span { color: var(--portal-primary); }
 .season-grid small { color: var(--portal-muted); }
 
