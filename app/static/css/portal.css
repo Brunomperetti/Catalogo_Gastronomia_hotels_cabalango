@@ -4220,3 +4220,313 @@ button:disabled {
   .accommodation-card { transition: none; }
   .accommodation-card:hover { transform: none; }
 }
+
+/* Cabalango global color system 2026 */
+:root {
+  --portal-bg: #F7F3EA;
+  --portal-surface: #F2E9D8;
+  --portal-surface-soft: #FBF8F2;
+  --portal-text: #3A3F2D;
+  --portal-text-strong: #2D3122;
+  --portal-muted: #66705A;
+  --portal-primary: #59663F;
+  --portal-primary-hover: #465031;
+  --portal-sage: #8A9B68;
+  --portal-border: #D8CFBE;
+  --portal-river: #78AABD;
+  --portal-white: #FFFDF8;
+  --portal-shadow: rgba(58, 63, 45, .10);
+
+  /* Backwards-compatible aliases used by the historical portal layers. */
+  --portal-ink: var(--portal-text);
+  --portal-ink-strong: var(--portal-text-strong);
+  --portal-olive: var(--portal-primary);
+  --portal-olive-dark: var(--portal-primary-hover);
+  --portal-sand: var(--portal-surface);
+  --portal-warm-white: var(--portal-surface-soft);
+  --portal-line: var(--portal-border);
+  --background-color: var(--portal-bg);
+  --card-background: var(--portal-surface-soft);
+  --text-color: var(--portal-text);
+  --muted-text-color: var(--portal-muted);
+  --accent-color: var(--portal-primary);
+  --button-background: var(--portal-primary);
+  --button-text: var(--portal-white);
+  --border-color: var(--portal-border);
+  --shadow-color: var(--portal-shadow);
+}
+
+body,
+.portal-body {
+  background: var(--portal-bg);
+  color: var(--portal-text);
+}
+
+.portal-body h1,
+.portal-body h2,
+.portal-body h3,
+.portal-body h4,
+.portal-body p,
+.portal-body li,
+.portal-body dd {
+  color: var(--portal-text);
+}
+
+.portal-subtitle,
+.portal-card p,
+.portal-empty p,
+.prestador-summary,
+.prestador-contact-lines,
+.accommodation-results-help,
+.accommodation-results-order,
+.accommodation-card-location,
+.accommodation-amenities span,
+.destination-hero-copy > p,
+.destination-section p,
+.destination-dialog-content {
+  color: var(--portal-muted);
+}
+
+.portal-kicker,
+.portal-card-label,
+.prestador-theme,
+.accommodation-card-kicker,
+.filter-control label,
+.destination-story-grid span,
+.destination-video-feature span,
+.destination-video-empty span,
+.weather-day span,
+.season-grid span {
+  color: var(--portal-primary);
+}
+
+.portal-topnav a {
+  background: transparent;
+  border-color: var(--portal-border);
+  box-shadow: 0 4px 14px rgba(58, 63, 45, .06);
+  color: var(--portal-text);
+}
+
+.portal-topnav a:not(.is-active):not(.portal-desktop-brand):hover {
+  background: rgba(138, 155, 104, .14);
+  border-color: rgba(89, 102, 63, .25);
+  box-shadow: 0 5px 16px rgba(58, 63, 45, .08);
+  color: var(--portal-text);
+}
+
+.portal-topnav a.is-active,
+.portal-topnav a.is-active:link,
+.portal-topnav a.is-active:visited,
+.portal-topnav a.is-active:hover,
+.portal-topnav a.is-active:focus,
+.portal-topnav a.is-active:active {
+  background: var(--portal-primary) !important;
+  border-color: var(--portal-primary) !important;
+  box-shadow: 0 7px 18px rgba(58, 63, 45, .14) !important;
+  color: var(--portal-white) !important;
+}
+
+.portal-hero,
+.portal-section-hero,
+.destination-editorial-hero,
+.prestador-profile-hero {
+  background: var(--portal-surface-soft);
+  border-color: var(--portal-border);
+  box-shadow: 0 20px 50px rgba(58, 63, 45, .09);
+}
+
+.portal-card,
+.prestador-card,
+.portal-empty,
+.tourism-heading-card,
+.quick-facts-card,
+.destination-guide .destination-section,
+.destination-story-grid article,
+.destination-video-feature,
+.accommodation-card {
+  background: var(--portal-surface-soft);
+  border-color: var(--portal-border);
+  box-shadow: 0 14px 34px rgba(58, 63, 45, .08);
+}
+
+.portal-button,
+.filter-actions .portal-button,
+.destination-dialog-action,
+.accommodation-primary-action,
+.accommodation-primary-action:link,
+.accommodation-primary-action:visited {
+  background: var(--portal-primary);
+  border-color: var(--portal-primary);
+  box-shadow: 0 7px 18px rgba(58, 63, 45, .12);
+  color: var(--portal-white) !important;
+}
+
+.portal-button:hover,
+.portal-button:focus-visible,
+.filter-actions .portal-button:hover,
+.filter-actions .portal-button:focus-visible,
+.accommodation-primary-action:hover,
+.accommodation-primary-action:focus-visible,
+.accommodation-primary-action:active {
+  background: var(--portal-primary-hover);
+  border-color: var(--portal-primary-hover);
+  color: var(--portal-white) !important;
+}
+
+.portal-button-secondary,
+.portal-button-ghost,
+.filter-actions .portal-button-secondary {
+  background: transparent;
+  border-color: var(--portal-border);
+  box-shadow: none;
+  color: var(--portal-primary) !important;
+}
+
+.portal-button-secondary:hover,
+.portal-button-secondary:focus-visible,
+.portal-button-ghost:hover,
+.portal-button-ghost:focus-visible,
+.filter-actions .portal-button-secondary:hover,
+.filter-actions .portal-button-secondary:focus-visible {
+  background: rgba(138, 155, 104, .14);
+  border-color: rgba(89, 102, 63, .25);
+  color: var(--portal-text) !important;
+}
+
+.alojamientos-filter-panel {
+  background: var(--portal-surface-soft) !important;
+  border-color: var(--portal-border) !important;
+  box-shadow: 0 14px 34px rgba(58, 63, 45, .08) !important;
+}
+
+.alojamientos-filters .filter-control,
+.alojamientos-filters select,
+.accommodation-more-filters summary,
+.accommodation-more-filters .filter-amenities,
+.amenity-pill {
+  background: var(--portal-white);
+  border-color: var(--portal-border);
+  color: var(--portal-text);
+}
+
+.alojamientos-filter-panel .filter-heading h2 { color: var(--portal-text) !important; }
+.alojamientos-filter-panel .filter-heading p:not(.portal-kicker) { color: var(--portal-muted) !important; }
+.alojamientos-filter-panel .portal-kicker,
+.alojamientos-filters .filter-control label { color: var(--portal-primary) !important; }
+.alojamientos-filters .filter-control,
+.alojamientos-filters select,
+.accommodation-more-filters summary,
+.accommodation-more-filters .filter-amenities {
+  background-color: var(--portal-white) !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-text) !important;
+}
+
+.amenity-pill span {
+  background: var(--portal-white) !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-text) !important;
+}
+
+.amenity-pill input:checked + span {
+  background: rgba(138, 155, 104, .20) !important;
+  border-color: var(--portal-sage) !important;
+  box-shadow: none !important;
+  color: var(--portal-text) !important;
+}
+
+.amenity-pill:has(input:checked),
+.amenity-pill.is-selected {
+  background: rgba(138, 155, 104, .20);
+  border-color: var(--portal-sage);
+  color: var(--portal-text);
+}
+
+.accommodation-clear-filters,
+.accommodation-secondary-action,
+.prestador-whatsapp {
+  color: var(--portal-primary);
+}
+
+.filter-actions .portal-button {
+  background: var(--portal-primary) !important;
+  border-color: var(--portal-primary) !important;
+  color: var(--portal-white) !important;
+}
+
+.filter-actions .portal-button:hover,
+.filter-actions .portal-button:focus-visible {
+  background: var(--portal-primary-hover) !important;
+  border-color: var(--portal-primary-hover) !important;
+}
+
+.filter-actions .portal-button-secondary {
+  background: transparent !important;
+  border-color: var(--portal-border) !important;
+  color: var(--portal-primary) !important;
+}
+
+.filter-actions .portal-button-secondary:hover,
+.filter-actions .portal-button-secondary:focus-visible {
+  background: rgba(138, 155, 104, .14) !important;
+  border-color: rgba(89, 102, 63, .25) !important;
+  color: var(--portal-text) !important;
+}
+
+.destination-dialog {
+  background: var(--portal-surface-soft);
+  border-color: var(--portal-border);
+  box-shadow: 0 28px 70px rgba(38, 42, 31, .20);
+  color: var(--portal-text);
+}
+
+.destination-dialog::backdrop { background: rgba(35, 38, 31, .48); }
+.destination-dialog h2 { color: var(--portal-text); }
+.destination-dialog-close {
+  background: var(--portal-white);
+  border-color: var(--portal-border);
+  color: var(--portal-primary);
+}
+
+.destination-river-block,
+.weather-advice,
+.destination-video-empty {
+  background: rgba(138, 155, 104, .12);
+  border-color: rgba(89, 102, 63, .18);
+}
+
+.destination-weather-card {
+  background: var(--portal-surface);
+  border-color: var(--portal-border);
+  box-shadow: 0 14px 34px rgba(58, 63, 45, .08);
+}
+
+.weather-temp,
+.weather-summary strong,
+.destination-weather-card dd { color: var(--portal-primary); }
+.weather-summary span,
+.weather-day small { color: var(--portal-river); }
+.weather-summary div,
+.weather-day,
+.season-grid div { background: var(--portal-white); border-color: var(--portal-border); }
+
+.destination-cta {
+  background: var(--portal-surface);
+  border-color: var(--portal-border);
+  box-shadow: 0 16px 38px rgba(58, 63, 45, .08);
+}
+
+.accommodation-card:hover,
+.prestador-card-premium:hover {
+  border-color: rgba(89, 102, 63, .25);
+  box-shadow: 0 16px 36px rgba(58, 63, 45, .11);
+}
+
+.portal-body a:focus-visible,
+.portal-body button:focus-visible,
+.portal-body select:focus-visible,
+.portal-body summary:focus-visible,
+.portal-body input:focus-visible {
+  outline: 3px solid rgba(120, 170, 189, .70);
+  outline-offset: 3px;
+}
