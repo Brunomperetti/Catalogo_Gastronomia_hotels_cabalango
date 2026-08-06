@@ -1,22 +1,22 @@
 :root {
-  --primary-color: #263126;
-  --secondary-color: #B9875A;
-  --background-color: #F7F4ED;
-  --card-background: #FCFAF5;
-  --text-color: #263126;
-  --muted-text-color: #5E6658;
-  --accent-color: #B9875A;
-  --button-background: #6F7B52;
-  --button-text: #FCFAF5;
-  --border-color: #DDD8CA;
-  --shadow-color: rgba(38, 49, 38, 0.08);
+  --primary-color: #65704B;
+  --secondary-color: #49372D;
+  --background-color: #F4F0E6;
+  --card-background: #FFFDF8;
+  --text-color: #514B43;
+  --muted-text-color: #766F65;
+  --accent-color: #65704B;
+  --button-background: #65704B;
+  --button-text: #FFFDF8;
+  --border-color: #D8D0C2;
+  --shadow-color: rgba(73, 55, 45, 0.08);
   --border-radius: 14px;
 }
 
 body.catalog-theme-default {
-  --primary-color: #6E7B52; --secondary-color: #A8B39A; --background-color: #F6F1E7; --card-background: #FBF8F2;
-  --text-color: #3F4633; --muted-text-color: #6B6F5E; --accent-color: #B97A56; --button-background: #6E7B52;
-  --button-text: #FFFDF8; --border-color: #D8CCB8; --shadow-color: rgba(63,70,51,.10);
+  --primary-color: #65704B; --secondary-color: #49372D; --background-color: #F4F0E6; --card-background: #FFFDF8;
+  --text-color: #514B43; --muted-text-color: #766F65; --accent-color: #65704B; --button-background: #65704B;
+  --button-text: #FFFDF8; --border-color: #D8D0C2; --shadow-color: rgba(73,55,45,.08);
 }
 body.catalog-theme-autopartes {
   --primary-color: #111827; --secondary-color: #dc2626; --background-color: #030712; --card-background: #111827;

@@ -4570,3 +4570,137 @@ body,
   outline: 3px solid rgba(111, 167, 190, .70);
   outline-offset: 3px;
 }
+
+/* Cabalango editorial refinement: quiet, natural and intentionally reduced. */
+:root {
+  --portal-bg: #F4F0E6;
+  --portal-surface-soft: #FAF7F0;
+  --portal-surface: #ECE6DA;
+  --portal-white: #FFFDF8;
+  --portal-heading: #49372D;
+  --portal-text: #514B43;
+  --portal-text-strong: #49372D;
+  --portal-muted: #766F65;
+  --portal-primary: #65704B;
+  --portal-primary-hover: #505A3B;
+  --portal-sage: #AAB19A;
+  --portal-river: #789BA5;
+  --portal-river-soft: #EDF1ED;
+  --portal-terracotta: #65704B;
+  --portal-border: #D8D0C2;
+  --portal-shadow: rgba(73, 55, 45, .08);
+}
+
+.portal-kicker,
+.portal-card-label,
+.prestador-theme,
+.accommodation-card-kicker,
+.alojamientos-filter-panel .portal-kicker,
+.destination-weather-card .portal-kicker,
+.destination-story-grid span,
+.destination-video-feature span,
+.destination-video-empty span {
+  color: var(--portal-primary) !important;
+}
+
+.portal-hero h1,
+.portal-section-hero h1,
+.destination-hero-copy h1,
+.destination-section h2,
+.destination-river-block h2,
+.tourism-heading-card h1,
+.prestador-profile-card h1 {
+  color: var(--portal-heading);
+  text-shadow: none;
+}
+
+.portal-topnav a,
+.portal-button {
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+
+.portal-topnav a:visited:not(.is-active) { color: var(--portal-text); }
+.portal-button:visited { color: var(--portal-white) !important; }
+
+.portal-card,
+.prestador-card,
+.accommodation-card,
+.destination-story-grid article {
+  box-shadow: 0 12px 30px var(--portal-shadow);
+}
+
+.tourism-gallery-main figcaption,
+.destination-photo-card figcaption {
+  background: linear-gradient(180deg, rgba(73, 55, 45, 0), rgba(73, 55, 45, .78));
+  color: var(--portal-white);
+}
+
+.destination-weather-card {
+  background: var(--portal-surface-soft);
+  border-color: var(--portal-border);
+  box-shadow: 0 14px 34px var(--portal-shadow);
+  gap: 20px;
+}
+
+.weather-main {
+  align-items: stretch;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.weather-current,
+.weather-summary,
+.weather-forecast {
+  min-height: 100%;
+}
+
+.weather-summary,
+.weather-forecast {
+  grid-auto-rows: 1fr;
+}
+
+.weather-summary div,
+.weather-day,
+.season-grid div {
+  background: var(--portal-white);
+  border-color: var(--portal-border);
+  box-shadow: none;
+}
+
+.weather-summary span,
+.weather-day span,
+.weather-day small,
+.destination-weather-card dt {
+  color: var(--portal-muted);
+}
+
+.weather-temp,
+.weather-temp span,
+.weather-summary strong,
+.weather-day strong,
+.season-grid strong,
+.destination-weather-card dd {
+  color: var(--portal-text-strong);
+}
+
+.weather-advice {
+  background: rgba(170, 177, 154, .20);
+  border-color: rgba(101, 112, 75, .20);
+  color: var(--portal-text-strong);
+}
+
+.season-grid span { color: var(--portal-primary); }
+.season-grid small { color: var(--portal-muted); }
+
+.portal-body a:focus-visible,
+.portal-body button:focus-visible,
+.portal-body select:focus-visible,
+.portal-body summary:focus-visible,
+.portal-body input:focus-visible,
+.portal-body [tabindex]:focus-visible {
+  outline-color: rgba(120, 155, 165, .72);
+}
+
+@media (max-width: 1020px) {
+  .weather-main { grid-template-columns: 1fr; }
+}
