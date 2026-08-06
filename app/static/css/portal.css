@@ -4320,10 +4320,10 @@ body,
 .portal-topnav a.is-active:hover,
 .portal-topnav a.is-active:focus,
 .portal-topnav a.is-active:active {
-  background: var(--portal-primary);
-  border-color: var(--portal-primary);
-  box-shadow: 0 7px 18px rgba(58, 63, 45, .14);
-  color: var(--portal-white);
+  background: var(--portal-primary) !important;
+  border-color: var(--portal-primary) !important;
+  box-shadow: 0 7px 18px rgba(58, 63, 45, .14) !important;
+  color: var(--portal-white) !important;
 }
 
 .portal-hero,
