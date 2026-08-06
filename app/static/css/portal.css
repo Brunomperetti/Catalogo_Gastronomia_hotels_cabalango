@@ -1111,8 +1111,8 @@ button.portal-button { cursor: pointer; font: inherit; }
   --portal-cream: #fffdf7;
   --portal-border: rgba(102, 114, 79, .20);
   --portal-shadow: 0 24px 70px rgba(74, 63, 48, .10);
-  --portal-serif: "Cormorant Garamond", Georgia, serif;
-  --portal-sans: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --portal-serif: var(--portal-font-display);
+  --portal-sans: var(--portal-font-sans);
 }
 
 .portal-body {
@@ -1567,7 +1567,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 
   .portal-mobile-brand {
     color: var(--text-color);
-    font-family: "Cormorant Garamond", Georgia, serif;
+    font-family: var(--portal-font-display);
     font-size: 1.45rem;
     font-weight: 700;
     letter-spacing: -.025em;
@@ -1825,7 +1825,7 @@ button.portal-button { cursor: pointer; font: inherit; }
     transparent,
     transparent;
   color: var(--portal-ink);
-  font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--portal-font-sans);
   font-size: 16px;
   line-height: 1.55;
 }
@@ -1932,7 +1932,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 .portal-empty h2,
 .filter-heading h2 {
   color: var(--portal-ink-strong);
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--portal-font-display);
   font-weight: 700;
   letter-spacing: -.035em;
   text-shadow: none;
@@ -1954,7 +1954,7 @@ button.portal-button { cursor: pointer; font: inherit; }
   place-content: end start;
 }
 .portal-hero-visual span, .destination-preview-art span { background: rgba(255,250,241,.84); border: 1px solid var(--portal-line); border-radius: 999px; display: inline-flex; font-weight: 900; margin: 4px; padding: 8px 12px; width: fit-content; }
-.portal-hero-visual strong { font-family: "Cormorant Garamond", Georgia, serif; font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1; margin-top: 12px; }
+.portal-hero-visual strong { font-family: var(--portal-font-display); font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1; margin-top: 12px; }
 .portal-hero-visual small { color: var(--portal-muted); font-weight: 800; margin-top: 8px; }
 .portal-hero-tags { justify-content: flex-start; }
 .portal-hero-tags a { background: #fffaf1; border-color: rgba(64,85,63,.22); box-shadow: 0 10px 24px rgba(73,58,36,.09); color: var(--portal-ink); font-size: .96rem; min-height: 46px; padding: 12px 16px; }
@@ -1964,7 +1964,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 .portal-card { border-radius: 28px; padding: clamp(24px, 3vw, 34px); }
 .portal-card::before { background: transparent; }
 .portal-card p, .portal-empty p, .prestador-summary, .prestador-card-meta, .prestador-location { color: var(--portal-muted); font-size: .98rem; }
-.portal-card-icon { color: var(--portal-olive); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; }
+.portal-card-icon { color: var(--portal-olive); font-family: var(--portal-font-display); font-size: 1.6rem; font-weight: 700; margin-bottom: 12px; }
 .destination-preview { align-items: center; display: grid; gap: 24px; grid-template-columns: 1fr .75fr; margin-top: 26px; }
 .destination-preview-art { min-height: 220px; }
 
@@ -2024,7 +2024,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 @media (max-width: 760px) {
   .portal-shell { width: min(100% - 24px, 1180px); padding-top: 14px; }
   .portal-mobile-header { align-items: center; background: rgba(255,250,241,.86); border: 1px solid var(--portal-line); border-radius: 22px; box-shadow: 0 12px 32px rgba(55,44,28,.10); display: flex; justify-content: space-between; margin-bottom: 10px; padding: 10px 12px; position: sticky; top: 8px; z-index: 20; backdrop-filter: blur(16px); }
-  .portal-mobile-brand { color: var(--portal-ink-strong); font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.45rem; font-weight: 700; text-decoration: none; }
+  .portal-mobile-brand { color: var(--portal-ink-strong); font-family: var(--portal-font-display); font-size: 1.45rem; font-weight: 700; text-decoration: none; }
   .portal-mobile-menu { align-items: center; border: 1px solid rgba(64,85,63,.2); border-radius: 999px; cursor: pointer; display: grid; gap: 4px; height: 44px; justify-content: center; width: 48px; }
   .portal-mobile-menu span { background: var(--portal-ink); border-radius: 99px; display: block; height: 2px; width: 20px; }
   .portal-topnav { display: none; border-radius: 24px; justify-content: flex-start; margin-bottom: 18px; overflow-x: auto; padding: 10px; position: static; }
@@ -2069,7 +2069,7 @@ button.portal-button { cursor: pointer; font: inherit; }
     transparent,
     transparent;
   color: var(--portal-graphite);
-  font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--portal-font-sans);
 }
 
 .portal-hero h1,
@@ -2080,7 +2080,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 .portal-empty h2,
 .filter-heading h2 {
   color: var(--portal-forest);
-  font-family: "Cormorant Garamond", Georgia, serif;
+  font-family: var(--portal-font-display);
   font-weight: 700;
   letter-spacing: -.025em;
 }
@@ -2935,7 +2935,7 @@ button.portal-button { cursor: pointer; font: inherit; }
 .portal-body {
   background: var(--color-bg) !important;
   color: var(--color-text) !important;
-  font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--portal-font-sans);
 }
 
 .portal-shell { padding-top: clamp(18px, 3vw, 34px); }
@@ -3596,12 +3596,12 @@ button:disabled {
 /* Descubrí Cabalango: editorial destination guide */
 .destination-guide { color: #4E3A2D; }
 .destination-editorial-hero { align-items: center; background: #FBF8F2; border: 1px solid rgba(216,204,188,.9); border-radius: 36px; display: grid; gap: 28px; grid-template-columns: minmax(0,1fr) minmax(320px,.86fr); margin: 22px 0 34px; padding: clamp(24px,4vw,48px); box-shadow: 0 22px 52px rgba(78,58,45,.1); }
-.destination-hero-copy h1, .destination-section h2, .destination-river-block h2, .destination-weather-card h2 { color: #3F2F25; font-family: "Cormorant Garamond", serif; font-size: clamp(2.25rem,5vw,4.7rem); line-height: .95; margin: 0 0 18px; }
+.destination-hero-copy h1, .destination-section h2, .destination-river-block h2, .destination-weather-card h2 { color: #3F2F25; font-family: var(--portal-font-display); font-size: clamp(2.25rem,5vw,4.7rem); line-height: .95; margin: 0 0 18px; }
 .destination-hero-copy .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .destination-hero-image { background: #EFE5D6; border: 1px solid #D8CCBC; border-radius: 30px; margin: 0; min-height: 420px; overflow: hidden; position: relative; }
 .destination-hero-image img { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
 .destination-hero-image figcaption { background: rgba(251,248,242,.9); border-radius: 999px; bottom: 18px; color: #5C4332; font-weight: 800; left: 18px; padding: 9px 14px; position: absolute; }
-.destination-hero-placeholder { align-items: center; color: #7C8660; display: flex; font-family: "Cormorant Garamond", serif; font-size: 2.3rem; height: 100%; justify-content: center; min-height: 420px; }
+.destination-hero-placeholder { align-items: center; color: #7C8660; display: flex; font-family: var(--portal-font-display); font-size: 2.3rem; height: 100%; justify-content: center; min-height: 420px; }
 .destination-story-grid { display: grid; gap: 16px; grid-template-columns: repeat(4,minmax(0,1fr)); }
 .destination-story-grid article, .destination-video-feature, .destination-weather-card { background: #FFF9F1; border: 1px solid #D8CCBC; border-radius: 24px; box-shadow: 0 14px 34px rgba(78,58,45,.07); padding: 22px; }
 .destination-story-grid span, .destination-video-feature span, .destination-photo-card span { color: #A5633F; display: block; font-size: .76rem; font-weight: 900; letter-spacing: .12em; margin-bottom: 8px; text-transform: uppercase; }
@@ -3638,7 +3638,7 @@ button:disabled {
 .destination-river-media { display: grid; gap: 16px; grid-template-columns: minmax(0,1fr) minmax(240px,.78fr); }
 .destination-river-media > img, .destination-river-media > .destination-hero-placeholder { aspect-ratio: 4/5; border-radius: 26px; min-height: 100%; overflow: hidden; }
 .destination-weather-card { align-self: stretch; background: linear-gradient(180deg,#FFF9F1,#F3EBDD); border-color: rgba(216,204,188,.95); display: flex; flex-direction: column; justify-content: space-between; margin: 0; padding: 20px; }
-.destination-weather-card h3 { color: #3F2F25; font-family: "Cormorant Garamond", serif; font-size: clamp(1.8rem,3vw,2.45rem); line-height: 1; margin: 0 0 12px; }
+.destination-weather-card h3 { color: #3F2F25; font-family: var(--portal-font-display); font-size: clamp(1.8rem,3vw,2.45rem); line-height: 1; margin: 0 0 12px; }
 .destination-weather-card dl { grid-template-columns: 1fr; }
 .destination-weather-card dl div { background: rgba(238,243,231,.7); border: 1px solid rgba(124,134,96,.16); border-radius: 16px; padding: 10px 12px; }
 .destination-editorial-gallery { align-items: stretch; }
@@ -3651,7 +3651,7 @@ button:disabled {
 .destination-photo-card strong { display: block; font-size: 1.08rem; line-height: 1.18; margin-top: 5px; }
 .destination-video-empty { background: linear-gradient(135deg,#FFF9F1,#EEF3E7); border: 1px dashed #B8C7A5; border-radius: 26px; padding: clamp(24px,4vw,38px); text-align: center; }
 .destination-video-empty span { color: #A5633F; font-size: .76rem; font-weight: 950; letter-spacing: .13em; text-transform: uppercase; }
-.destination-video-empty h3 { color: #3F2F25; font-family: "Cormorant Garamond", serif; font-size: clamp(1.8rem,3vw,2.8rem); margin: 8px 0; }
+.destination-video-empty h3 { color: #3F2F25; font-family: var(--portal-font-display); font-size: clamp(1.8rem,3vw,2.8rem); margin: 8px 0; }
 .destination-cta { background: linear-gradient(135deg,#FFF9F1,#F3EBDD); border: 1px solid rgba(216,204,188,.9); box-shadow: 0 20px 48px rgba(78,58,45,.08); }
 @media (max-width: 1020px) { .destination-river-block, .destination-river-media { grid-template-columns: 1fr; } .destination-river-media > img, .destination-river-media > .destination-hero-placeholder { aspect-ratio: 16/10; } }
 @media (max-width: 900px) { .destination-photo-card, .destination-photo-card.is-primary { aspect-ratio: 4/3; } }
@@ -3774,7 +3774,7 @@ button:disabled {
 
 .destination-weather-card h3 {
   color: #3F2F25;
-  font-family: "Cormorant Garamond", serif;
+  font-family: var(--portal-font-display);
   font-size: clamp(1.9rem, 3vw, 2.7rem);
   line-height: 1;
   margin: 0 0 10px;
@@ -4118,7 +4118,7 @@ button:disabled {
 .destination-dialog { background: #FBF7F0; border: 1px solid #D8C7AE; border-radius: 26px; box-shadow: 0 28px 70px rgba(47, 36, 28, .22); box-sizing: border-box; color: #4D3527; margin: auto; max-height: min(82vh, 720px); max-width: 680px; overflow: hidden; padding: 0; width: calc(100% - 48px); }
 .destination-dialog::backdrop { background: rgba(37, 30, 24, .46); }
 .destination-dialog-panel { box-sizing: border-box; display: flex; flex-direction: column; max-height: min(82vh, 720px); padding: clamp(26px, 5vw, 42px); position: relative; }
-.destination-dialog h2 { color: #3F2F25; font-family: "Cormorant Garamond", Georgia, serif; font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: .96; margin: 0 52px 16px 0; }
+.destination-dialog h2 { color: #3F2F25; font-family: var(--portal-font-display); font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: .96; margin: 0 52px 16px 0; }
 .destination-dialog-content { color: #5C4332; line-height: 1.75; min-height: 0; overflow-y: auto; padding-right: 6px; }
 .destination-dialog-content p { margin: 0; white-space: pre-line; }
 .destination-dialog-close { align-items: center; background: #FFF9F1; border: 1px solid #D8C7AE; border-radius: 999px; color: #4E5C45; cursor: pointer; display: inline-flex; font: inherit; font-size: 1.5rem; font-weight: 700; height: 42px; justify-content: center; position: absolute; right: 22px; top: 22px; width: 42px; }
@@ -4167,7 +4167,7 @@ button:disabled {
 .accommodation-more-filters .filter-amenities { background: #fffdf7; border: 1px solid rgba(64,85,63,.18); border-radius: 0 18px 18px 18px; display: flex; flex-wrap: wrap; gap: 8px; margin-top: -1px; padding: 12px; }
 
 .accommodation-results-header { align-items: end; border-bottom: 1px solid rgba(64,85,63,.18); display: flex; gap: 24px; justify-content: space-between; margin-top: clamp(32px, 4vw, 46px); padding: 0 2px 16px; scroll-margin-top: 120px; }
-.accommodation-results-count { color: var(--portal-ink-strong); font-family: "Cormorant Garamond", Georgia, serif; font-size: clamp(1.65rem, 3vw, 2.15rem); line-height: 1.1; margin: 0; }
+.accommodation-results-count { color: var(--portal-ink-strong); font-family: var(--portal-font-display); font-size: clamp(1.65rem, 3vw, 2.15rem); line-height: 1.1; margin: 0; }
 .accommodation-results-help, .accommodation-results-order { color: var(--portal-muted); font-size: .9rem; margin: 5px 0 0; }
 .accommodation-results-order { flex: 0 0 auto; }
 .accommodation-grid { display: grid; gap: 28px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 24px; width: 100%; }
@@ -4176,11 +4176,11 @@ button:disabled {
 .accommodation-card-media { aspect-ratio: 4 / 3; background: #e9e4d8; border-radius: 20px; overflow: hidden; position: relative; width: 100%; }
 .accommodation-card-media > a { display: block; height: 100%; }
 .accommodation-card-image { border-radius: 20px; display: block; height: 100%; object-fit: cover; width: 100%; }
-.accommodation-card-placeholder { align-items: center; color: var(--portal-muted); display: flex; font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.35rem; justify-content: center; }
+.accommodation-card-placeholder { align-items: center; color: var(--portal-muted); display: flex; font-family: var(--portal-font-display); font-size: 1.35rem; justify-content: center; }
 .accommodation-card-type { background: rgba(255,250,241,.94); border-radius: 999px; color: var(--portal-olive-dark); font-size: .7rem; font-weight: 800; left: 12px; letter-spacing: .07em; padding: 6px 9px; pointer-events: none; position: absolute; text-transform: uppercase; top: 12px; }
 .accommodation-card-body { display: flex; flex: 1; flex-direction: column; padding: 15px 14px 0; }
 .accommodation-card-kicker { color: var(--portal-olive); font-size: .72rem; font-weight: 800; letter-spacing: .1em; margin: 0 0 5px; text-transform: uppercase; }
-.accommodation-card-title { font-family: "Cormorant Garamond", Georgia, serif; font-size: 1.55rem; line-height: 1.05; margin: 0 0 4px; }
+.accommodation-card-title { font-family: var(--portal-font-display); font-size: 1.55rem; line-height: 1.05; margin: 0 0 4px; }
 .accommodation-card-title a { color: var(--portal-ink-strong); display: -webkit-box; overflow: hidden; text-decoration: none; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .accommodation-card-location { color: var(--portal-muted); font-size: .88rem; margin: 5px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .accommodation-card-location::before { content: "— "; }
@@ -4224,6 +4224,14 @@ button:disabled {
 /* Cabalango global color system 2026 */
 
 :root {
+  --portal-font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --portal-font-sans: "Manrope", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --portal-display-weight: 500;
+  --portal-display-weight-strong: 600;
+  --portal-body-weight: 400;
+  --portal-ui-weight: 600;
+  --portal-ui-weight-strong: 700;
+
   --portal-bg: #F4F0E6;
   --portal-surface-soft: #FAF7F0;
   --portal-surface: #ECE6DA;
@@ -4264,6 +4272,160 @@ body,
 .portal-body {
   background: var(--portal-bg);
   color: var(--portal-text);
+}
+
+/* Public typography: editorial headings with a functional, accessible UI face. */
+.portal-body {
+  font-family: var(--portal-font-sans);
+  font-weight: var(--portal-body-weight);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.portal-hero h1,
+.portal-section-hero h1,
+.destination-hero-copy h1,
+.tourism-heading-card h1,
+.prestador-profile-card h1 {
+  font-family: var(--portal-font-display);
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-synthesis: none;
+  font-weight: var(--portal-display-weight);
+  letter-spacing: -.035em;
+  line-height: .96;
+  text-shadow: none;
+  text-wrap: balance;
+}
+
+.portal-card h2,
+.portal-empty h2,
+.destination-section h2,
+.destination-river-block h2,
+.destination-cta h2,
+.destination-weather-card h3,
+.destination-video-feature h3,
+.destination-video-empty h3,
+.destination-dialog h2,
+.filter-heading h2,
+.gallery-lightbox-header h2,
+.menu-card h2,
+.photos-summary-card h2,
+.reviews-card h2,
+.prestador-detail-grid .portal-card h2,
+.review-form h3 {
+  font-family: var(--portal-font-display);
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-synthesis: none;
+  font-weight: var(--portal-display-weight);
+  letter-spacing: -.025em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.prestador-card h2,
+.accommodation-card-title,
+.accommodation-card-title a {
+  font-family: var(--portal-font-display);
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-synthesis: none;
+  font-weight: var(--portal-display-weight);
+  letter-spacing: -.015em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.portal-body p,
+.portal-body li,
+.portal-body dd,
+.portal-body input,
+.portal-body select,
+.portal-body textarea {
+  font-family: var(--portal-font-sans);
+}
+
+.portal-body p,
+.portal-body li,
+.portal-body dd {
+  letter-spacing: -.008em;
+}
+
+.portal-topnav a,
+.portal-mobile-menu,
+.portal-mobile-brand,
+.portal-card-icon,
+.destination-hero-placeholder,
+.accommodation-card-placeholder {
+  font-family: var(--portal-font-sans);
+  font-weight: var(--portal-ui-weight);
+  letter-spacing: -.012em;
+}
+
+.portal-topnav a.is-active { font-weight: var(--portal-ui-weight-strong); }
+
+.portal-button,
+.gallery-see-all,
+.gallery-lightbox-close,
+.gallery-lightbox-nav,
+.gallery-thumb,
+.menu-lightbox__close,
+.menu-photo-button,
+.destination-dialog-close,
+.accommodation-primary-action,
+.accommodation-secondary-action,
+.accommodation-clear-filters,
+.floating-whatsapp,
+.review-form button,
+.review-form input,
+.review-form select,
+.review-form textarea {
+  font-family: var(--portal-font-sans);
+  font-weight: var(--portal-ui-weight-strong);
+  letter-spacing: -.012em;
+}
+
+.portal-kicker,
+.portal-card-label,
+.prestador-theme,
+.accommodation-card-kicker,
+.filter-control label,
+.amenity-pill,
+.prestador-type-badge,
+.prestador-price-badge,
+.destination-story-grid span,
+.destination-video-feature > div > span,
+.destination-video-empty > span,
+.weather-summary span,
+.weather-day span,
+.season-grid span {
+  font-family: var(--portal-font-sans);
+  font-weight: var(--portal-ui-weight-strong);
+  letter-spacing: .12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.weather-temp,
+.weather-summary,
+.weather-forecast,
+.season-grid,
+.accommodation-card-price,
+.prestador-facts,
+.rating-pill,
+.gallery-lightbox-footer-counter,
+.prestador-contact-lines {
+  font-family: var(--portal-font-sans);
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-temp {
+  font-weight: var(--portal-ui-weight-strong);
+  letter-spacing: -.025em;
 }
 
 .portal-body h1,
