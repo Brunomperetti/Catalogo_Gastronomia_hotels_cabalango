@@ -14,9 +14,9 @@
 }
 
 body.catalog-theme-default {
-  --primary-color: #59663F; --secondary-color: #8A9B68; --background-color: #F7F3EA; --card-background: #FBF8F2;
-  --text-color: #3A3F2D; --muted-text-color: #66705A; --accent-color: #59663F; --button-background: #59663F;
-  --button-text: #FFFDF8; --border-color: #D8CFBE; --shadow-color: rgba(58,63,45,.10);
+  --primary-color: #6E7B52; --secondary-color: #A8B39A; --background-color: #F6F1E7; --card-background: #FBF8F2;
+  --text-color: #3F4633; --muted-text-color: #6B6F5E; --accent-color: #B97A56; --button-background: #6E7B52;
+  --button-text: #FFFDF8; --border-color: #D8CCB8; --shadow-color: rgba(63,70,51,.10);
 }
 body.catalog-theme-autopartes {
   --primary-color: #111827; --secondary-color: #dc2626; --background-color: #030712; --card-background: #111827;
