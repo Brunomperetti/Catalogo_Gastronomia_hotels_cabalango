@@ -34,3 +34,15 @@ def test_weather_uses_the_reduced_editorial_palette_and_balanced_grid():
     assert "color: var(--portal-muted);" in color_system
     assert ".season-grid span { color: var(--portal-primary); }" in color_system
     assert "background: rgba(170, 177, 154, .20);" in color_system
+
+
+def test_provider_profile_uses_editorial_colors_and_legible_promotion():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    color_system = css.split("/* Cabalango global color system 2026 */", 1)[1]
+
+    assert ".portal-body .prestador-promo" in color_system
+    assert ".portal-body .prestador-page .promo-highlight" in color_system
+    assert "background: var(--portal-surface) !important;" in color_system
+    assert "color: var(--portal-heading) !important;" in color_system
+    assert "color: var(--portal-muted) !important;" in color_system
+    assert "color: var(--portal-primary) !important;" in color_system
