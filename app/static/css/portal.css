@@ -4231,6 +4231,8 @@ button:disabled {
   --portal-body-weight: 400;
   --portal-ui-weight: 600;
   --portal-ui-weight-strong: 700;
+  --portal-title-hero: clamp(2.25rem, 6vw, 4.5rem);
+  --portal-title-editorial: clamp(2.125rem, 4.5vw, 4rem);
 
   --portal-bg: #F4F0E6;
   --portal-surface-soft: #FAF7F0;
@@ -4294,8 +4296,10 @@ body,
   font-style: normal;
   font-synthesis: none;
   font-weight: var(--portal-display-weight);
-  letter-spacing: -.035em;
-  line-height: .96;
+  font-size: var(--portal-title-hero);
+  letter-spacing: -.03em;
+  line-height: .94;
+  max-width: 15ch;
   text-shadow: none;
   text-wrap: balance;
 }
@@ -4324,6 +4328,15 @@ body,
   letter-spacing: -.025em;
   line-height: 1.02;
   text-wrap: balance;
+}
+
+.destination-section h2,
+.destination-river-block h2,
+.destination-cta h2 {
+  font-size: var(--portal-title-editorial);
+  letter-spacing: -.02em;
+  line-height: .98;
+  max-width: 18ch;
 }
 
 .prestador-card h2,

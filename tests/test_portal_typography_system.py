@@ -29,7 +29,7 @@ def test_public_templates_load_the_approved_font_families_once():
         assert "Cormorant+Garamond" not in template
         assert 'rel="preconnect" href="https://fonts.googleapis.com"' in template
         assert 'rel="preconnect" href="https://fonts.gstatic.com" crossorigin' in template
-        assert "?v=20260806-newsreader-1" in template
+        assert "?v=20260810-type-scale-1" in template
 
 
 def test_portal_typography_tokens_and_base_face_are_consolidated():
@@ -55,6 +55,17 @@ def test_editorial_and_functional_components_use_their_respective_tokens():
     assert ".weather-temp," in typography
     assert "font-family: var(--portal-font-sans);" in typography
     assert 'font-feature-settings: "tnum" 1, "lnum" 1;' in typography
+
+
+def test_public_hero_and_editorial_title_scales_are_bounded():
+    typography = _typography_layer()
+
+    assert "--portal-title-hero: clamp(2.25rem, 6vw, 4.5rem);" in typography
+    assert "--portal-title-editorial: clamp(2.125rem, 4.5vw, 4rem);" in typography
+    assert "font-size: var(--portal-title-hero);" in typography
+    assert "font-size: var(--portal-title-editorial);" in typography
+    assert "max-width: 15ch;" in typography
+    assert "max-width: 18ch;" in typography
 
 
 def test_public_portal_has_no_active_cormorant_reference():
