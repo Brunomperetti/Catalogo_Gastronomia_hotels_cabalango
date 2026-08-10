@@ -72,6 +72,7 @@ def test_delete_gallery_photo_keeps_remaining_and_removes_managed_file(admin_app
     response = delete_photo(client, company, 0)
     db.refresh(company)
     assert response.status_code == 303
+    assert response.headers["location"].startswith("/admin?area=prestador&empresa=demo&tab=fotos")
     assert json.loads(company.galeria_urls) == [urls[1]]
     assert not target.exists()
 
@@ -149,11 +150,60 @@ def test_saving_known_service_subtype_normalizes_group(admin_app, subtype, group
         "theme": "servicios",
         "subgrupo": "compras" if group != "compras" else "otros",
         "subtipo": subtype,
+        "admin_tab": "rubro",
     }, follow_redirects=False)
     db.refresh(company)
     assert response.status_code == 303
     assert company.subgrupo == group
     assert company.subtipo == subtype
+    assert "area=prestador" in response.headers["location"]
+    assert "tab=rubro" in response.headers["location"]
+
+
+def test_admin_defaults_to_provider_area_and_only_renders_provider_navigation(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin")
+    assert response.status_code == 200
+    assert 'class="admin-area-link is-active"' in response.text
+    assert "Prestadores / lugares" in response.text
+    assert "Descubrí Cabalango" not in response.text
+
+
+def test_explicit_admin_areas_render_only_their_workspace(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    provider = client.get("/admin?area=prestador")
+    assert "Cambiar prestador" in provider.text
+    assert "Configuración" not in provider.text
+    portal = client.get("/admin?area=portal")
+    assert portal.status_code == 200
+    assert "Descubrí Cabalango" in portal.text
+    assert "Cambiar prestador" not in portal.text
+    assert "Prestadores / lugares" not in portal.text
+
+
+def test_legacy_tabs_infer_area_and_invalid_area_falls_back_safely(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db)
+    legacy_provider = client.get(f"/admin?empresa={company.slug}&tab=fotos")
+    assert legacy_provider.status_code == 200
+    assert "admin-gallery-grid" in legacy_provider.text
+    assert f"/admin?area=prestador&empresa={company.slug}&tab=contacto" in legacy_provider.text
+    legacy_portal = client.get("/admin?tab=descubri")
+    assert legacy_portal.status_code == 200
+    assert "Descubrí Cabalango" in legacy_portal.text
+    invalid = client.get("/admin?area=foo")
+    assert invalid.status_code == 200
+    assert "Prestadores / lugares" in invalid.text
+
+
+def test_provider_switch_preserves_current_area_and_tab(admin_app):
+    client, db, _ = admin_app
+    add_company(db, slug="first")
+    second = add_company(db, slug="second")
+    response = client.post("/empresa/activar_panel", data={"slug": second.slug, "tab": "fotos"}, follow_redirects=False)
+    assert response.headers["location"] == "/admin?area=prestador&empresa=second&tab=fotos"
 
 
 def test_active_provider_summary_never_renders_none(admin_app):

@@ -20,108 +20,25 @@
     </div>
     {% endif %}
 
-    {% if empresa_activa %}
-    <section class="hero-card admin-hero-compact">
-        <div class="hero-card__content admin-hero-grid">
-            <div class="hero-card__left">
-                <div class="hero-badge">Prestador activo</div>
-                <h1 class="hero-title hero-title--compact">{{ empresa_activa.nombre }}</h1>
-                <div class="active-provider-summary" aria-label="Resumen del prestador activo">
-                    <span class="active-provider-section">{{ prestador_section_label }}</span>
-                    {% if prestador_taxonomy_label %}<span class="active-provider-taxonomy">{{ prestador_taxonomy_label }}</span>{% endif %}
-                    <span class="provider-status {% if empresa_activa.activo is sameas false %}is-inactive{% else %}is-active{% endif %}">{{ 'Inactivo' if empresa_activa.activo is sameas false else 'Activo' }}</span>
-                </div>
-
-                <div class="hero-actions hero-actions--compact">
-                    <a href="/prestador/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">
-                        Ver ficha pública
-                    </a>
-                    <a href="/{{ 'gastronomia' if empresa_activa.theme in ['comida','gastronomia'] else 'alojamientos' if empresa_activa.theme == 'alojamiento' else 'servicios' if empresa_activa.theme == 'servicios' else 'actividades' if empresa_activa.theme == 'actividades' else '' }}" target="_blank" class="btn-secondary-custom">
-                        Ver sección pública
-                    </a>
-                    <a href="/logout" class="btn-outline-custom">Cerrar sesión</a>
-                </div>
-            </div>
-
-            <div class="hero-card__right admin-hero-side">
-                {% if empresa_logo_url %}
-                <img
-                    src="{{ empresa_logo_url }}?ts={{ time }}"
-                    alt="Logo empresa activa"
-                    class="hero-logo"
-                    onerror="this.style.display='none'; document.getElementById('heroLogoFallback').style.display='flex';"
-                >
-                {% endif %}
-                <div id="heroLogoFallback" class="hero-logo-fallback" {% if empresa_logo_url %}style="display:none;"{% endif %}>
-                    {{ empresa_activa.slug[:2].upper() if empresa_activa.slug else 'EM' }}
-                </div>
-
-                <form method="post" action="/empresa/activar_panel" class="toolbar-form toolbar-form--hero">
-                    <div class="toolbar-form__group toolbar-form__group--compact">
-                        <label for="slug" class="field-label">Cambiar prestador</label>
-                        <select id="slug" name="slug" class="input-custom select-custom">
-                            {% for e in empresas %}
-                            <option value="{{ e.slug }}"
-                                {% if empresa_activa and e.id == empresa_activa.id %}selected{% endif %}>
-                                {{ e.nombre }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <button class="btn-outline-custom w-100" type="submit">Cambiar prestador</button>
-                </form>
-            </div>
-        </div>
-    </section>
-    {% endif %}
-
-    <section class="tabs-shell">
-        <div class="admin-nav-groups" role="navigation" aria-label="Secciones del panel admin">
-            {% set active_empresa = empresa_query %}
-            <section class="admin-nav-group admin-nav-group--provider" aria-labelledby="admin-nav-provider-title">
-                <div class="admin-nav-group__heading">
-                    <span class="admin-nav-eyebrow">Prestador activo</span>
-                    <strong id="admin-nav-provider-title">Contenido del negocio seleccionado</strong>
-                </div>
-                <nav class="admin-tabs" role="tablist" aria-label="Prestador activo">
-                    <a id="tab-empresa" class="admin-tab {% if active_tab == 'prestadores' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'prestadores' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=prestadores" aria-controls="panel-prestadores" data-tab-target="prestadores">Prestadores / lugares</a>
-                    <a id="tab-ficha" class="admin-tab {% if active_tab == 'ficha' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'ficha' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=ficha" aria-controls="panel-ficha" data-tab-target="ficha">Ficha</a>
-                    <a id="tab-fotos" class="admin-tab {% if active_tab == 'fotos' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'fotos' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=fotos" aria-controls="panel-fotos" data-tab-target="fotos">Fotos y video</a>
-                    <a id="tab-contacto" class="admin-tab {% if active_tab == 'contacto' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'contacto' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=contacto" aria-controls="panel-contacto" data-tab-target="contacto">Contacto / ubicación</a>
-                    <a id="tab-rubro" class="admin-tab {% if active_tab == 'rubro' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'rubro' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=rubro" aria-controls="panel-rubro" data-tab-target="rubro">Datos por rubro</a>
-                    <a id="tab-leads" class="admin-tab {% if active_tab == 'leads' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'leads' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=leads" aria-controls="panel-leads" data-tab-target="leads">Consultas / leads</a>
-                    <a id="tab-opiniones" class="admin-tab {% if active_tab == 'opiniones' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'opiniones' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=opiniones" aria-controls="panel-opiniones" data-tab-target="opiniones">Opiniones</a>
-                    <a id="tab-usuarios" class="admin-tab {% if active_tab == 'usuarios' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'usuarios' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=usuarios" aria-controls="panel-usuarios" data-tab-target="usuarios">Usuarios</a>
-                </nav>
-            </section>
-            <section class="admin-nav-group admin-nav-group--portal" aria-labelledby="admin-nav-portal-title">
-                <div class="admin-nav-group__heading">
-                    <span class="admin-nav-eyebrow">Portal / destino</span>
-                    <strong id="admin-nav-portal-title">Contenido global de Cabalango</strong>
-                </div>
-                <nav class="admin-tabs admin-tabs--portal" role="tablist" aria-label="Portal y destino">
-                    <a class="admin-tab admin-tab--global" href="/admin/actividades">Qué hacer</a>
-                    <a id="tab-cabalango" class="admin-tab admin-tab--global {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'cabalango' else 'false' }}" href="/admin?tab=cabalango" aria-controls="panel-cabalango" data-tab-target="cabalango">Descubrí Cabalango</a>
-                    <a id="tab-configuracion" class="admin-tab {% if active_tab == 'configuracion' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'configuracion' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=configuracion" aria-controls="panel-configuracion" data-tab-target="configuracion">Configuración</a>
-                    <a id="tab-avanzado" class="admin-tab admin-tab--warning {% if active_tab == 'tecnico' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'tecnico' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=tecnico" aria-controls="panel-tecnico" data-tab-target="tecnico">Técnico</a>
-                </nav>
-            </section>
-        </div>
+    <header class="admin-header-compact"><div><span class="global-eyebrow">Administración</span><h1>Admin Cabalango</h1></div><a href="/logout" class="btn-outline-custom">Cerrar sesión</a></header>
+    <nav class="admin-area-nav" aria-label="Áreas principales del administrador"><a class="admin-area-link {% if admin_area == 'prestador' %}is-active{% endif %}" href="/admin?area=prestador{% if empresa_query %}&empresa={{ empresa_query }}{% endif %}&tab=prestadores">Prestador activo</a><a class="admin-area-link {% if admin_area == 'portal' %}is-active{% endif %}" href="/admin?area=portal&tab=cabalango">Portal / destino</a></nav>
+    {% if admin_area == 'prestador' and empresa_activa %}<section class="hero-card admin-hero-compact"><div class="hero-card__content admin-hero-grid"><div class="hero-card__left"><h2 class="hero-title hero-title--compact">{{ empresa_activa.nombre }}</h2><div class="active-provider-summary"><span class="active-provider-section">{{ prestador_section_label }}</span>{% if prestador_taxonomy_label %}<span class="active-provider-taxonomy">{{ prestador_taxonomy_label }}</span>{% endif %}<span class="provider-status {% if empresa_activa.activo is sameas false %}is-inactive{% else %}is-active{% endif %}">{{ 'Inactivo' if empresa_activa.activo is sameas false else 'Activo' }}</span></div><div class="hero-actions hero-actions--compact"><a href="/prestador/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">Ver ficha pública</a><a href="/{{ 'gastronomia' if empresa_activa.theme in ['comida','gastronomia'] else 'alojamientos' if empresa_activa.theme == 'alojamiento' else 'servicios' if empresa_activa.theme == 'servicios' else 'actividades' if empresa_activa.theme == 'actividades' else '' }}" target="_blank" class="btn-secondary-custom">Ver sección pública</a></div></div><form method="post" action="/empresa/activar_panel" class="toolbar-form toolbar-form--hero"><input type="hidden" name="tab" value="{{ active_tab }}"><label for="slug" class="field-label">Cambiar prestador</label><div class="provider-switch-row"><select id="slug" name="slug" class="input-custom select-custom">{% for e in empresas %}<option value="{{ e.slug }}" {% if empresa_activa and e.id == empresa_activa.id %}selected{% endif %}>{{ e.nombre }}</option>{% endfor %}</select><button class="btn-outline-custom" type="submit">Cambiar</button></div></form></div></section>{% elif admin_area == 'portal' %}<section class="admin-portal-context"><span class="global-eyebrow">Área global</span><h2>Portal / destino</h2><p>Contenido y configuración general de Cabalango.</p></section>{% endif %}
+    <section class="tabs-shell">{% set active_empresa = empresa_query %}{% if admin_area == 'prestador' %}<nav class="admin-tabs admin-tabs--secondary" aria-label="Secciones del prestador">{% for value, label in [('prestadores','Prestadores / lugares'),('ficha','Ficha'),('fotos','Fotos y video'),('contacto','Contacto / ubicación'),('rubro','Datos por rubro'),('leads','Consultas / leads'),('opiniones','Opiniones'),('usuarios','Usuarios')] %}<a class="admin-tab {% if active_tab == value %}is-active{% endif %}" href="/admin?area=prestador&empresa={{ active_empresa }}&tab={{ value }}">{{ label }}</a>{% endfor %}</nav>{% else %}<nav class="admin-tabs admin-tabs--secondary admin-tabs--portal" aria-label="Secciones del portal y destino"><a class="admin-tab admin-tab--global" href="/admin/actividades">Qué hacer</a><a class="admin-tab admin-tab--global {% if active_tab == 'cabalango' %}is-active{% endif %}" href="/admin?area=portal&tab=cabalango">Descubrí Cabalango</a><a class="admin-tab {% if active_tab == 'configuracion' %}is-active{% endif %}" href="/admin?area=portal&tab=configuracion">Configuración</a><a class="admin-tab admin-tab--warning {% if active_tab == 'tecnico' %}is-active{% endif %}" href="/admin?area=portal&tab=tecnico">Técnico</a></nav>{% endif %}
 
 
         {% if empresa_activa %}
-        <section id="panel-ficha" class="admin-tab-panel {% if active_tab == 'ficha' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-ficha" data-tab-panel="ficha" {% if active_tab != 'ficha' %}hidden{% endif %}>
+        {% if admin_area == 'prestador' and active_tab == 'ficha' %}<section id="panel-ficha" class="admin-tab-panel {% if active_tab == 'ficha' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-ficha" data-tab-panel="ficha" {% if active_tab != 'ficha' %}hidden{% endif %}>
             <section class="admin-card admin-card--wide">
                 <div class="card-header-custom"><h2 class="card-title-custom">Ficha del prestador</h2><p class="card-subtitle-custom">Editá la información principal que se mostrará en el portal de Cabalango.</p></div>
                 <form action="/empresa/editar_panel" method="post" class="stack-form">
-                    <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"><input type="hidden" name="telefono" value="{{ empresa_activa.telefono or '' }}"><input type="hidden" name="instagram" value="{{ empresa_activa.instagram or '' }}"><input type="hidden" name="facebook" value="{{ empresa_activa.facebook or '' }}"><input type="hidden" name="web_url" value="{{ empresa_activa.web_url or '' }}"><input type="hidden" name="direccion" value="{{ empresa_activa.direccion or '' }}"><input type="hidden" name="maps_url" value="{{ empresa_activa.maps_url or '' }}"><input type="hidden" name="horarios" value="{{ empresa_activa.horarios or '' }}"><input type="hidden" name="video_url" value="{{ empresa_activa.video_url or '' }}">
+                    <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="admin_tab" value="{{ active_tab }}"><input type="hidden" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"><input type="hidden" name="telefono" value="{{ empresa_activa.telefono or '' }}"><input type="hidden" name="instagram" value="{{ empresa_activa.instagram or '' }}"><input type="hidden" name="facebook" value="{{ empresa_activa.facebook or '' }}"><input type="hidden" name="web_url" value="{{ empresa_activa.web_url or '' }}"><input type="hidden" name="direccion" value="{{ empresa_activa.direccion or '' }}"><input type="hidden" name="maps_url" value="{{ empresa_activa.maps_url or '' }}"><input type="hidden" name="horarios" value="{{ empresa_activa.horarios or '' }}"><input type="hidden" name="video_url" value="{{ empresa_activa.video_url or '' }}">
                     <div class="form-grid"><div><label class="field-label">Nombre del prestador/lugar</label><input class="input-custom" name="nombre" value="{{ empresa_activa.nombre }}" required></div><div><label class="field-label">Slug</label><input class="input-custom" value="{{ empresa_activa.slug }}" readonly></div><div><label class="field-label">Rubro / sección</label><select name="theme" class="input-custom select-custom"><option value="gastronomia" {% if empresa_activa.theme in ['gastronomia','comida'] %}selected{% endif %}>Gastronomía</option><option value="alojamiento" {% if empresa_activa.theme == 'alojamiento' %}selected{% endif %}>Alojamientos</option><option value="servicios" {% if empresa_activa.theme == 'servicios' %}selected{% endif %}>Compras y servicios</option><option value="actividades" {% if empresa_activa.theme == 'actividades' %}selected{% endif %}>Actividades y comunidad</option><option value="default" {% if (empresa_activa.theme or 'default') == 'default' %}selected{% endif %}>General</option></select></div><div><label class="field-label">Subtipo / categoría</label><input class="input-custom" name="subtipo" value="{{ empresa_activa.subtipo or '' }}" placeholder="Ej: cabaña, restaurante, farmacia"></div><div class="full-width"><label class="field-label">Descripción corta</label><input class="input-custom" name="descripcion_corta" value="{{ empresa_activa.descripcion_corta or '' }}"></div><div class="full-width"><label class="field-label">Descripción completa</label><textarea class="input-custom" name="descripcion" rows="5">{{ empresa_activa.descripcion or '' }}</textarea></div></div>
                     <div class="feature-list"><label class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" {% if empresa_activa.activo is not sameas false %}checked{% endif %}> Publicado / activo</label><label class="form-check"><input class="form-check-input" type="checkbox" name="destacado" value="1" {% if empresa_activa.destacado %}checked{% endif %}> Destacado</label></div><button class="btn-primary-custom w-100">Guardar ficha</button>
                 </form>
             </section>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-fotos" class="admin-tab-panel {% if active_tab == 'fotos' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-fotos" data-tab-panel="fotos" {% if active_tab != 'fotos' %}hidden{% endif %}>
+        {% if admin_area == 'prestador' and active_tab == 'fotos' %}<section id="panel-fotos" class="admin-tab-panel {% if active_tab == 'fotos' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-fotos" data-tab-panel="fotos" {% if active_tab != 'fotos' %}hidden{% endif %}>
             <section class="admin-card admin-card--wide admin-media-card">
                 <div class="card-header-custom">
                     <h2 class="card-title-custom">Fotos y video</h2>
@@ -131,7 +48,7 @@
                 <div class="gallery-admin-preview media-priority-block">
                     <label class="field-label">1. Fotos del lugar / galería</label>
                     <p class="field-help">Para una mejor ficha, priorizá fotos reales del lugar. Máximo recomendado: 7 fotos.</p>
-                    <div class="feature-list">
+                    <div class="admin-gallery-grid">
                         {% for foto in galeria_urls[:7] %}
                         <figure class="admin-gallery-item">
                             <img class="admin-gallery-thumb" src="{{ foto }}?ts={{ time }}" alt="Foto de galería {{ loop.index }}">
@@ -187,7 +104,7 @@
                 </form>
 
                 <form action="/empresa/editar_panel" method="post" class="stack-form mt-3">
-                    <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
+                    <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="admin_tab" value="{{ active_tab }}">
                     <input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}">
                     <input type="hidden" name="theme" value="{{ empresa_activa.theme }}">
                     <label class="field-label">3. Video URL opcional</label>
@@ -195,10 +112,10 @@
                     <button class="btn-secondary-custom w-100">Guardar video</button>
                 </form>
             </section>
-        </section>
+        </section>{% endif %}
 
 
-        <section id="panel-cabalango" class="admin-tab-panel {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-cabalango" data-tab-panel="cabalango" {% if active_tab != 'cabalango' %}hidden{% endif %}>
+        {% if admin_area == 'portal' and active_tab == 'cabalango' %}<section id="panel-cabalango" class="admin-tab-panel {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-cabalango" data-tab-panel="cabalango" {% if active_tab != 'cabalango' %}hidden{% endif %}>
             <section class="admin-global-banner">
                 <div>
                     <span class="global-eyebrow">Contenido general del destino</span>
@@ -246,11 +163,11 @@
                 <div class="card-header-custom"><h2 class="card-title-custom">Contenido cargado</h2><p class="card-subtitle-custom">Cards editoriales con estado, categoría, orden y acciones rápidas. El orden queda preparado para jerarquizar la página pública.</p></div>
                 <div class="destination-admin-grid">{% for item in destino_media %}<article class="destination-admin-card"><div class="destination-admin-thumb">{% if item.image_path %}<img src="{{ item.image_path }}?ts={{ time }}" alt="{{ item.titulo or 'Foto Cabalango' }}">{% elif item.video_url %}<span class="video-preview-mark">▶</span>{% else %}<span>Sin imagen</span>{% endif %}</div><div class="destination-admin-content"><div class="destination-admin-meta"><span>{{ item.tipo|upper }}</span><span>{{ destino_categories.get(item.categoria, item.categoria) }}</span></div><h3>{{ item.titulo or destino_categories.get(item.categoria, item.categoria) }}</h3><p>{{ item.descripcion or 'Sin descripción cargada.' }}</p><div class="destination-admin-badges"><span>Orden {{ item.orden }}</span><span class="{% if item.visible %}is-visible{% else %}is-hidden{% endif %}">{% if item.visible %}Visible{% else %}Oculto{% endif %}</span>{% if item.destacado %}<span>Destacada</span>{% endif %}</div>{% if item.video_url %}<a href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir video</a>{% endif %}<div class="destination-admin-actions"><button class="btn-outline-custom" type="button" disabled>Editar</button><button class="btn-outline-custom" type="button" disabled>↑↓ Orden</button><form method="post" action="/admin/cabalango/media/{{ item.id }}/toggle"><button class="btn-secondary-custom">{% if item.visible %}Ocultar{% else %}Mostrar{% endif %}</button></form></div></div></article>{% else %}<div class="gallery-empty-state">Todavía no hay contenido cargado para el destino.</div>{% endfor %}</div>
             </section>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-contacto" class="admin-tab-panel {% if active_tab == 'contacto' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-contacto" data-tab-panel="contacto" {% if active_tab != 'contacto' %}hidden{% endif %}><section class="admin-card admin-card--wide"><div class="card-header-custom"><h2 class="card-title-custom">Contacto y ubicación</h2><p class="card-subtitle-custom">Estos datos ayudan a turistas, vecinos y visitantes a contactarte o llegar al lugar.</p></div><form action="/empresa/editar_panel" method="post" class="stack-form"><input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}"><input type="hidden" name="theme" value="{{ empresa_activa.theme }}"><div class="form-grid"><div><label class="field-label">WhatsApp</label><input class="input-custom" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div><div><label class="field-label">Teléfono</label><input class="input-custom" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div><div><label class="field-label">Instagram / redes</label><input class="input-custom" name="instagram" value="{{ empresa_activa.instagram or '' }}" placeholder="https://instagram.com/tuusuario o @tuusuario"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Facebook</label><input class="input-custom" name="facebook" value="{{ empresa_activa.facebook or '' }}" placeholder="https://facebook.com/tupagina"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Sitio web</label><input class="input-custom" name="web_url" value="{{ empresa_activa.web_url or '' }}" placeholder="https://tusitio.com"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Horarios</label><input class="input-custom" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div><div class="full-width"><label class="field-label">Dirección</label><input class="input-custom" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div><div class="full-width"><label class="field-label">Google Maps</label><input class="input-custom" name="maps_url" value="{{ empresa_activa.maps_url or '' }}" placeholder="pegá el link de Google Maps"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div></div><button class="btn-primary-custom w-100">Guardar contacto</button></form></section></section>
+        {% if admin_area == 'prestador' and active_tab == 'contacto' %}<section id="panel-contacto" class="admin-tab-panel {% if active_tab == 'contacto' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-contacto" data-tab-panel="contacto" {% if active_tab != 'contacto' %}hidden{% endif %}><section class="admin-card admin-card--wide"><div class="card-header-custom"><h2 class="card-title-custom">Contacto y ubicación</h2><p class="card-subtitle-custom">Estos datos ayudan a turistas, vecinos y visitantes a contactarte o llegar al lugar.</p></div><form action="/empresa/editar_panel" method="post" class="stack-form"><input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="admin_tab" value="{{ active_tab }}"><input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}"><input type="hidden" name="theme" value="{{ empresa_activa.theme }}"><div class="form-grid"><div><label class="field-label">WhatsApp</label><input class="input-custom" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div><div><label class="field-label">Teléfono</label><input class="input-custom" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div><div><label class="field-label">Instagram / redes</label><input class="input-custom" name="instagram" value="{{ empresa_activa.instagram or '' }}" placeholder="https://instagram.com/tuusuario o @tuusuario"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Facebook</label><input class="input-custom" name="facebook" value="{{ empresa_activa.facebook or '' }}" placeholder="https://facebook.com/tupagina"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Sitio web</label><input class="input-custom" name="web_url" value="{{ empresa_activa.web_url or '' }}" placeholder="https://tusitio.com"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Horarios</label><input class="input-custom" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div><div class="full-width"><label class="field-label">Dirección</label><input class="input-custom" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div><div class="full-width"><label class="field-label">Google Maps</label><input class="input-custom" name="maps_url" value="{{ empresa_activa.maps_url or '' }}" placeholder="pegá el link de Google Maps"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div></div><button class="btn-primary-custom w-100">Guardar contacto</button></form></section></section>{% endif %}
 
-        <section id="panel-rubro" class="admin-tab-panel {% if active_tab == 'rubro' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-rubro" data-tab-panel="rubro" {% if active_tab != 'rubro' %}hidden{% endif %}>
+        {% if admin_area == 'prestador' and active_tab == 'rubro' %}<section id="panel-rubro" class="admin-tab-panel {% if active_tab == 'rubro' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-rubro" data-tab-panel="rubro" {% if active_tab != 'rubro' %}hidden{% endif %}>
             <section class="admin-card admin-card--wide">
                 <div class="card-header-custom">
                     <h2 class="card-title-custom">Datos por rubro</h2>
@@ -263,7 +180,7 @@
                     </p>
                 </div>
                 <form action="/empresa/editar_panel" method="post" class="stack-form">
-                    <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
+                    <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="admin_tab" value="{{ active_tab }}">
                     <input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}">
                     <input type="hidden" name="theme" value="{{ empresa_activa.theme }}">
 
@@ -322,7 +239,7 @@
                     <button class="btn-primary-custom w-100">Guardar datos del rubro</button>
                 </form>
             </section>
-        </section>
+        </section>{% endif %}
         {% else %}
         {% for panel_id, title in [('ficha','Ficha del prestador'),('fotos','Fotos y video'),('contacto','Contacto / ubicación'),('rubro','Datos por rubro')] %}
         <section id="panel-{{ panel_id }}" class="admin-tab-panel" role="tabpanel" data-tab-panel="{{ panel_id }}" hidden>
@@ -336,7 +253,7 @@
         {% endfor %}
         {% endif %}
 
-        <section id="panel-opiniones" class="admin-tab-panel {% if active_tab == 'opiniones' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-opiniones" data-tab-panel="opiniones" {% if active_tab != 'opiniones' %}hidden{% endif %}>
+        {% if admin_area == 'prestador' and active_tab == 'opiniones' %}<section id="panel-opiniones" class="admin-tab-panel {% if active_tab == 'opiniones' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-opiniones" data-tab-panel="opiniones" {% if active_tab != 'opiniones' %}hidden{% endif %}>
             <section class="admin-card admin-card--wide">
                 <div class="card-header-custom"><h2 class="card-title-custom">Moderación de opiniones</h2><p class="card-subtitle-custom">Las opiniones las envían visitantes reales y se publican solo cuando las aprobás.</p></div>
                 {% if pending_reviews %}
@@ -347,9 +264,9 @@
                 </div>
                 {% else %}<p class="gallery-empty-state">No hay opiniones pendientes de moderación.</p>{% endif %}
             </section>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-prestadores" class="admin-tab-panel {% if active_tab == 'prestadores' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-empresa" data-tab-panel="prestadores" {% if active_tab != 'prestadores' %}hidden{% endif %}>
+        {% if admin_area == 'prestador' and active_tab == 'prestadores' %}<section id="panel-prestadores" class="admin-tab-panel {% if active_tab == 'prestadores' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-empresa" data-tab-panel="prestadores" {% if active_tab != 'prestadores' %}hidden{% endif %}>
             <div class="admin-grid">
                 {% if empresa_activa %}
                 <section class="admin-card admin-card--empresa-main">
@@ -359,7 +276,7 @@
                         <p class="card-subtitle-custom">Este es el prestador seleccionado. La creación de uno nuevo queda separada abajo para evitar confusiones.</p>
                     </div>
                     <form action="/empresa/editar_panel" method="post" class="stack-form">
-                        <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
+                        <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="admin_tab" value="{{ active_tab }}">
                         <div class="form-grid">
                             <div><label class="field-label">Nombre del prestador o lugar</label><input class="input-custom" type="text" name="nombre" value="{{ empresa_activa.nombre }}" required></div>
                             <div><label class="field-label">WhatsApp</label><input class="input-custom" type="text" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div>
@@ -395,9 +312,9 @@
                     </details>
                 </section>
             </div>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-tecnico" class="admin-tab-panel {% if active_tab == 'tecnico' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-tecnico" data-tab-panel="tecnico" {% if active_tab != 'tecnico' %}hidden{% endif %}>
+        {% if admin_area == 'portal' and active_tab == 'tecnico' %}<section id="panel-tecnico" class="admin-tab-panel {% if active_tab == 'tecnico' %}is-active{% endif %}" role="tabpanel" aria-labelledby="tab-tecnico" data-tab-panel="tecnico" {% if active_tab != 'tecnico' %}hidden{% endif %}>
             <div class="admin-grid">
                 <section class="admin-card admin-card--wide">
                     <div class="card-header-custom">
@@ -472,9 +389,9 @@
                 </section>
                 {% endif %}
             </div>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-leads" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-leads" data-tab-panel="leads" hidden>
+        {% if admin_area == 'prestador' and active_tab == 'leads' %}<section id="panel-leads" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-leads" data-tab-panel="leads" hidden>
             <div class="admin-grid">
                 <section class="admin-card admin-card--wide">
                     <div class="card-header-custom">
@@ -487,11 +404,11 @@
                             <h3 class="leads-kpi-title">Tablero comercial</h3>
                             <p class="leads-kpi-subtitle">KPIs generales de la empresa activa (no archivados), para priorización diaria.</p>
                         </div>
-                        <a class="btn-outline-custom btn-sm" href="/admin?empresa={{ empresa_query }}&tab=leads&lead_unmanaged=1">Ver sin gestionar</a>
+                        <a class="btn-outline-custom btn-sm" href="/admin?area=prestador&empresa={{ empresa_query }}&tab=leads&lead_unmanaged=1">Ver sin gestionar</a>
                     </div>
                     <div class="leads-kpi-grid">
                         {% for kpi in leads_kpis %}
-                        <a class="leads-kpi-card {% if lead_unmanaged and kpi.key == 'sin_gestionar' %}is-active{% endif %}" href="/admin?empresa={{ empresa_query }}&tab=leads&{{ kpi.query }}">
+                        <a class="leads-kpi-card {% if lead_unmanaged and kpi.key == 'sin_gestionar' %}is-active{% endif %}" href="/admin?area=prestador&empresa={{ empresa_query }}&tab=leads&{{ kpi.query }}">
                             <span class="leads-kpi-label">{{ kpi.label }}</span>
                             <strong class="leads-kpi-value">{{ kpi.value }}</strong>
                             <small class="leads-kpi-hint">{{ kpi.hint }}</small>
@@ -559,8 +476,8 @@
 
                         <div class="leads-filter-actions">
                             <button class="btn-secondary-custom" type="submit">Aplicar filtros</button>
-                            <a class="btn-outline-custom" href="/admin?empresa={{ empresa_query }}&tab=leads">Limpiar</a>
-                            <a class="btn-outline-custom {% if lead_unmanaged %}is-active{% endif %}" href="/admin?empresa={{ empresa_query }}&tab=leads&lead_unmanaged=1">Sin gestionar</a>
+                            <a class="btn-outline-custom" href="/admin?area=prestador&empresa={{ empresa_query }}&tab=leads">Limpiar</a>
+                            <a class="btn-outline-custom {% if lead_unmanaged %}is-active{% endif %}" href="/admin?area=prestador&empresa={{ empresa_query }}&tab=leads&lead_unmanaged=1">Sin gestionar</a>
                         </div>
                     </form>
                 </section>
@@ -576,7 +493,7 @@
                         {% for item in leads_rows %}
                         {% set lead = item.lead %}
                         <article class="lead-card-row priority-{{ item.priority.slug }} {% if lead_selected and lead_selected.id == lead.id %}is-selected{% endif %}">
-                            <a class="lead-card-main-link" href="/admin?empresa={{ empresa_query }}&tab=leads&lead_q={{ lead_q_url }}{% if lead_whatsapp is sameas true %}&lead_whatsapp=1{% endif %}{% if lead_pdf is sameas true %}&lead_pdf=1{% endif %}{% if lead_cart is sameas true %}&lead_cart=1{% endif %}{% if lead_status %}&lead_status={{ lead_status }}{% endif %}{% if lead_interest %}&lead_interest={{ lead_interest }}{% endif %}{% if lead_archived %}&lead_archived=1{% endif %}{% if lead_unmanaged %}&lead_unmanaged=1{% endif %}&lead_id={{ lead.id }}">
+                            <a class="lead-card-main-link" href="/admin?area=prestador&empresa={{ empresa_query }}&tab=leads&lead_q={{ lead_q_url }}{% if lead_whatsapp is sameas true %}&lead_whatsapp=1{% endif %}{% if lead_pdf is sameas true %}&lead_pdf=1{% endif %}{% if lead_cart is sameas true %}&lead_cart=1{% endif %}{% if lead_status %}&lead_status={{ lead_status }}{% endif %}{% if lead_interest %}&lead_interest={{ lead_interest }}{% endif %}{% if lead_archived %}&lead_archived=1{% endif %}{% if lead_unmanaged %}&lead_unmanaged=1{% endif %}&lead_id={{ lead.id }}">
                                 <div class="lead-card-main">
                                     <div class="lead-card-title">
                                         <strong>{{ lead.nombre }}</strong>
@@ -767,9 +684,9 @@
                     {% endif %}
                 </section>
             </div>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-usuarios" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-usuarios" data-tab-panel="usuarios" hidden>
+        {% if admin_area == 'prestador' and active_tab == 'usuarios' %}<section id="panel-usuarios" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-usuarios" data-tab-panel="usuarios" hidden>
             <div class="admin-grid">
                 <section class="admin-card admin-card--wide">
                     <div class="card-header-custom">
@@ -806,9 +723,9 @@
                     </form>
                 </section>
             </div>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-configuracion" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-configuracion" data-tab-panel="configuracion" hidden>
+        {% if admin_area == 'portal' and active_tab == 'configuracion' %}<section id="panel-configuracion" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-configuracion" data-tab-panel="configuracion" hidden>
             <div class="admin-grid">
                 <section class="admin-card admin-card--wide">
                     <div class="card-header-custom">
@@ -851,9 +768,9 @@
                     </div>
                 </section>
             </div>
-        </section>
+        </section>{% endif %}
 
-        <section id="panel-tecnico-extra" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-avanzado" data-tab-panel="tecnico" hidden>
+        {% if admin_area == 'portal' and active_tab == 'tecnico' %}<section id="panel-tecnico-extra" class="admin-tab-panel" role="tabpanel" aria-labelledby="tab-avanzado" data-tab-panel="tecnico" hidden>
             <div class="admin-grid">
                 <section class="admin-card admin-card--danger admin-card--wide danger-zone-card">
                     <div class="danger-zone-header">
@@ -870,7 +787,7 @@
                     </div>
                 </section>
             </div>
-        </section>
+        </section>{% endif %}
     </section>
 </div>
 
