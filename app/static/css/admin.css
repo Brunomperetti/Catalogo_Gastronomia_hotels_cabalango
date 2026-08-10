@@ -399,3 +399,31 @@
 .admin-tabs--portal .admin-tab--global { background: #EEF3E7 !important; border-color: #AEBF96 !important; color: #38452B; }
 .admin-tabs--portal .admin-tab.is-active { box-shadow: 0 10px 22px rgba(124,134,96,.16); }
 @media (max-width: 720px) { .admin-nav-group { border-radius: 20px; padding: 12px; } .admin-nav-group__heading { align-items: flex-start; flex-direction: column; } }
+
+/* Compact provider context and secondary destination navigation */
+.admin-hero-compact { padding: 20px 24px !important; }
+.admin-hero-grid { align-items: center; gap: 22px; }
+.hero-title--compact { font-size: clamp(1.65rem, 3vw, 2.45rem) !important; margin-bottom: 8px !important; }
+.active-provider-summary { align-items: center; display: flex; flex-wrap: wrap; gap: 7px 12px; margin: 0 0 14px; }
+.active-provider-section { color: var(--admin-text-deep); font-weight: 900; }
+.active-provider-taxonomy { color: var(--admin-text-soft); font-weight: 750; }
+.provider-status { border-radius: 999px; font-size: .75rem; font-weight: 900; padding: 5px 10px; }
+.provider-status.is-active { background: #EEF3E7; border: 1px solid #B8C7A5; color: #38452B; }
+.provider-status.is-inactive { background: #F6E9DF; border: 1px solid #D9A085; color: #743C2C; }
+.admin-hero-side { align-items: center; display: grid; gap: 12px; grid-template-columns: auto minmax(220px, 320px); max-width: 430px; }
+.toolbar-form--hero { margin: 0; width: 100%; }
+.toolbar-form--hero .input-custom { min-height: 42px; }
+.admin-nav-group--provider { border-color: var(--admin-border-strong); box-shadow: 0 16px 38px rgba(78,58,45,.1); }
+.admin-nav-group--portal { box-shadow: none; opacity: .92; padding-block: 13px; }
+.admin-nav-group--portal .admin-nav-group__heading strong { font-size: 1rem; }
+.admin-gallery-item { display: grid; gap: 7px; margin: 0; width: 132px; }
+.admin-gallery-item .admin-gallery-thumb { height: 96px; width: 132px; }
+.admin-gallery-item form { margin: 0; }
+.admin-gallery-delete { font-size: .78rem; padding: 7px 10px; width: 100%; }
+@media (max-width: 720px) {
+  .admin-hero-compact { padding: 16px !important; }
+  .admin-hero-side { grid-template-columns: 1fr; max-width: none; width: 100%; }
+  .admin-hero-side .hero-logo, .admin-hero-side .hero-logo-fallback { display: none !important; }
+  .hero-actions--compact { align-items: stretch; flex-direction: column; }
+  .hero-actions--compact a { text-align: center; }
+}

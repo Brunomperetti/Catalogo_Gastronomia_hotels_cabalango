@@ -26,7 +26,11 @@
             <div class="hero-card__left">
                 <div class="hero-badge">Prestador activo</div>
                 <h1 class="hero-title hero-title--compact">{{ empresa_activa.nombre }}</h1>
-                <p class="hero-subtitle hero-subtitle--compact">Administrá fichas promocionales de prestadores, lugares, fotos, publicación y consultas del portal turístico de Cabalango.</p>
+                <div class="active-provider-summary" aria-label="Resumen del prestador activo">
+                    <span class="active-provider-section">{{ prestador_section_label }}</span>
+                    {% if prestador_taxonomy_label %}<span class="active-provider-taxonomy">{{ prestador_taxonomy_label }}</span>{% endif %}
+                    <span class="provider-status {% if empresa_activa.activo is sameas false %}is-inactive{% else %}is-active{% endif %}">{{ 'Inactivo' if empresa_activa.activo is sameas false else 'Activo' }}</span>
+                </div>
 
                 <div class="hero-actions hero-actions--compact">
                     <a href="/prestador/{{ empresa_activa.slug }}" target="_blank" class="btn-primary-custom">
@@ -54,7 +58,7 @@
 
                 <form method="post" action="/empresa/activar_panel" class="toolbar-form toolbar-form--hero">
                     <div class="toolbar-form__group toolbar-form__group--compact">
-                        <label for="slug" class="field-label">Prestador activo</label>
+                        <label for="slug" class="field-label">Cambiar prestador</label>
                         <select id="slug" name="slug" class="input-custom select-custom">
                             {% for e in empresas %}
                             <option value="{{ e.slug }}"
@@ -128,7 +132,15 @@
                     <label class="field-label">1. Fotos del lugar / galería</label>
                     <p class="field-help">Para una mejor ficha, priorizá fotos reales del lugar. Máximo recomendado: 7 fotos.</p>
                     <div class="feature-list">
-                        {% for foto in galeria_urls[:7] %}<img class="admin-gallery-thumb" src="{{ foto }}?ts={{ time }}" alt="Foto de galería {{ loop.index }}">{% else %}<span class="small text-white-50">Todavía no hay fotos cargadas. Este bloque queda preparado para mostrar hasta 7 fotos.</span>{% endfor %}
+                        {% for foto in galeria_urls[:7] %}
+                        <figure class="admin-gallery-item">
+                            <img class="admin-gallery-thumb" src="{{ foto }}?ts={{ time }}" alt="Foto de galería {{ loop.index }}">
+                            <form method="post" action="/empresa/{{ empresa_activa.id }}/galeria/eliminar" onsubmit="return confirm('¿Eliminar esta foto de la galería? Esta acción no se puede deshacer.');">
+                                <input type="hidden" name="foto_indice" value="{{ loop.index0 }}">
+                                <button class="btn-danger-custom admin-gallery-delete" type="submit" aria-label="Eliminar foto {{ loop.index }}">Eliminar</button>
+                            </form>
+                        </figure>
+                        {% else %}<span class="small text-white-50">Todavía no hay fotos cargadas. Este bloque queda preparado para mostrar hasta 7 fotos.</span>{% endfor %}
                     </div>
                 </div>
                 <form action="/empresa/galeria" method="post" enctype="multipart/form-data" class="stack-form mt-3">
@@ -280,7 +292,7 @@
 
                     {% elif empresa_activa.theme == 'servicios' %}
                     <div class="form-grid">
-                        <div><label class="field-label">Grupo</label><select class="input-custom select-custom" name="subgrupo">{% for value, label in [('compras','Compras'),('transporte','Transporte'),('estacionamiento','Estacionamiento'),('salud','Salud y bienestar'),('otros','Otros servicios')] %}<option value="{{ value }}" {% if empresa_activa.subgrupo == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div><div><label class="field-label">Rubro</label><select class="input-custom select-custom" name="subtipo">{% for option in ['Proveeduría','Almacén','Minimercado','Kiosco','Productos regionales','Fraccionamiento de productos secos','Remis','Playa de estacionamiento','Kinesiología','Centro de salud','Farmacia','Lavadero de ropa','Otro'] %}<option value="{{ option }}" {% if empresa_activa.subtipo == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+                        <div><label class="field-label" for="servicio-grupo">Grupo</label><select id="servicio-grupo" class="input-custom select-custom" name="subgrupo">{% for value, label in servicios_grupos.items() %}<option value="{{ value }}" {% if servicio_grupo_activo == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><small class="form-help">Se ajusta automáticamente según el rubro.</small></div><div><label class="field-label" for="servicio-subtipo">Rubro / subtipo</label><select id="servicio-subtipo" class="input-custom select-custom" name="subtipo">{% if empresa_activa.subtipo and empresa_activa.subtipo not in servicios_subtipos %}<option value="{{ empresa_activa.subtipo }}" selected>{{ empresa_activa.subtipo }}</option>{% endif %}{% for option in servicios_subtipos %}<option value="{{ option }}" {% if empresa_activa.subtipo == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
                         <div><label class="field-label">Horarios</label><input class="input-custom" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div>
                         <div><label class="field-label">Teléfono principal</label><input class="input-custom" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div>
                         <div><label class="field-label">Guardia / urgencias</label><input class="input-custom" name="guardia" value="{{ empresa_activa.guardia or '' }}"></div>
@@ -356,7 +368,12 @@
                             <div><label class="field-label">Dirección</label><input class="input-custom" type="text" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div>
                             <div><label class="field-label">Google Maps</label><input class="input-custom" name="maps_url" value="{{ empresa_activa.maps_url or '' }}" placeholder="pegá el link de Google Maps"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div>
                             <div><label class="field-label">Rubro / sección</label><select name="theme" class="input-custom select-custom"><option value="gastronomia" {% if empresa_activa.theme in ["gastronomia", "comida"] %}selected{% endif %}>Gastronomía</option><option value="alojamiento" {% if empresa_activa.theme == "alojamiento" %}selected{% endif %}>Alojamientos</option><option value="servicios" {% if empresa_activa.theme == "servicios" %}selected{% endif %}>Compras y servicios</option><option value="actividades" {% if empresa_activa.theme == "actividades" %}selected{% endif %}>Actividades y comunidad</option><option value="default" {% if (empresa_activa.theme or "default") == "default" %}selected{% endif %}>Otro / General</option></select></div>
-                            <div><label class="field-label">Grupo</label><select name="subgrupo" class="input-custom select-custom"><option value="">No aplica</option>{% if empresa_activa.theme == 'servicios' %}{% for value, label in [('compras','Compras'),('transporte','Transporte'),('estacionamiento','Estacionamiento'),('salud','Salud y bienestar'),('otros','Otros servicios')] %}<option value="{{ value }}" {% if empresa_activa.subgrupo == value %}selected{% endif %}>{{ label }}</option>{% endfor %}{% else %}<option value="diurnas" {% if empresa_activa.subgrupo == "diurnas" %}selected{% endif %}>Actividades diurnas</option><option value="nocturnas" {% if empresa_activa.subgrupo == "nocturnas" %}selected{% endif %}>Actividades nocturnas</option><option value="locales" {% if empresa_activa.subgrupo == "locales" %}selected{% endif %}>Productos locales y artesanos</option>{% endif %}</select></div>
+                            {% if empresa_activa.theme == 'servicios' %}
+                            <div><label class="field-label">Grupo</label><select name="subgrupo" class="input-custom select-custom">{% for value, label in servicios_grupos.items() %}<option value="{{ value }}" {% if servicio_grupo_activo == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+                            <div><label class="field-label">Rubro / subtipo</label><select name="subtipo" class="input-custom select-custom">{% if empresa_activa.subtipo and empresa_activa.subtipo not in servicios_subtipos %}<option value="{{ empresa_activa.subtipo }}" selected>{{ empresa_activa.subtipo }}</option>{% endif %}{% for option in servicios_subtipos %}<option value="{{ option }}" {% if empresa_activa.subtipo == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+                            {% else %}
+                            <div><label class="field-label">Grupo</label><select name="subgrupo" class="input-custom select-custom"><option value="">No aplica</option><option value="diurnas" {% if empresa_activa.subgrupo == "diurnas" %}selected{% endif %}>Actividades diurnas</option><option value="nocturnas" {% if empresa_activa.subgrupo == "nocturnas" %}selected{% endif %}>Actividades nocturnas</option><option value="locales" {% if empresa_activa.subgrupo == "locales" %}selected{% endif %}>Productos locales y artesanos</option></select></div>
+                            {% endif %}
                             <div class="full-width"><label class="field-label">Descripción promocional</label><textarea class="input-custom" name="descripcion" rows="4" placeholder="Contá qué ofrece este lugar o prestador en Cabalango">{{ empresa_activa.descripcion or '' }}</textarea></div>
                             <div><label class="field-label">Horarios</label><input class="input-custom" type="text" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div>
                             <div><label class="field-label">Video URL</label><input class="input-custom" type="url" name="video_url" value="{{ empresa_activa.video_url or '' }}" placeholder="YouTube, Instagram, Drive..."></div>
@@ -937,5 +954,16 @@ document.addEventListener("click", async (event) => {
 });
 </script>
 
+<script>
+const serviceSubtypeGroups = {{ servicio_subtipo_grupos | tojson }};
+const serviceSubtype = document.getElementById('servicio-subtipo');
+const serviceGroup = document.getElementById('servicio-grupo');
+if (serviceSubtype && serviceGroup) {
+    serviceSubtype.addEventListener('change', () => {
+        const group = serviceSubtypeGroups[serviceSubtype.value];
+        if (group) serviceGroup.value = group;
+    });
+}
+</script>
 </body>
 </html>
