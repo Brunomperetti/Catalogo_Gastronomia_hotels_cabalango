@@ -2355,14 +2355,20 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
     if isinstance(user, RedirectResponse): return user
     item = db.get(models.ActividadAgenda, id) if id else models.ActividadAgenda(created_at=utc_now())
     if id and not item: raise HTTPException(404)
-    for name, value in {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden, "publicado": bool(publicado), "destacado": bool(destacado)}.items(): setattr(item, name, value or None if name not in {"publicado", "destacado"} else value)
+    values = {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden, "publicado": bool(publicado), "destacado": bool(destacado)}
+    for name, value in values.items():
+        setattr(item, name, value if name in {"publicado", "destacado", "orden"} else value or None)
     item.tipo, item.categoria, item.momento = tipo, categoria, momento
     item.fecha_inicio, item.fecha_fin, item.updated_at = parse_local_form_datetime(fecha_inicio), parse_local_form_datetime(fecha_fin), utc_now()
+    # Keep published URLs stable when an editor changes a title.
     item.slug = item.slug if id else unique_agenda_slug(db, titulo)
     try:
         validate_activity(item)
         if has_uploaded_file(imagen): item.imagen_url = await save_agenda_image(imagen, item.slug)
     except ValueError as exc:
+        # Editing mutates an ORM-managed object before validation. Explicitly
+        # discard those changes and leave the request session reusable.
+        db.rollback()
         return RedirectResponse(f"/admin/actividades?edit={id or ''}&error={quote(str(exc))}", 303)
     db.add(item); db.commit()
     return RedirectResponse("/admin/actividades", 303)
