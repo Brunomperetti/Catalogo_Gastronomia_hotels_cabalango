@@ -2519,6 +2519,7 @@ def redirect_cabalango_legacy():
 @app.get("/admin", response_class=HTMLResponse)
 def admin_panel(
     request: Request,
+    area: str = "",
     empresa: str = "",
     tab: str = "empresa",
     msg: str = "",
@@ -2553,6 +2554,15 @@ def admin_panel(
         active_tab = "prestadores"
     legacy_tab_map = {"empresa": "prestadores", "productos": "tecnico", "backup": "configuracion", "avanzado": "tecnico", "datos_rubro": "rubro"}
     active_tab = legacy_tab_map.get(active_tab, active_tab)
+    provider_tabs = {"prestadores", "ficha", "fotos", "contacto", "rubro", "leads", "opiniones", "usuarios"}
+    portal_tabs = {"cabalango", "configuracion", "tecnico"}
+    admin_area = clean_text(area, default="").lower()
+    if admin_area not in {"prestador", "portal"}:
+        admin_area = "portal" if active_tab in portal_tabs else "prestador"
+    if admin_area == "prestador" and active_tab not in provider_tabs:
+        active_tab = "prestadores"
+    elif admin_area == "portal" and active_tab not in portal_tabs:
+        active_tab = "cabalango"
 
     lead_whatsapp_filter = parse_bool_query_flag(lead_whatsapp)
     lead_pdf_filter = parse_bool_query_flag(lead_pdf)
@@ -2637,6 +2647,7 @@ def admin_panel(
             "admin_username": os.getenv("ADMIN_USER", "admin"),
             "app_build": APP_BUILD,
             "active_tab": active_tab,
+            "admin_area": admin_area,
             "leads_rows": leads_rows,
             "lead_q": lead_q,
             "lead_q_url": quote(lead_q or ""),
