@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -57,6 +58,70 @@ def gallery_url(company, filename):
 
 def delete_photo(client, company, index):
     return client.post(f"/empresa/{company.id}/galeria/eliminar", data={"foto_indice": index}, follow_redirects=False)
+
+
+def assert_server_rendered_panel(html, panel_id, expected_text):
+    match = re.search(rf'<section\s+id="panel-{re.escape(panel_id)}"[^>]*>', html)
+    assert match, f"panel-{panel_id} was not rendered"
+    assert "hidden" not in match.group(0)
+    assert expected_text in html
+
+
+@pytest.mark.parametrize(("tab", "panel_id", "expected_text"), [
+    ("leads", "leads", "Tablero comercial"),
+    ("usuarios", "usuarios", "Usuarios y accesos"),
+    ("ficha", "ficha", "Ficha del prestador"),
+    ("fotos", "fotos", "Fotos y video"),
+    ("prestadores", "prestadores", "Editar prestador activo"),
+    ("contacto", "contacto", "Contacto y ubicación"),
+    ("rubro", "rubro", "Datos por rubro"),
+    ("opiniones", "opiniones", "Moderación de opiniones"),
+])
+def test_provider_panels_are_complete_server_rendered_pages(admin_app, tab, panel_id, expected_text):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get(f"/admin?area=prestador&empresa=demo&tab={tab}")
+    assert response.status_code == 200
+    assert_server_rendered_panel(response.text, panel_id, expected_text)
+    assert 'id="panel-cabalango"' not in response.text
+    assert 'id="panel-configuracion"' not in response.text
+    assert 'id="panel-tecnico"' not in response.text
+
+
+def test_portal_configuration_is_visible_and_keeps_active_company_context(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin?area=portal&empresa=demo&tab=configuracion")
+    assert response.status_code == 200
+    assert_server_rendered_panel(response.text, "configuracion", "Backup / Restore empresa completa")
+    assert "/admin/empresa/exportar?empresa=demo" in response.text
+    assert 'id="panel-prestadores"' not in response.text
+    assert 'id="panel-leads"' not in response.text
+
+
+def test_cabalango_portal_panel_is_server_rendered(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin?area=portal&empresa=demo&tab=cabalango")
+    assert response.status_code == 200
+    assert_server_rendered_panel(response.text, "cabalango", "Descubrí Cabalango")
+    assert 'id="panel-opiniones"' not in response.text
+
+
+def test_both_technical_sections_are_visible_without_javascript(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin?area=portal&empresa=demo&tab=tecnico")
+    assert response.status_code == 200
+    assert_server_rendered_panel(response.text, "tecnico", "Compatibilidad catálogo viejo")
+    assert_server_rendered_panel(response.text, "tecnico-extra", "Zona peligrosa")
+    assert 'id="panel-ficha"' not in response.text
+
+
+def test_admin_template_has_no_legacy_client_tab_system():
+    template = Path("app/templates/upload.html").read_text()
+    for legacy_marker in ("data-tab-target", "data-tab-panel", "setupAdminTabs", "activateTab", 'role="tab"', 'role="tabpanel"'):
+        assert legacy_marker not in template
 
 
 def test_delete_gallery_photo_keeps_remaining_and_removes_managed_file(admin_app):
