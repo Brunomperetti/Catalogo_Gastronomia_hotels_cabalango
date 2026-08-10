@@ -439,16 +439,21 @@
                                 <p>Herramienta heredada del catálogo anterior. No forma parte de la experiencia pública. Usar solo si necesitás compatibilidad técnica con productos o precios.</p>
 
                                 <form action="/upload_excel" method="post" enctype="multipart/form-data" class="stack-form">
-                                    <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
+                                    <label class="field-label">Prestador / empresa</label>
+                                    <select name="empresa_slug" class="input-custom select-custom" required>
+                                        {% for e in empresas %}<option value="{{ e.slug }}">{{ e.nombre }}</option>{% endfor %}
+                                    </select>
                                     <input class="input-file-custom" type="file" name="file" accept=".xlsx" required>
                                     <button class="btn-primary-custom w-100" type="submit">Subir Excel</button>
                                 </form>
 
-                                {% if empresa_activa %}
-                                <a href="/admin/productos?empresa={{ empresa_activa.slug }}" class="btn-outline-custom w-100 mt-3 d-inline-block text-center">
-                                    Ver / editar productos importados
-                                </a>
-                                {% endif %}
+                                <form action="/admin/productos" method="get" class="stack-form mt-3">
+                                    <label class="field-label">Prestador / empresa para consultar</label>
+                                    <select name="empresa" class="input-custom select-custom" required>
+                                        {% for e in empresas %}<option value="{{ e.slug }}">{{ e.nombre }}</option>{% endfor %}
+                                    </select>
+                                    <button class="btn-outline-custom w-100" type="submit">Ver / editar productos importados</button>
+                                </form>
                             </div>
                         </div>
 
@@ -459,7 +464,10 @@
                                 <p>Solo para catálogos antiguos: las imágenes deben coincidir con códigos de producto.</p>
 
                                 <form action="/upload_zip" method="post" enctype="multipart/form-data" class="stack-form">
-                                    <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
+                                    <label class="field-label">Prestador / empresa</label>
+                                    <select name="empresa_slug" class="input-custom select-custom" required>
+                                        {% for e in empresas %}<option value="{{ e.slug }}">{{ e.nombre }}</option>{% endfor %}
+                                    </select>
                                     <input class="input-file-custom" type="file" name="file" accept=".zip" required>
                                     <button class="btn-secondary-custom w-100" type="submit">Importar imágenes heredadas por ZIP</button>
                                 </form>
@@ -467,9 +475,6 @@
                         </div>
                     </div>
 
-                    {% if empresa_activa %}
-                    <a href="/legacy/catalogo/{{ empresa_activa.slug }}" target="_blank" class="btn-outline-custom w-100 mt-3">Abrir herramienta heredada</a>
-                    {% endif %}
                 </section>
 
                 {% if msg or error %}
@@ -836,21 +841,22 @@
                     <div class="card-header-custom">
                         <h2 class="card-title-custom">🧳 Backup / Restore empresa completa</h2>
                         <p class="card-subtitle-custom">Exportá e importá datos, productos y assets en un ZIP.</p>
+                        <p class="form-help">Seleccioná explícitamente el prestador sobre el que querés operar.</p>
                     </div>
 
                     <div class="steps-grid">
                         <div class="step-card">
                             <div class="step-number">1</div>
                             <div class="step-content">
-                                <h3>Exportar empresa activa</h3>
+                                <h3>Exportar empresa</h3>
                                 <p>Genera un ZIP con metadatos de empresa, productos e imágenes.</p>
-                                {% if empresa_activa %}
-                                <a class="btn-primary-custom w-100 d-inline-block text-center" href="/admin/empresa/exportar?empresa={{ empresa_activa.slug }}">
-                                    Descargar ZIP completo
-                                </a>
-                                {% else %}
-                                <p class="text-warning">No hay empresa activa para exportar.</p>
-                                {% endif %}
+                                <form action="/admin/empresa/exportar" method="get" class="stack-form">
+                                    <label class="field-label">Prestador / empresa</label>
+                                    <select name="empresa" class="input-custom select-custom" required>
+                                        {% for e in empresas %}<option value="{{ e.slug }}">{{ e.nombre }}</option>{% endfor %}
+                                    </select>
+                                    <button class="btn-primary-custom w-100" type="submit">Descargar ZIP completo</button>
+                                </form>
                             </div>
                         </div>
 
@@ -858,9 +864,8 @@
                             <div class="step-number">2</div>
                             <div class="step-content">
                                 <h3>Importar ZIP completo</h3>
-                                <p>Modo <b>duplicate</b>: crea nueva empresa si el slug existe. Modo <b>replace</b>: sobrescribe la empresa existente.</p>
+                                <p>Modo <b>duplicate</b>: crea una empresa nueva. Modo <b>replace</b>: sobrescribe la empresa cuyo slug está dentro del ZIP. No usa una empresa activa implícita.</p>
                                 <form action="/admin/empresa/importar" method="post" enctype="multipart/form-data" class="stack-form">
-                                    <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
                                     <input class="input-file-custom" type="file" name="file" accept=".zip" required>
                                     <select class="input-custom select-custom" name="import_mode">
                                         <option value="duplicate" selected>duplicate (seguro)</option>
@@ -886,9 +891,12 @@
                     </div>
 
                     <div class="danger-row__content">
-                        <p class="danger-note">Esta acción elimina todos los productos de la empresa activa y no se puede deshacer.</p>
+                        <p class="danger-note">Esta acción afecta únicamente al prestador seleccionado abajo y no se puede deshacer.</p>
                         <form action="/delete_all_products" method="post" onsubmit="return confirmarBorrado()" class="danger-form">
-                            <input type="hidden" name="empresa_slug" value="{{ empresa_query }}">
+                            <label class="field-label">Empresa afectada</label>
+                            <select name="empresa_slug" class="input-custom select-custom" required>
+                                {% for e in empresas %}<option value="{{ e.slug }}">{{ e.nombre }}</option>{% endfor %}
+                            </select>
                             <button class="btn-danger-soft" type="submit">Borrar TODOS los productos</button>
                         </form>
                     </div>

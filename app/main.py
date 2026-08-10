@@ -3357,7 +3357,7 @@ def delete_all_products(
     db.query(models.Producto).filter(models.Producto.empresa_id == empresa.id).delete()
     db.commit()
 
-    return panel_redirect(empresa_slug=empresa.slug, msg=f"Se borraron todos los productos de {empresa.nombre}.")
+    return panel_redirect(area="portal", tab="tecnico", msg=f"Se borraron todos los productos de {empresa.nombre}.")
 
 # ---------------------------------------------------
 # SUBIR EXCEL
@@ -3507,9 +3507,9 @@ def exportar_empresa_completa(
     if isinstance(auth, RedirectResponse):
         return auth
 
-    empresa_obj = get_empresa_by_slug(db, empresa) or get_default_empresa(db)
+    empresa_obj = get_empresa_by_slug(db, empresa)
     if not empresa_obj:
-        return JSONResponse({"error": "No hay empresa activa para exportar"}, status_code=400)
+        return JSONResponse({"error": "Seleccioná una empresa válida para exportar"}, status_code=400)
 
     productos = db.query(models.Producto).filter(models.Producto.empresa_id == empresa_obj.id).all()
     payload = {
@@ -3568,7 +3568,6 @@ def exportar_empresa_completa(
 @app.post("/admin/empresa/importar")
 def importar_empresa_completa(
     request: Request,
-    empresa_slug: str = Form(""),
     import_mode: str = Form("duplicate"),
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -3585,7 +3584,7 @@ def importar_empresa_completa(
         zip_bytes = file.file.read()
         with zipfile.ZipFile(BytesIO(zip_bytes), "r") as zip_ref:
             if "empresa.json" not in zip_ref.namelist():
-                return panel_redirect(empresa_slug=empresa_slug, error="ZIP inválido: falta empresa.json.")
+                return panel_redirect(area="portal", tab="configuracion", error="ZIP inválido: falta empresa.json.")
 
             payload = json.loads(zip_ref.read("empresa.json").decode("utf-8"))
             empresa_data = payload.get("empresa", {}) or {}
@@ -3595,7 +3594,7 @@ def importar_empresa_completa(
             source_slug = re.sub(r"[^a-z0-9\-]", "-", source_slug.lower())
             source_slug = re.sub(r"-+", "-", source_slug).strip("-")
             if not source_slug:
-                return panel_redirect(empresa_slug=empresa_slug, error="ZIP inválido: slug de empresa vacío.")
+                return panel_redirect(area="portal", tab="configuracion", error="ZIP inválido: slug de empresa vacío.")
 
             existing = get_empresa_by_slug(db, source_slug)
 
@@ -3694,16 +3693,17 @@ def importar_empresa_completa(
 
             action = "reemplazada" if mode == "replace" else "importada"
             return panel_redirect(
-                empresa_slug=target_slug,
+                area="portal",
+                tab="configuracion",
                 msg=f"Empresa {action} correctamente con slug '{target_slug}'."
             )
 
     except zipfile.BadZipFile:
-        return panel_redirect(empresa_slug=empresa_slug, error="Archivo ZIP inválido.")
+        return panel_redirect(area="portal", tab="configuracion", error="Archivo ZIP inválido.")
     except Exception as e:
         db.rollback()
         print("Error importando empresa:", e)
-        return panel_redirect(empresa_slug=empresa_slug, error="Error al importar la empresa.")
+        return panel_redirect(area="portal", tab="configuracion", error="Error al importar la empresa.")
 
 # ---------------------------------------------------
 # CATÁLOGO

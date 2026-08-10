@@ -161,15 +161,30 @@ def test_provider_panels_are_complete_server_rendered_pages(admin_app, tab, pane
     assert 'id="panel-tecnico"' not in response.text
 
 
-def test_portal_configuration_is_visible_and_keeps_active_company_context(admin_app):
+def test_portal_configuration_requires_explicit_company_selection(admin_app):
     client, db, _ = admin_app
-    add_company(db)
-    response = client.get("/admin?area=portal&empresa=demo&tab=configuracion")
+    add_company(db, nombre="Demo Company")
+    response = client.get("/admin?area=portal&tab=configuracion")
     assert response.status_code == 200
     assert_server_rendered_panel(response.text, "configuracion", "Backup / Restore empresa completa")
-    assert "/admin/empresa/exportar?empresa=demo" in response.text
+    assert 'form action="/admin/empresa/exportar" method="get"' in response.text
+    assert '<select name="empresa"' in response.text
+    assert '<option value="demo">Demo Company</option>' in response.text
+    assert "/admin/empresa/exportar?empresa=demo" not in response.text
+    import_form = re.search(r'<form action="/admin/empresa/importar".*?</form>', response.text, re.DOTALL)
+    assert import_form
+    assert 'name="empresa_slug"' not in import_form.group(0)
+    assert "No usa una empresa activa implícita" in response.text
     assert 'id="panel-prestadores"' not in response.text
     assert 'id="panel-leads"' not in response.text
+
+
+def test_export_requires_company_instead_of_using_default(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin/empresa/exportar")
+    assert response.status_code == 400
+    assert response.json() == {"error": "Seleccioná una empresa válida para exportar"}
 
 
 def test_cabalango_portal_panel_is_server_rendered(admin_app):
@@ -188,7 +203,20 @@ def test_both_technical_sections_are_visible_without_javascript(admin_app):
     assert response.status_code == 200
     assert_server_rendered_panel(response.text, "tecnico", "Compatibilidad catálogo viejo")
     assert_server_rendered_panel(response.text, "tecnico-extra", "Zona peligrosa")
+    assert response.text.count('<select name="empresa_slug"') == 3
+    assert "Esta acción afecta únicamente al prestador seleccionado abajo" in response.text
+    assert 'action="/delete_all_products"' in response.text
+    assert 'name="empresa_slug" value="demo"' not in response.text
     assert 'id="panel-ficha"' not in response.text
+
+
+def test_portal_navigation_links_never_carry_company(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin?area=portal&empresa=demo&tab=configuracion")
+    assert '/admin?area=portal&empresa=' not in response.text
+    assert '/admin?area=portal&tab=cabalango' in response.text
+    assert '/admin?area=portal&tab=tecnico' in response.text
 
 
 def test_admin_template_has_no_legacy_client_tab_system():
