@@ -4134,6 +4134,21 @@ button:disabled {
 .portal-section-illustration--servicios { color: #78AABD; }
 .portal-section-illustration--actividades { color: #D8C7AE; }
 
+/* Qué hacer / agenda */
+.agenda-hero { background: var(--surface, #fbf8f2); }
+.agenda-filters { display:flex; gap:.65rem; margin:1.5rem 0 2.5rem; overflow-x:auto; padding:.25rem 0 .75rem; }
+.agenda-filters a,.agenda-moment { border:1px solid #d8ccbc; border-radius:999px; color:#4e3a2d; font-weight:700; padding:.65rem 1rem; text-decoration:none; white-space:nowrap; }
+.agenda-filters a:hover,.agenda-filters a:focus-visible,.agenda-filters a.is-active { background:#596344; border-color:#596344; color:#fff9ef; outline-offset:3px; }
+.agenda-section { margin:clamp(2.5rem,6vw,5rem) 0; }
+.agenda-section>header { margin-bottom:1.4rem; }.agenda-section>header h2{margin-bottom:.25rem}
+.agenda-section--night { background:#eef3e7; border:1px solid #c9d4b8; border-radius:28px; padding:clamp(1.25rem,3vw,2.5rem); }
+.agenda-grid { display:grid; gap:1.25rem; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.agenda-card { background:#fff9f1; border:1px solid #d8ccbc; border-radius:24px; box-shadow:0 12px 30px rgba(78,58,45,.07); overflow:hidden; }
+.agenda-card>img { aspect-ratio:16/10; object-fit:cover; width:100%; }.agenda-card__body{padding:1.25rem}.agenda-card__body h3{margin:.35rem 0}.agenda-card__meta{font-size:.82rem}.agenda-card .agenda-moment{display:inline-block;font-size:.72rem;margin:.4rem 0 1rem;padding:.35rem .65rem}.agenda-card .portal-button{display:block;text-align:center}
+.agenda-detail { display:grid; gap:clamp(1.5rem,4vw,4rem); grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin:3rem 0; }.agenda-detail__image{border-radius:28px;max-height:650px;object-fit:cover;width:100%}.agenda-facts{display:grid;grid-template-columns:max-content 1fr;gap:.6rem 1.25rem;margin:2rem 0}.agenda-facts dt{font-weight:800}.agenda-facts dd{margin:0}.agenda-actions{display:flex;flex-wrap:wrap;gap:.75rem}
+@media(max-width:900px){.agenda-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.agenda-detail{grid-template-columns:1fr}}
+@media(max-width:600px){.agenda-grid{grid-template-columns:1fr}.agenda-filters{margin-inline:-1rem;padding-inline:1rem}.agenda-section--night{border-radius:20px}.agenda-card__body{padding:1rem}}
+
 @media (max-width: 900px) {
   .portal-section-hero { gap: 22px; grid-template-columns: minmax(0, 1.25fr) minmax(220px, .75fr); }
   .portal-section-illustration { max-width: 300px; }

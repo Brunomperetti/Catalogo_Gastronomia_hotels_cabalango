@@ -18,7 +18,7 @@ PUBLIC_SECTIONS = [
     ("/gastronomia", "Gastronomía", "Gastronomía en Cabalango"),
     ("/alojamientos", "Alojamientos", "Alojamientos en Cabalango"),
     ("/servicios", "Servicios útiles", "Servicios útiles en Cabalango"),
-    ("/actividades", "Actividades", "Actividades y comunidad en Cabalango"),
+    ("/actividades", "Qué hacer", "Qué hacer"),
 ]
 
 SECTION_ILLUSTRATIONS = [

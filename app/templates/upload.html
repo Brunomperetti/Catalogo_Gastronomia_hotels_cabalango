@@ -96,6 +96,7 @@
                     <strong id="admin-nav-portal-title">Contenido global de Cabalango</strong>
                 </div>
                 <nav class="admin-tabs admin-tabs--portal" role="tablist" aria-label="Portal y destino">
+                    <a class="admin-tab admin-tab--global" href="/admin/actividades">Qué hacer</a>
                     <a id="tab-cabalango" class="admin-tab admin-tab--global {% if active_tab == 'cabalango' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'cabalango' else 'false' }}" href="/admin?tab=cabalango" aria-controls="panel-cabalango" data-tab-target="cabalango">Descubrí Cabalango</a>
                     <a id="tab-configuracion" class="admin-tab {% if active_tab == 'configuracion' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'configuracion' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=configuracion" aria-controls="panel-configuracion" data-tab-target="configuracion">Configuración</a>
                     <a id="tab-avanzado" class="admin-tab admin-tab--warning {% if active_tab == 'tecnico' %}is-active{% endif %}" role="tab" aria-selected="{{ 'true' if active_tab == 'tecnico' else 'false' }}" href="/admin?empresa={{ active_empresa }}&tab=tecnico" aria-controls="panel-tecnico" data-tab-target="tecnico">Técnico</a>

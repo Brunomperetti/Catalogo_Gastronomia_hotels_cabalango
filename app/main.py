@@ -31,6 +31,7 @@ from reportlab.lib.pagesizes import A4
 
 from app.database import SessionLocal, engine, Base
 from app import models
+from app.agenda import CATEGORIES, MOMENTS, TYPES, derived_status, get_public_activities, group_public_agenda, now_cabalango, validate_activity
 
 app = FastAPI()
 APP_BUILD = "2026-07-01-descubri-cabalango-v1"
@@ -72,6 +73,7 @@ def run_startup_db_maintenance():
         ensure_review_columns()
         ensure_destino_media_table()
         ensure_destino_contenido_table()
+        ensure_actividad_agenda_table()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
     except Exception as exc:
@@ -329,6 +331,12 @@ def ensure_destino_media_table():
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_tipo ON destino_media(tipo)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_categoria ON destino_media(categoria)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_visible ON destino_media(visible)"))
+
+
+def ensure_actividad_agenda_table():
+    """Idempotent, additive migration: no existing table or row is altered."""
+    if "actividades_agenda" not in set(inspect(engine).get_table_names()):
+        Base.metadata.create_all(bind=engine, tables=[models.ActividadAgenda.__table__])
 
 # ---------------------------------------------------
 # DB Dependency
@@ -2236,6 +2244,7 @@ def render_destino_home(request: Request, db: Session):
             "content": content,
             "weather": get_cabalango_weather(),
             "active_section": "inicio",
+            "agenda_home": build_home_agenda(db),
         },
     )
 
@@ -2285,18 +2294,105 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/actividades", response_class=HTMLResponse)
-def portal_actividades(request: Request, subgrupo: str = "", db: Session = Depends(get_db)):
-    active_subgrupo = normalize_actividad_subgrupo(subgrupo)
-    return portal_section_context(
-        request,
-        db,
-        title="Actividades y comunidad en Cabalango",
-        eyebrow="Qué hacer en Cabalango",
-        description="Caminatas, ferias, eventos, artesanos, experiencias y propuestas locales para disfrutar la comunidad.",
-        themes={"actividades"},
-        section="actividades",
-        subgrupo=active_subgrupo,
-    )
+def portal_actividades(request: Request, momento: str = "", categoria: str = "", cuando: str = "", db: Session = Depends(get_db)):
+    items = get_public_activities(db, categoria=categoria, momento=momento, cuando=cuando)
+    return templates.TemplateResponse("actividades.html", {"request": request, "groups": group_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"momento": momento, "categoria": categoria, "cuando": cuando}, "active_section": "actividades"})
+
+
+@app.get("/actividades/{slug}", response_class=HTMLResponse)
+def actividad_detail(request: Request, slug: str, db: Session = Depends(get_db)):
+    item = next((i for i in get_public_activities(db) if i.slug == slug), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Actividad no encontrada")
+    return templates.TemplateResponse("actividad_detalle.html", {"request": request, "item": item, "categories": CATEGORIES, "moments": MOMENTS, "active_section": "actividades"})
+
+
+def build_home_agenda(db: Session):
+    groups = group_public_agenda(get_public_activities(db))
+    selected = (groups["today"] + groups["night"])[:4]
+    if len(selected) < 4:
+        selected += [i for i in groups["activities"] if i.destacado][:4-len(selected)]
+    return selected
+
+
+def parse_local_form_datetime(value: str):
+    value = clean_text(value, default="")
+    return datetime.fromisoformat(value) if value else None
+
+
+def unique_agenda_slug(db: Session, title: str, exclude_id=None):
+    base = re.sub(r"[^a-z0-9]+", "-", title.lower().translate(str.maketrans("áéíóúñ", "aeioun"))).strip("-") or "actividad"
+    slug, suffix = base, 2
+    while db.query(models.ActividadAgenda).filter(models.ActividadAgenda.slug == slug, models.ActividadAgenda.id != exclude_id).first():
+        slug, suffix = f"{base}-{suffix}", suffix + 1
+    return slug
+
+
+async def save_agenda_image(upload: UploadFile, slug: str):
+    if Path(upload.filename or "").suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError("Formato de imagen inválido")
+    target = STORAGE_DIR / "actividades" / slug
+    target.mkdir(parents=True, exist_ok=True)
+    filename = safe_unique_filename(upload, prefix="principal")
+    data = await upload.read()
+    if len(data) > 8 * 1024 * 1024:
+        raise ValueError("La imagen supera el máximo de 8 MB")
+    (target / filename).write_bytes(data)
+    return f"{MEDIA_URL_PREFIX}/actividades/{slug}/{filename}"
+
+
+@app.get("/admin/actividades", response_class=HTMLResponse)
+def admin_activities(request: Request, edit: int | None = None, error: str = "", db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse): return user
+    items = db.query(models.ActividadAgenda).order_by(models.ActividadAgenda.fecha_inicio.desc(), models.ActividadAgenda.titulo).all()
+    return templates.TemplateResponse("admin_actividades.html", {"request": request, "items": items, "editing": db.get(models.ActividadAgenda, edit) if edit else None, "categories": CATEGORIES, "moments": MOMENTS, "types": TYPES, "status": derived_status, "error": error})
+
+
+@app.post("/admin/actividades/guardar")
+async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: int | None = Form(None), publicado: str | None = Form(None), destacado: str | None = Form(None), imagen: UploadFile | None = File(None), db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse): return user
+    item = db.get(models.ActividadAgenda, id) if id else models.ActividadAgenda(created_at=utc_now())
+    if id and not item: raise HTTPException(404)
+    values = {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden, "publicado": bool(publicado), "destacado": bool(destacado)}
+    for name, value in values.items():
+        setattr(item, name, value if name in {"publicado", "destacado", "orden"} else value or None)
+    item.tipo, item.categoria, item.momento = tipo, categoria, momento
+    item.fecha_inicio, item.fecha_fin, item.updated_at = parse_local_form_datetime(fecha_inicio), parse_local_form_datetime(fecha_fin), utc_now()
+    # Keep published URLs stable when an editor changes a title.
+    item.slug = item.slug if id else unique_agenda_slug(db, titulo)
+    try:
+        validate_activity(item)
+        if has_uploaded_file(imagen): item.imagen_url = await save_agenda_image(imagen, item.slug)
+    except ValueError as exc:
+        # Editing mutates an ORM-managed object before validation. Explicitly
+        # discard those changes and leave the request session reusable.
+        db.rollback()
+        return RedirectResponse(f"/admin/actividades?edit={id or ''}&error={quote(str(exc))}", 303)
+    db.add(item); db.commit()
+    return RedirectResponse("/admin/actividades", 303)
+
+
+@app.post("/admin/actividades/{item_id}/duplicar")
+def admin_activity_duplicate(request: Request, item_id: int, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse): return user
+    source = db.get(models.ActividadAgenda, item_id)
+    if not source: raise HTTPException(404)
+    copied = {c.name: getattr(source, c.name) for c in models.ActividadAgenda.__table__.columns if c.name not in {"id", "slug", "fecha_inicio", "fecha_fin", "publicado", "created_at", "updated_at"}}
+    duplicate = models.ActividadAgenda(**copied, slug=unique_agenda_slug(db, f"{source.titulo}-copia"), fecha_inicio=None, fecha_fin=None, publicado=False, created_at=utc_now(), updated_at=utc_now())
+    db.add(duplicate); db.commit()
+    return RedirectResponse(f"/admin/actividades?edit={duplicate.id}", 303)
+
+
+@app.post("/admin/actividades/{item_id}/eliminar")
+def admin_activity_delete(request: Request, item_id: int, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse): return user
+    item = db.get(models.ActividadAgenda, item_id)
+    if item: db.delete(item); db.commit()
+    return RedirectResponse("/admin/actividades", 303)
 
 
 @app.get("/descubri-cabalango", include_in_schema=False)

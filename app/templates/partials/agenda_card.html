@@ -1,0 +1,10 @@
+<article class="agenda-card">
+  {% if item.imagen_url %}<img src="{{ item.imagen_url }}" alt="{{ item.titulo }}" loading="lazy">{% endif %}
+  <div class="agenda-card__body">
+    <p class="agenda-card__meta">{% if item.tipo == 'evento' %}<strong>{{ item.fecha_inicio.strftime('%H:%M') }}</strong> · {% endif %}{{ categories[item.categoria] }}{% if item.lugar %} · {{ item.lugar }}{% endif %}</p>
+    <h3>{{ item.titulo }}</h3>
+    {% if item.descripcion_corta %}<p>{{ item.descripcion_corta }}</p>{% endif %}
+    <span class="agenda-moment">{{ moments[item.momento] }}</span>
+    <a class="portal-button" href="/actividades/{{ item.slug }}">Ver actividad</a>
+  </div>
+</article>
