@@ -145,3 +145,33 @@ def test_edit_keeps_slug_stable_and_accepts_zero_order(agenda_app):
         item = db.get(ActividadAgenda, item_id)
         assert item.slug == "yoga-permanente"
         assert item.orden == 0
+
+
+def test_card_omits_short_description_when_it_matches_title(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.descripcion_corta = "  YOGA PERMANENTE  "
+        db.commit()
+
+    response = client.get("/actividades")
+    assert response.status_code == 200
+    card = response.text.split('href="/actividades/yoga-permanente"', 1)[0].rsplit('<article class="agenda-card">', 1)[1]
+    assert 'class="agenda-card__description"' not in card
+
+
+def test_detail_whatsapp_is_primary_and_conditional(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.whatsapp = "+54 9 351-555-0101"
+        db.commit()
+
+    detail = client.get("/actividades/yoga-permanente").text
+    whatsapp_tag = detail.split("Consultar por WhatsApp", 1)[0].rsplit("<a", 1)[1]
+    assert 'class="portal-button"' in whatsapp_tag
+    assert "portal-button-secondary" not in whatsapp_tag
+    assert "wa.me/5493515550101" in whatsapp_tag
+
+    without_whatsapp = client.get("/actividades/feria-hoy").text
+    assert "Consultar por WhatsApp" not in without_whatsapp
