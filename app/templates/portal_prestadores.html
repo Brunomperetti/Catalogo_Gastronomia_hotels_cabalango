@@ -3,12 +3,13 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ title }}</title>
+    <title>{% if section == 'servicios' %}Compras y servicios en Cabalango | Guía turística{% else %}{{ title }}{% endif %}</title>
+    {% if section == 'servicios' %}<meta name="description" content="Comercios, transporte, estacionamiento, salud y servicios para vecinos y visitantes de Cabalango.">{% endif %}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-agenda-polish-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-commerce-services-1">
 </head>
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
@@ -18,7 +19,7 @@
         <section class="portal-hero portal-hero-compact portal-section-hero">
             <div class="portal-section-hero-copy">
                 <p class="portal-kicker">{{ eyebrow }}</p>
-                <h1>{{ title }}</h1>
+                <h1>{% if section == 'servicios' %}Compras y<br>servicios{% else %}{{ title }}{% endif %}</h1>
                 <p class="portal-subtitle">{{ description }}</p>
             </div>
             <div class="portal-section-hero-art">
@@ -26,6 +27,12 @@
             </div>
         </section>
 
+        {% if section == 'servicios' %}
+        <nav class="services-filters" aria-label="Filtrar compras y servicios">
+            <a class="{% if not active_service_group %}is-active{% endif %}" href="/servicios">Todo</a>
+            {% for key, label in service_groups.items() %}<a class="{% if active_service_group == key %}is-active{% endif %}" href="/servicios?grupo={{ key }}">{{ label }}</a>{% endfor %}
+        </nav>
+        {% endif %}
 
         {% if section == 'alojamientos' %}
         <section class="alojamientos-filter-panel" aria-label="Filtros de alojamientos">
@@ -126,7 +133,7 @@
                     {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</span>{% endif %}
                 </a>
                 <div class="prestador-content">
-                    <p class="prestador-theme">{{ empresa.subtipo or theme_display_label(empresa.theme) }}{% if empresa.subgrupo %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}</p>
+                    <p class="prestador-theme">{% if section == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ empresa.subtipo or theme_display_label(empresa.theme) }}{% if empresa.subgrupo %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}{% endif %}</p>
                     <h2>{{ empresa.nombre }}</h2>
                     <p class="prestador-summary">{{ empresa.descripcion_corta or empresa.descripcion or 'Propuesta turística de Cabalango con contacto directo y ficha pública preparada para consultas.' }}</p>
                     {% if section == 'alojamientos' %}
@@ -136,14 +143,14 @@
                     {% endif %}
                     {% if card_chips %}<div class="prestador-chip-row">{% for chip in card_chips %}<span>{{ chip }}</span>{% endfor %}</div>{% endif %}
                     <div class="prestador-card-meta">{% if section != 'alojamientos' and empresa.direccion %}<span>📍 {{ empresa.direccion }}</span>{% elif empresa.whatsapp %}<span>💬 WhatsApp {{ empresa.whatsapp }}</span>{% else %}<span>Consultá disponibilidad</span>{% endif %}</div>
-                    <div class="prestador-card-actions"><a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha</a>{% if clean_whatsapp %}<a class="portal-button portal-button-secondary" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div>
+                    <div class="prestador-card-actions"><a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha</a>{% if clean_whatsapp %}<a class="portal-button portal-button-secondary" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% elif section == 'servicios' and empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}</div>
                 </div>
             </article>
             {% endif %}
             {% endfor %}
         </section>
         {% else %}
-        <section class="portal-empty"><h2>{% if section == 'alojamientos' %}No encontramos alojamientos con esos filtros{% else %}Estamos preparando esta sección{% endif %}</h2><p>{% if section == 'alojamientos' %}Probá ajustar la búsqueda o limpiar los filtros para ver más opciones.{% else %}Muy pronto vas a encontrar propuestas locales acá. Esta sección está lista para recibir prestadores de Cabalango.{% endif %}</p><div class="empty-actions"><a class="portal-button" href="{% if section == 'alojamientos' %}/alojamientos{% else %}/{% endif %}">{% if section == 'alojamientos' %}Limpiar filtros{% else %}Volver al inicio{% endif %}</a>{% if section != 'alojamientos' %}<a class="portal-button portal-button-secondary" href="/#fotos">Ver fotos y videos</a>{% endif %}</div></section>
+        <section class="portal-empty"><h2>{% if section == 'alojamientos' %}No encontramos alojamientos con esos filtros{% elif section == 'servicios' %}No encontramos propuestas en esta categoría por ahora.{% else %}Estamos preparando esta sección{% endif %}</h2><p>{% if section == 'alojamientos' %}Probá ajustar la búsqueda o limpiar los filtros para ver más opciones.{% elif section == 'servicios' %}Podés explorar el resto de compras y servicios disponibles.{% else %}Muy pronto vas a encontrar propuestas locales acá. Esta sección está lista para recibir prestadores de Cabalango.{% endif %}</p><div class="empty-actions"><a class="portal-button" href="{% if section == 'alojamientos' %}/alojamientos{% else %}/{% endif %}">{% if section == 'alojamientos' %}Limpiar filtros{% else %}Volver al inicio{% endif %}</a>{% if section != 'alojamientos' %}<a class="portal-button portal-button-secondary" href="/#fotos">Ver fotos y videos</a>{% endif %}</div></section>
         {% endif %}
     </main>
 </body>

@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-agenda-polish-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-commerce-services-1">
 </head>
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
     {% set hero_image = main_photo_url %}
@@ -46,7 +46,7 @@
 
             <div class="tourism-heading-card">
                 <div class="tourism-heading-meta">
-                    <span>{{ theme_display_label(empresa.theme) }}</span>
+                    <span>{% if kind == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ theme_display_label(empresa.theme) }}{% endif %}</span>
                     {% if empresa.subtipo %}<span>{{ empresa.subtipo }}</span>{% endif %}
                     {% if empresa.subgrupo and actividad_subgrupos %}<span>{{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}</span>{% endif %}
                 </div>

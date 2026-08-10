@@ -5020,3 +5020,36 @@ body,
 @media (max-width: 600px) {
   .agenda-facts > div { padding: .78rem .9rem; }
 }
+
+/* Compras y servicios: intent-level filters, horizontally scrollable on small screens. */
+.services-filters {
+  display: flex;
+  gap: 10px;
+  margin: clamp(20px, 3vw, 32px) 0 0;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  scrollbar-width: thin;
+}
+.services-filters a {
+  background: var(--portal-card);
+  border: 1px solid var(--portal-line);
+  border-radius: 999px;
+  color: var(--portal-graphite);
+  flex: 0 0 auto;
+  font-size: .84rem;
+  font-weight: 800;
+  padding: 10px 16px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.services-filters a:hover,
+.services-filters a:focus-visible,
+.services-filters a.is-active {
+  background: var(--portal-olive);
+  border-color: var(--portal-olive);
+  color: var(--portal-cream);
+}
+@media (max-width: 480px) {
+  .services-filters { margin-inline: -4px; }
+  .services-filters a { padding: 9px 14px; }
+}
