@@ -175,3 +175,28 @@ def test_detail_whatsapp_is_primary_and_conditional(agenda_app):
 
     without_whatsapp = client.get("/actividades/feria-hoy").text
     assert "Consultar por WhatsApp" not in without_whatsapp
+
+
+def test_detail_never_renders_none_or_blank_optional_content(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.descripcion_corta = None
+        item.descripcion = None
+        item.horarios = None
+        item.lugar = "   "
+        item.direccion = None
+        item.maps_url = None
+        item.whatsapp = None
+        item.instagram = None
+        item.url_externa = None
+        db.commit()
+
+    response = client.get("/actividades/yoga-permanente")
+    assert response.status_code == 200
+    detail = response.text.split('<article class="agenda-detail">', 1)[1].split("</article>", 1)[0]
+    assert "None" not in detail
+    assert 'class="portal-subtitle"' not in detail
+    assert 'class="agenda-description"' not in detail
+    assert "<dt>Lugar</dt>" not in detail
+    assert "<dt>Dirección</dt>" not in detail
