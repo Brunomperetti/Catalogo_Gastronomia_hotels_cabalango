@@ -1,6 +1,7 @@
 import json
 import re
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
@@ -65,6 +66,78 @@ def assert_server_rendered_panel(html, panel_id, expected_text):
     assert match, f"panel-{panel_id} was not rendered"
     assert "hidden" not in match.group(0)
     assert expected_text in html
+
+
+def redirect_query(response):
+    return parse_qs(urlparse(response.headers["location"]).query)
+
+
+@pytest.mark.parametrize(("admin_tab", "expected_tab"), [
+    ("ficha", "ficha"),
+    ("contacto", "contacto"),
+    ("rubro", "rubro"),
+])
+def test_saving_provider_data_preserves_originating_tab(admin_app, admin_tab, expected_tab):
+    client, db, _ = admin_app
+    company = add_company(db)
+    response = client.post("/empresa/editar_panel", data={
+        "empresa_slug_actual": company.slug,
+        "nombre": company.nombre,
+        "theme": "default",
+        "admin_tab": admin_tab,
+    }, follow_redirects=False)
+    assert redirect_query(response) | {"status": [str(response.status_code)]} == {
+        "area": ["prestador"], "empresa": ["demo"], "tab": [expected_tab],
+        "msg": ["Empresa actualizada correctamente."], "status": ["303"],
+    }
+
+
+def test_arbitrary_edit_tab_is_normalized_by_backend(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db)
+    response = client.post("/empresa/editar_panel", data={
+        "empresa_slug_actual": company.slug, "nombre": company.nombre,
+        "theme": "default", "admin_tab": "javascript:alert(1)",
+    }, follow_redirects=False)
+    assert redirect_query(response)["tab"] == ["prestadores"]
+
+
+def test_gallery_upload_and_delete_redirect_to_photos(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db)
+    upload = client.post("/empresa/galeria", data={"empresa_slug": company.slug}, follow_redirects=False)
+    assert redirect_query(upload)["area"] == ["prestador"]
+    assert redirect_query(upload)["empresa"] == [company.slug]
+    assert redirect_query(upload)["tab"] == ["fotos"]
+    company.galeria_urls = json.dumps([gallery_url(company, "photo.jpg")])
+    db.commit()
+    deleted = delete_photo(client, company, 0)
+    assert redirect_query(deleted)["tab"] == ["fotos"]
+
+
+def test_switching_provider_from_photos_preserves_tab(admin_app):
+    client, db, _ = admin_app
+    add_company(db, slug="crisma")
+    add_company(db, slug="farmacia")
+    response = client.post("/empresa/activar_panel", data={
+        "slug": "farmacia", "admin_tab": "fotos",
+    }, follow_redirects=False)
+    assert redirect_query(response) == {
+        "area": ["prestador"], "empresa": ["farmacia"], "tab": ["fotos"],
+    }
+
+
+def test_portal_redirect_omits_provider_context():
+    response = main.panel_redirect(empresa_slug="demo", area="portal", tab="cabalango", msg="Guardado")
+    assert redirect_query(response) == {"area": ["portal"], "tab": ["cabalango"], "msg": ["Guardado"]}
+
+
+def test_admin_gallery_uses_compact_grid():
+    template = Path("app/templates/upload.html").read_text()
+    stylesheet = Path("app/static/css/admin.css").read_text()
+    assert 'class="admin-gallery-grid"' in template
+    assert "repeat(auto-fill, minmax(125px, 150px))" in stylesheet
+    assert "aspect-ratio: 4 / 3" in stylesheet
 
 
 @pytest.mark.parametrize(("tab", "panel_id", "expected_text"), [

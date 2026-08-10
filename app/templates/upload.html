@@ -59,6 +59,7 @@
                 <form method="post" action="/empresa/activar_panel" class="toolbar-form toolbar-form--hero">
                     <div class="toolbar-form__group toolbar-form__group--compact">
                         <label for="slug" class="field-label">Cambiar prestador</label>
+                        <input type="hidden" name="admin_tab" value="{{ active_tab }}">
                         <select id="slug" name="slug" class="input-custom select-custom">
                             {% for e in empresas %}
                             <option value="{{ e.slug }}"
@@ -80,7 +81,7 @@
             {% set active_empresa = empresa_query %}
             <div class="admin-tabs" aria-label="Área activa">
                 <a class="admin-tab {% if admin_area == 'prestador' %}is-active{% endif %}" href="/admin?area=prestador&empresa={{ active_empresa }}&tab=prestadores" {% if admin_area == 'prestador' %}aria-current="page"{% endif %}>Prestador</a>
-                <a class="admin-tab admin-tab--global {% if admin_area == 'portal' %}is-active{% endif %}" href="/admin?area=portal&empresa={{ active_empresa }}&tab=cabalango" {% if admin_area == 'portal' %}aria-current="page"{% endif %}>Portal / destino</a>
+                <a class="admin-tab admin-tab--global {% if admin_area == 'portal' %}is-active{% endif %}" href="/admin?area=portal&tab=cabalango" {% if admin_area == 'portal' %}aria-current="page"{% endif %}>Portal / destino</a>
             </div>
             {% if admin_area == 'prestador' %}
             <section class="admin-nav-group admin-nav-group--provider" aria-labelledby="admin-nav-provider-title">
@@ -97,7 +98,7 @@
                 <div class="admin-tabs admin-tabs--portal" aria-label="Secciones del portal">
                     <a class="admin-tab admin-tab--global" href="/admin/actividades">Qué hacer</a>
                     {% for tab_id, label in [('cabalango','Descubrí Cabalango'),('configuracion','Configuración'),('tecnico','Técnico')] %}
-                    <a id="tab-{{ 'avanzado' if tab_id == 'tecnico' else tab_id }}" class="admin-tab {% if tab_id == 'cabalango' %}admin-tab--global{% elif tab_id == 'tecnico' %}admin-tab--warning{% endif %} {% if active_tab == tab_id %}is-active{% endif %}" href="/admin?area=portal&empresa={{ active_empresa }}&tab={{ tab_id }}" {% if active_tab == tab_id %}aria-current="page"{% endif %}>{{ label }}</a>
+                    <a id="tab-{{ 'avanzado' if tab_id == 'tecnico' else tab_id }}" class="admin-tab {% if tab_id == 'cabalango' %}admin-tab--global{% elif tab_id == 'tecnico' %}admin-tab--warning{% endif %} {% if active_tab == tab_id %}is-active{% endif %}" href="/admin?area=portal&tab={{ tab_id }}" {% if active_tab == tab_id %}aria-current="page"{% endif %}>{{ label }}</a>
                     {% endfor %}
                 </div>
             </section>
@@ -110,6 +111,7 @@
             <section class="admin-card admin-card--wide">
                 <div class="card-header-custom"><h2 class="card-title-custom">Ficha del prestador</h2><p class="card-subtitle-custom">Editá la información principal que se mostrará en el portal de Cabalango.</p></div>
                 <form action="/empresa/editar_panel" method="post" class="stack-form">
+                    <input type="hidden" name="admin_tab" value="{{ active_tab }}">
                     <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"><input type="hidden" name="telefono" value="{{ empresa_activa.telefono or '' }}"><input type="hidden" name="instagram" value="{{ empresa_activa.instagram or '' }}"><input type="hidden" name="facebook" value="{{ empresa_activa.facebook or '' }}"><input type="hidden" name="web_url" value="{{ empresa_activa.web_url or '' }}"><input type="hidden" name="direccion" value="{{ empresa_activa.direccion or '' }}"><input type="hidden" name="maps_url" value="{{ empresa_activa.maps_url or '' }}"><input type="hidden" name="horarios" value="{{ empresa_activa.horarios or '' }}"><input type="hidden" name="video_url" value="{{ empresa_activa.video_url or '' }}">
                     <div class="form-grid"><div><label class="field-label">Nombre del prestador/lugar</label><input class="input-custom" name="nombre" value="{{ empresa_activa.nombre }}" required></div><div><label class="field-label">Slug</label><input class="input-custom" value="{{ empresa_activa.slug }}" readonly></div><div><label class="field-label">Rubro / sección</label><select name="theme" class="input-custom select-custom"><option value="gastronomia" {% if empresa_activa.theme in ['gastronomia','comida'] %}selected{% endif %}>Gastronomía</option><option value="alojamiento" {% if empresa_activa.theme == 'alojamiento' %}selected{% endif %}>Alojamientos</option><option value="servicios" {% if empresa_activa.theme == 'servicios' %}selected{% endif %}>Compras y servicios</option><option value="actividades" {% if empresa_activa.theme == 'actividades' %}selected{% endif %}>Actividades y comunidad</option><option value="default" {% if (empresa_activa.theme or 'default') == 'default' %}selected{% endif %}>General</option></select></div><div><label class="field-label">Subtipo / categoría</label><input class="input-custom" name="subtipo" value="{{ empresa_activa.subtipo or '' }}" placeholder="Ej: cabaña, restaurante, farmacia"></div><div class="full-width"><label class="field-label">Descripción corta</label><input class="input-custom" name="descripcion_corta" value="{{ empresa_activa.descripcion_corta or '' }}"></div><div class="full-width"><label class="field-label">Descripción completa</label><textarea class="input-custom" name="descripcion" rows="5">{{ empresa_activa.descripcion or '' }}</textarea></div></div>
                     <div class="feature-list"><label class="form-check"><input class="form-check-input" type="checkbox" name="activo" value="1" {% if empresa_activa.activo is not sameas false %}checked{% endif %}> Publicado / activo</label><label class="form-check"><input class="form-check-input" type="checkbox" name="destacado" value="1" {% if empresa_activa.destacado %}checked{% endif %}> Destacado</label></div><button class="btn-primary-custom w-100">Guardar ficha</button>
@@ -129,7 +131,7 @@
                 <div class="gallery-admin-preview media-priority-block">
                     <label class="field-label">1. Fotos del lugar / galería</label>
                     <p class="field-help">Para una mejor ficha, priorizá fotos reales del lugar. Máximo recomendado: 7 fotos.</p>
-                    <div class="feature-list">
+                    <div class="admin-gallery-grid">
                         {% for foto in galeria_urls[:7] %}
                         <figure class="admin-gallery-item">
                             <img class="admin-gallery-thumb" src="{{ foto }}?ts={{ time }}" alt="Foto de galería {{ loop.index }}">
@@ -185,6 +187,7 @@
                 </form>
 
                 <form action="/empresa/editar_panel" method="post" class="stack-form mt-3">
+                    <input type="hidden" name="admin_tab" value="{{ active_tab }}">
                     <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
                     <input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}">
                     <input type="hidden" name="theme" value="{{ empresa_activa.theme }}">
@@ -250,7 +253,8 @@
 {% endif %}
 
         {% if admin_area == 'prestador' and active_tab == 'contacto' %}
-<section id="panel-contacto" class="admin-tab-panel is-active"><section class="admin-card admin-card--wide"><div class="card-header-custom"><h2 class="card-title-custom">Contacto y ubicación</h2><p class="card-subtitle-custom">Estos datos ayudan a turistas, vecinos y visitantes a contactarte o llegar al lugar.</p></div><form action="/empresa/editar_panel" method="post" class="stack-form"><input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}"><input type="hidden" name="theme" value="{{ empresa_activa.theme }}"><div class="form-grid"><div><label class="field-label">WhatsApp</label><input class="input-custom" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div><div><label class="field-label">Teléfono</label><input class="input-custom" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div><div><label class="field-label">Instagram / redes</label><input class="input-custom" name="instagram" value="{{ empresa_activa.instagram or '' }}" placeholder="https://instagram.com/tuusuario o @tuusuario"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Facebook</label><input class="input-custom" name="facebook" value="{{ empresa_activa.facebook or '' }}" placeholder="https://facebook.com/tupagina"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Sitio web</label><input class="input-custom" name="web_url" value="{{ empresa_activa.web_url or '' }}" placeholder="https://tusitio.com"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Horarios</label><input class="input-custom" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div><div class="full-width"><label class="field-label">Dirección</label><input class="input-custom" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div><div class="full-width"><label class="field-label">Google Maps</label><input class="input-custom" name="maps_url" value="{{ empresa_activa.maps_url or '' }}" placeholder="pegá el link de Google Maps"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div></div><button class="btn-primary-custom w-100">Guardar contacto</button></form></section></section>
+<section id="panel-contacto" class="admin-tab-panel is-active"><section class="admin-card admin-card--wide"><div class="card-header-custom"><h2 class="card-title-custom">Contacto y ubicación</h2><p class="card-subtitle-custom">Estos datos ayudan a turistas, vecinos y visitantes a contactarte o llegar al lugar.</p></div><form action="/empresa/editar_panel" method="post" class="stack-form">
+                    <input type="hidden" name="admin_tab" value="{{ active_tab }}"><input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}"><input type="hidden" name="theme" value="{{ empresa_activa.theme }}"><div class="form-grid"><div><label class="field-label">WhatsApp</label><input class="input-custom" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div><div><label class="field-label">Teléfono</label><input class="input-custom" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div><div><label class="field-label">Instagram / redes</label><input class="input-custom" name="instagram" value="{{ empresa_activa.instagram or '' }}" placeholder="https://instagram.com/tuusuario o @tuusuario"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Facebook</label><input class="input-custom" name="facebook" value="{{ empresa_activa.facebook or '' }}" placeholder="https://facebook.com/tupagina"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Sitio web</label><input class="input-custom" name="web_url" value="{{ empresa_activa.web_url or '' }}" placeholder="https://tusitio.com"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Horarios</label><input class="input-custom" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div><div class="full-width"><label class="field-label">Dirección</label><input class="input-custom" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div><div class="full-width"><label class="field-label">Google Maps</label><input class="input-custom" name="maps_url" value="{{ empresa_activa.maps_url or '' }}" placeholder="pegá el link de Google Maps"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div></div><button class="btn-primary-custom w-100">Guardar contacto</button></form></section></section>
 {% endif %}
 
         {% if admin_area == 'prestador' and active_tab == 'rubro' %}
@@ -267,6 +271,7 @@
                     </p>
                 </div>
                 <form action="/empresa/editar_panel" method="post" class="stack-form">
+                    <input type="hidden" name="admin_tab" value="{{ active_tab }}">
                     <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
                     <input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}">
                     <input type="hidden" name="theme" value="{{ empresa_activa.theme }}">
@@ -367,6 +372,7 @@
                         <p class="card-subtitle-custom">Este es el prestador seleccionado. La creación de uno nuevo queda separada abajo para evitar confusiones.</p>
                     </div>
                     <form action="/empresa/editar_panel" method="post" class="stack-form">
+                    <input type="hidden" name="admin_tab" value="{{ active_tab }}">
                         <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
                         <div class="form-grid">
                             <div><label class="field-label">Nombre del prestador o lugar</label><input class="input-custom" type="text" name="nombre" value="{{ empresa_activa.nombre }}" required></div>
