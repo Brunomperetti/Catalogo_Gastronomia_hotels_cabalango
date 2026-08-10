@@ -3,7 +3,7 @@
   <div class="agenda-card__body">
     <p class="agenda-card__meta">{% if item.tipo == 'evento' %}<strong>{{ item.fecha_inicio.strftime('%H:%M') }}</strong> · {% endif %}{{ categories[item.categoria] }}{% if item.lugar %} · {{ item.lugar }}{% endif %}</p>
     <h3>{{ item.titulo }}</h3>
-    {% if item.descripcion_corta %}<p>{{ item.descripcion_corta }}</p>{% endif %}
+    {% if item.descripcion_corta and item.descripcion_corta|trim|lower != item.titulo|trim|lower %}<p class="agenda-card__description">{{ item.descripcion_corta }}</p>{% endif %}
     <span class="agenda-moment">{{ moments[item.momento] }}</span>
     <a class="portal-button" href="/actividades/{{ item.slug }}">Ver actividad</a>
   </div>
