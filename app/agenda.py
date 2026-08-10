@@ -33,8 +33,8 @@ def validate_activity(item: models.ActividadAgenda) -> None:
     if item.tipo == "evento":
         if not item.fecha_inicio or not item.fecha_fin:
             raise ValueError("Los eventos requieren fecha y hora de inicio y finalización")
-        if local_datetime(item.fecha_fin) < local_datetime(item.fecha_inicio):
-            raise ValueError("La finalización no puede ser anterior al inicio")
+    if item.fecha_inicio and item.fecha_fin and local_datetime(item.fecha_fin) < local_datetime(item.fecha_inicio):
+        raise ValueError("La finalización no puede ser anterior al inicio")
 
 
 def derived_status(item: models.ActividadAgenda, now: datetime | None = None) -> str:
@@ -42,7 +42,11 @@ def derived_status(item: models.ActividadAgenda, now: datetime | None = None) ->
     if not item.publicado:
         return "Borrador"
     if item.tipo == "actividad":
-        return "Publicado"
+        if item.fecha_inicio and now < local_datetime(item.fecha_inicio):
+            return "Próxima"
+        if item.fecha_fin and now > local_datetime(item.fecha_fin):
+            return "Finalizada"
+        return "Publicada"
     if now > local_datetime(item.fecha_fin):
         return "Finalizado"
     if now < local_datetime(item.fecha_inicio):
@@ -53,7 +57,16 @@ def derived_status(item: models.ActividadAgenda, now: datetime | None = None) ->
 def get_public_activities(db: Session, *, categoria="", momento="", cuando="", now=None):
     now = local_datetime(now or now_cabalango())
     items = db.query(models.ActividadAgenda).filter(models.ActividadAgenda.publicado.is_(True)).all()
-    items = [i for i in items if i.tipo == "actividad" or (i.fecha_fin and local_datetime(i.fecha_fin) >= now)]
+    items = [
+        item for item in items
+        if (
+            item.tipo == "evento" and item.fecha_fin and local_datetime(item.fecha_fin) >= now
+        ) or (
+            item.tipo == "actividad"
+            and (not item.fecha_inicio or now >= local_datetime(item.fecha_inicio))
+            and (not item.fecha_fin or now <= local_datetime(item.fecha_fin))
+        )
+    ]
     if categoria in CATEGORIES:
         items = [i for i in items if i.categoria == categoria]
     if momento in MOMENTS:

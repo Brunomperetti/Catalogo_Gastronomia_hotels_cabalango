@@ -51,3 +51,31 @@ def test_today_filter_intersects_full_day(db):
     now = datetime(2026,8,10,12,tzinfo=CABALANGO_TZ)
     spanning = make_item(db,"continuado",start=datetime(2026,8,9,23),end=datetime(2026,8,10,14))
     assert spanning in get_public_activities(db, cuando="hoy", now=now)
+
+
+def test_seasonal_activity_visibility_status_and_grouping(db):
+    now = datetime(2026, 8, 10, 20, 0, tzinfo=CABALANGO_TZ)
+    permanent = make_item(db, "permanente", tipo="actividad", start=None, end=None)
+    future = make_item(db, "temporada-futura", tipo="actividad", start=datetime(2026, 9, 1), end=datetime(2026, 9, 30))
+    current = make_item(db, "temporada-vigente", tipo="actividad", start=datetime(2026, 8, 1), end=datetime(2026, 8, 31), momento="noche")
+    expired = make_item(db, "temporada-vencida", tipo="actividad", start=datetime(2026, 7, 1), end=datetime(2026, 7, 31))
+    only_start = make_item(db, "desde-agosto", tipo="actividad", start=datetime(2026, 8, 1), end=None)
+    only_end = make_item(db, "hasta-agosto", tipo="actividad", start=None, end=datetime(2026, 8, 31))
+
+    public = get_public_activities(db, now=now)
+    assert {item.slug for item in public} == {"permanente", "temporada-vigente", "desde-agosto", "hasta-agosto"}
+    assert derived_status(permanent, now) == "Publicada"
+    assert derived_status(future, now) == "Próxima"
+    assert derived_status(current, now) == "Publicada"
+    assert derived_status(expired, now) == "Finalizada"
+
+    groups = group_public_agenda(public, now=now)
+    assert current in groups["activities"]
+    assert current not in groups["today"]
+    assert current not in groups["night"]
+
+
+def test_activity_with_invalid_validity_range_is_rejected():
+    item = ActividadAgenda(tipo="actividad", titulo="Temporada inválida", slug="temporada-invalida", categoria="otros", momento="dia", publicado=True, fecha_inicio=datetime(2026, 8, 10, 20), fecha_fin=datetime(2026, 8, 10, 19))
+    with pytest.raises(ValueError, match="anterior"):
+        validate_activity(item)

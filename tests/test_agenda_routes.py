@@ -36,6 +36,8 @@ def agenda_app(monkeypatch):
             ActividadAgenda(tipo="evento", titulo="Evento vencido", slug="evento-vencido", categoria="cultura", momento="noche", publicado=True, fecha_inicio=datetime(2026, 8, 9, 18), fecha_fin=datetime(2026, 8, 9, 20)),
             ActividadAgenda(tipo="evento", titulo="Evento borrador", slug="evento-borrador", categoria="otros", momento="dia", publicado=False, fecha_inicio=datetime(2026, 8, 11, 10), fecha_fin=datetime(2026, 8, 11, 12)),
             ActividadAgenda(tipo="evento", titulo="Evento despublicado", slug="evento-despublicado", categoria="cultura", momento="dia", publicado=False, fecha_inicio=datetime(2026, 8, 10, 10), fecha_fin=datetime(2026, 8, 10, 22)),
+            ActividadAgenda(tipo="actividad", titulo="Feria de temporada", slug="feria-temporada", categoria="artesania", momento="noche", horarios="Todos los días de 19:00 a 22:00", publicado=True, fecha_inicio=datetime(2026, 8, 1), fecha_fin=datetime(2026, 8, 31)),
+            ActividadAgenda(tipo="actividad", titulo="Temporada terminada", slug="temporada-terminada", categoria="artesania", momento="noche", publicado=True, fecha_inicio=datetime(2026, 7, 1), fecha_fin=datetime(2026, 7, 31)),
         ])
         seed.commit()
 
@@ -72,7 +74,7 @@ def test_public_listing_and_detail_visibility(agenda_app):
 @pytest.mark.parametrize(
     ("query", "visible", "hidden"),
     [
-        ("cuando=hoy", ("Feria de hoy", "Música esta noche"), ("Evento de mañana", "Yoga permanente")),
+        ("cuando=hoy", ("Feria de hoy", "Música esta noche"), ("Evento de mañana", "Yoga permanente", "Feria de temporada")),
         ("momento=noche", ("Música esta noche", "Evento de mañana"), ("Feria de hoy", "Yoga permanente")),
         ("categoria=bienestar", ("Yoga permanente", "Evento de mañana"), ("Feria de hoy", "Música esta noche")),
     ],
@@ -90,6 +92,8 @@ def test_authenticated_admin_keeps_expired_event_as_finalizado(agenda_app):
     assert response.status_code == 200
     assert "Evento vencido" in response.text
     assert "Finalizado" in response.text
+    assert "Temporada terminada" in response.text
+    assert "Finalizada" in response.text
 
 
 def test_invalid_range_rolls_back_without_persisting(agenda_app):
@@ -99,7 +103,15 @@ def test_invalid_range_rolls_back_without_persisting(agenda_app):
     assert response.status_code == 303
     with TestingSession() as db:
         assert db.query(ActividadAgenda).filter_by(titulo="Evento inválido").first() is None
-        assert db.query(ActividadAgenda).count() == 7
+        assert db.query(ActividadAgenda).count() == 9
+
+
+def test_seasonal_activity_detail_presents_schedule_before_validity(agenda_app):
+    response = agenda_app[0].get("/actividades/feria-temporada")
+    assert response.status_code == 200
+    assert "Todos los días de 19:00 a 22:00" in response.text
+    assert "Disponible del 01/08/2026 al 31/08/2026" in response.text
+    assert response.text.index("Horarios / disponibilidad") < response.text.index("Disponible del")
 
 
 def test_duplicate_is_draft_without_dates_and_preserves_content(agenda_app):
