@@ -212,3 +212,32 @@ class DestinoContenido(Base):
     video_url = Column(String, nullable=True)
     visible = Column(Boolean, nullable=False, default=True, index=True)
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+
+class ActividadAgenda(Base):
+    """Editorial activity/event content, deliberately separate from providers."""
+    __tablename__ = "actividades_agenda"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tipo = Column(String, nullable=False, index=True)
+    titulo = Column(String, nullable=False)
+    slug = Column(String, nullable=False, unique=True, index=True)
+    descripcion_corta = Column(String, nullable=True)
+    descripcion = Column(Text, nullable=True)
+    categoria = Column(String, nullable=False, default="otros", index=True)
+    momento = Column(String, nullable=False, default="todo_el_dia", index=True)
+    fecha_inicio = Column(DateTime(timezone=True), nullable=True, index=True)
+    fecha_fin = Column(DateTime(timezone=True), nullable=True, index=True)
+    horarios = Column(String, nullable=True)
+    lugar = Column(String, nullable=True)
+    direccion = Column(String, nullable=True)
+    maps_url = Column(String, nullable=True)
+    whatsapp = Column(String, nullable=True)
+    instagram = Column(String, nullable=True)
+    url_externa = Column(String, nullable=True)
+    imagen_url = Column(String, nullable=True)
+    publicado = Column(Boolean, nullable=False, default=False, index=True)
+    destacado = Column(Boolean, nullable=False, default=False, index=True)
+    orden = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

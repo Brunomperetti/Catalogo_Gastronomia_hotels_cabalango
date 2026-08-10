@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-type-scale-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-agenda-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
 </head>
 <body class="catalog-theme-default portal-body">
@@ -28,6 +28,8 @@
         </div>
         <figure class="destination-hero-image">{% if hero_photo and hero_photo.image_path %}<img src="{{ hero_photo.image_path }}" alt="{{ hero_photo.titulo or 'Paisaje de Cabalango' }}"><figcaption><span>Río y naturaleza</span>{% if hero_photo.titulo %}<strong>{{ hero_photo.titulo }}</strong>{% endif %}</figcaption>{% else %}<div class="destination-hero-placeholder" aria-label="Postal cálida de Cabalango"></div>{% endif %}</figure>
     </section>
+
+    {% if agenda_home %}<section class="agenda-section agenda-home"><header><p class="portal-kicker">HOY EN CABALANGO</p><h2>¿Qué hacemos hoy?</h2></header><div class="agenda-grid">{% for item in agenda_home %}{% set categories = {'naturaleza':'Naturaleza','bienestar':'Bienestar','cultura':'Cultura','entretenimiento':'Entretenimiento','familiar':'Para chicos','deporte':'Deporte','artesania':'Artesanía','musica':'Música','otros':'Otros'} %}{% set moments = {'dia':'Día','atardecer':'Atardecer','noche':'Noche','todo_el_dia':'Todo el día'} %}{% include 'partials/agenda_card.html' %}{% endfor %}</div><a class="portal-button" href="/actividades">Ver qué hacer</a></section>{% endif %}
 
     <section class="destination-section destination-about">
         <div class="section-heading-row"><div><p class="portal-kicker">Sobre Cabalango</p><h2>Una pausa serrana con identidad propia</h2></div></div>
