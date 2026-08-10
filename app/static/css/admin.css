@@ -427,3 +427,38 @@
   .hero-actions--compact { align-items: stretch; flex-direction: column; }
   .hero-actions--compact a { text-align: center; }
 }
+
+/* Two-level, server-rendered admin workspace */
+.admin-header-compact { align-items: center; display: flex; justify-content: space-between; margin: 0 auto 14px; max-width: 1100px; }
+.admin-header-compact h1 { color: var(--admin-text-deep); font-family: Georgia, serif; font-size: clamp(1.55rem, 3vw, 2.15rem); margin: 2px 0 0; }
+.admin-area-nav { background: var(--admin-surface-alt); border: 1px solid var(--admin-border-strong); border-radius: 18px; display: grid; gap: 6px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 auto 18px; max-width: 1100px; padding: 6px; }
+.admin-area-link, .admin-area-link:visited { border-radius: 13px; color: var(--admin-text) !important; font-weight: 850; min-height: 48px; padding: 12px 18px; text-align: center; text-decoration: none; }
+.admin-area-link:hover, .admin-area-link:focus-visible { background: rgba(255,249,239,.65); box-shadow: 0 0 0 3px rgba(122,132,92,.16); outline: none; }
+.admin-area-link.is-active { background: var(--admin-olive-dark); color: var(--admin-white) !important; box-shadow: 0 8px 18px rgba(89,99,68,.2); }
+.admin-portal-context { margin: 0 auto 16px; max-width: 1100px; }
+.admin-portal-context h2 { color: var(--admin-text-deep); font-family: Georgia, serif; margin: 3px 0; }
+.admin-portal-context p { color: var(--admin-text-soft); margin: 0; }
+.tabs-shell, .admin-hero-compact { margin-inline: auto; max-width: 1100px; }
+.admin-tabs--secondary { border-radius: 18px !important; box-shadow: none !important; margin-bottom: 18px; padding: 7px !important; }
+.admin-tabs--secondary .admin-tab { font-size: .88rem; min-height: 40px; padding: 8px 13px; }
+.admin-card--wide, .admin-card--empresa-main { max-width: 1020px; width: 100%; }
+.provider-switch-row { align-items: center; display: grid; gap: 8px; grid-template-columns: minmax(190px, 1fr) auto; }
+.admin-gallery-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(125px, 150px)); }
+.admin-gallery-item { width: 100%; }
+.admin-gallery-item .admin-gallery-thumb { aspect-ratio: 4 / 3; height: auto; object-fit: cover; width: 100%; }
+.admin-gallery-delete { min-height: 36px; padding: 6px 10px; width: auto; }
+.media-priority-block { min-height: 0 !important; }
+
+@media (min-width: 721px) and (max-width: 1024px) {
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-gallery-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+}
+@media (max-width: 720px) {
+  .admin-header-compact { align-items: flex-start; gap: 12px; }
+  .admin-area-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-area-link { align-items: center; display: flex; justify-content: center; padding-inline: 8px; }
+  .admin-tabs--secondary { overflow-x: auto; }
+  .provider-switch-row { grid-template-columns: 1fr; }
+  .admin-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-gallery-delete { width: 100%; }
+}

@@ -364,9 +364,47 @@ def get_default_empresa(db: Session):
     return db.query(models.Empresa).order_by(models.Empresa.nombre.asc()).first()
 
 
-def panel_redirect(empresa_slug: str | None = None, msg: str = "", error: str = "", path: str = "/admin"):
+ADMIN_PROVIDER_TABS = frozenset({"prestadores", "ficha", "fotos", "contacto", "rubro", "leads", "opiniones", "usuarios"})
+ADMIN_PORTAL_TABS = frozenset({"cabalango", "configuracion", "tecnico"})
+ADMIN_LEGACY_TAB_MAP = {
+    "empresa": "prestadores", "datos_rubro": "rubro", "productos": "tecnico",
+    "backup": "configuracion", "avanzado": "tecnico", "descubri": "cabalango",
+}
+
+
+def normalize_admin_tab(tab: str | None) -> str:
+    normalized = clean_text(tab, default="prestadores").lower()
+    normalized = ADMIN_LEGACY_TAB_MAP.get(normalized, normalized)
+    return normalized if normalized in ADMIN_PROVIDER_TABS | ADMIN_PORTAL_TABS else "prestadores"
+
+
+def normalize_admin_area(area: str | None, tab: str | None) -> str:
+    """Resolve the admin workspace while keeping legacy tab-only URLs valid."""
+    normalized_tab = normalize_admin_tab(tab)
+    if normalized_tab in ADMIN_PORTAL_TABS and area not in {"prestador", "portal"}:
+        return "portal"
+    return area if area in {"prestador", "portal"} else "prestador"
+
+
+def panel_redirect(
+    empresa_slug: str | None = None,
+    msg: str = "",
+    error: str = "",
+    path: str = "/admin",
+    area: str | None = None,
+    tab: str | None = None,
+    active_tab: str | None = None,
+):
     params = []
-    if empresa_slug:
+    target_tab = normalize_admin_tab(tab or active_tab) if (tab or active_tab) else None
+    if path == "/admin":
+        target_area = normalize_admin_area(area, target_tab)
+        params.append(f"area={target_area}")
+        if target_area == "prestador" and empresa_slug:
+            params.append(f"empresa={quote(empresa_slug)}")
+        if target_tab:
+            params.append(f"tab={quote(target_tab)}")
+    elif empresa_slug:
         params.append(f"empresa={quote(empresa_slug)}")
     if msg:
         params.append(f"msg={quote(msg)}")
@@ -1652,13 +1690,14 @@ async def actualizar_imagenes_empresa(
     db.add(empresa)
     db.commit()
 
-    return panel_redirect(empresa_slug=empresa.slug, msg="Imágenes actualizadas")
+    return panel_redirect(empresa_slug=empresa.slug, area="prestador", tab="fotos", msg="Imágenes actualizadas")
 
 
 @app.post("/empresa/activar_panel")
 def activar_empresa_panel(
     request: Request,
     slug: str = Form(...),
+    tab: str = Form("prestadores"),
     db: Session = Depends(get_db),
 ):
     user = require_login(request, db)
@@ -1673,7 +1712,7 @@ def activar_empresa_panel(
     if not empresa:
         return redirect_for_user(user, error="Empresa no encontrada")
 
-    return redirect_for_user(user, empresa_slug=empresa.slug)
+    return panel_redirect(empresa_slug=empresa.slug, area="prestador", tab=tab)
 
 
 @app.post("/empresa/editar_panel")
@@ -1720,6 +1759,7 @@ def editar_empresa_panel(
     theme: str = Form("default"),
     editar_slug: str = Form("0"),
     nuevo_slug: str = Form(""),
+    admin_tab: str = Form("ficha"),
     db: Session = Depends(get_db),
 ):
     auth = require_admin(request, db)
@@ -1826,7 +1866,7 @@ def editar_empresa_panel(
     db.add(empresa)
     db.commit()
 
-    return panel_redirect(empresa_slug=empresa.slug, msg="Empresa actualizada correctamente.")
+    return panel_redirect(empresa_slug=empresa.slug, area="prestador", tab=admin_tab, msg="Empresa actualizada correctamente.")
 
 
 
@@ -2520,7 +2560,8 @@ def redirect_cabalango_legacy():
 def admin_panel(
     request: Request,
     empresa: str = "",
-    tab: str = "empresa",
+    tab: str = "",
+    area: str = "",
     msg: str = "",
     error: str = "",
     lead_q: str = "",
@@ -2548,11 +2589,12 @@ def admin_panel(
     empresa_activa = get_empresa_by_slug(db, empresa) or get_default_empresa(db)
     import time
     using_default_admin_password = os.getenv("ADMIN_PASSWORD", "").strip() in {"", "admin123"}
-    active_tab = clean_text(tab, default="empresa").lower()
-    if active_tab not in {"prestadores", "ficha", "fotos", "cabalango", "contacto", "rubro", "datos_rubro", "leads", "opiniones", "usuarios", "configuracion", "tecnico", "empresa", "productos", "backup", "avanzado"}:
+    active_tab = normalize_admin_tab(tab)
+    admin_area = normalize_admin_area(area, tab)
+    if admin_area == "prestador" and active_tab not in ADMIN_PROVIDER_TABS:
         active_tab = "prestadores"
-    legacy_tab_map = {"empresa": "prestadores", "productos": "tecnico", "backup": "configuracion", "avanzado": "tecnico", "datos_rubro": "rubro"}
-    active_tab = legacy_tab_map.get(active_tab, active_tab)
+    elif admin_area == "portal" and active_tab not in ADMIN_PORTAL_TABS:
+        active_tab = "cabalango"
 
     lead_whatsapp_filter = parse_bool_query_flag(lead_whatsapp)
     lead_pdf_filter = parse_bool_query_flag(lead_pdf)
@@ -2637,6 +2679,7 @@ def admin_panel(
             "admin_username": os.getenv("ADMIN_USER", "admin"),
             "app_build": APP_BUILD,
             "active_tab": active_tab,
+            "admin_area": admin_area,
             "leads_rows": leads_rows,
             "lead_q": lead_q,
             "lead_q_url": quote(lead_q or ""),
@@ -2834,7 +2877,7 @@ def actualizar_destino_contenido(
     content.updated_at = utc_now()
     db.add(content)
     db.commit()
-    return RedirectResponse(url="/admin?tab=cabalango&msg=Contenido editorial actualizado", status_code=303)
+    return panel_redirect(area="portal", tab="cabalango", msg="Contenido editorial actualizado")
 
 @app.post("/admin/cabalango/media")
 async def crear_destino_media(
@@ -2860,7 +2903,7 @@ async def crear_destino_media(
     if tipo_clean == "video":
         url = clean_text(video_url, default="")
         if not url:
-            return panel_redirect(error="Cargá un link de video.", path="/admin")
+            return panel_redirect(area="portal", tab="cabalango", error="Cargá un link de video.")
         db.add(models.DestinoMedia(tipo="video", categoria="videos", titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), video_url=url, destacado=bool(destacado), visible=bool(visible), orden=orden))
         created = 1
     else:
@@ -2874,7 +2917,7 @@ async def crear_destino_media(
             created += 1
     db.commit()
     msg = f"Contenido del destino agregado ({created})." if created else "No se cargó contenido nuevo."
-    return RedirectResponse(url=f"/admin?tab=cabalango&msg={quote(msg)}", status_code=303)
+    return panel_redirect(area="portal", tab="cabalango", msg=msg)
 
 @app.post("/admin/cabalango/media/{media_id}/toggle")
 def toggle_destino_media(media_id: int, request: Request, db: Session = Depends(get_db)):
@@ -2886,7 +2929,7 @@ def toggle_destino_media(media_id: int, request: Request, db: Session = Depends(
         item.visible = not bool(item.visible)
         db.add(item)
         db.commit()
-    return RedirectResponse(url="/admin?tab=cabalango&msg=Contenido actualizado", status_code=303)
+    return panel_redirect(area="portal", tab="cabalango", msg="Contenido actualizado")
 
 @app.post("/empresa/galeria")
 async def actualizar_galeria_empresa_admin(
@@ -2904,7 +2947,7 @@ async def actualizar_galeria_empresa_admin(
     _, message = await append_empresa_gallery_images(empresa, fotos or [])
     db.add(empresa)
     db.commit()
-    return panel_redirect(empresa_slug=empresa.slug, msg=message, path="/admin")
+    return panel_redirect(empresa_slug=empresa.slug, area="prestador", tab="fotos", msg=message)
 
 
 @app.post("/empresa/{empresa_id}/galeria/eliminar")
@@ -2942,8 +2985,9 @@ def eliminar_foto_galeria_empresa_admin(
             pass
     return panel_redirect(
         empresa_slug=empresa.slug,
+        area="prestador",
+        tab="fotos",
         msg="Foto eliminada de la galería",
-        path="/admin",
     )
 
 @app.post("/cliente/empresa/galeria")
@@ -2982,7 +3026,7 @@ async def actualizar_menu_fotos_empresa_admin(
     _, message = await append_empresa_menu_images(empresa, fotos or [])
     db.add(empresa)
     db.commit()
-    return panel_redirect(empresa_slug=empresa.slug, msg=message, path="/admin")
+    return panel_redirect(empresa_slug=empresa.slug, area="prestador", tab="fotos", msg=message)
 
 
 @app.post("/cliente/empresa/menu-fotos")
@@ -3038,7 +3082,7 @@ def admin_update_lead_status(
     db.add(lead)
     db.commit()
     return RedirectResponse(
-        url=f"/admin?empresa={quote(empresa_obj.slug)}&tab=leads&lead_id={lead_id}&msg={quote('Estado del lead actualizado')}",
+        url=f"/admin?area=prestador&empresa={quote(empresa_obj.slug)}&tab=leads&lead_id={lead_id}&msg={quote('Estado del lead actualizado')}",
         status_code=303,
     )
 
@@ -3075,7 +3119,7 @@ def admin_update_lead_notes(
     db.add(lead)
     db.commit()
     return RedirectResponse(
-        url=f"/admin?empresa={quote(empresa_obj.slug)}&tab=leads&lead_id={lead_id}&msg={quote('Notas internas guardadas')}",
+        url=f"/admin?area=prestador&empresa={quote(empresa_obj.slug)}&tab=leads&lead_id={lead_id}&msg={quote('Notas internas guardadas')}",
         status_code=303,
     )
 
@@ -3169,7 +3213,7 @@ def admin_delete_lead(
     db.add(lead)
     db.commit()
     return RedirectResponse(
-        url=f"/admin?empresa={quote(empresa_obj.slug)}&tab=leads&msg={quote('Lead eliminado')}",
+        url=f"/admin?area=prestador&empresa={quote(empresa_obj.slug)}&tab=leads&msg={quote('Lead eliminado')}",
         status_code=303,
     )
 
@@ -3257,7 +3301,7 @@ async def crear_empresa_panel(
     db.add(empresa)
     db.commit()
 
-    return panel_redirect(empresa_slug=empresa.slug, msg="Empresa creada correctamente")
+    return panel_redirect(empresa_slug=empresa.slug, area="prestador", tab="prestadores", msg="Empresa creada correctamente")
 
 
 @app.post("/admin/usuarios/crear")
@@ -3299,6 +3343,8 @@ def crear_usuario_cliente(
     db.commit()
     return panel_redirect(
         empresa_slug=empresa_slug or None,
+        area="prestador",
+        tab="usuarios",
         msg=f"Usuario '{username_clean}' creado con rol {role_clean}."
     )
 
