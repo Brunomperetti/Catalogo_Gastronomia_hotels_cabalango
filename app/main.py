@@ -1398,6 +1398,25 @@ def get_empresa_gallery_urls(empresa: models.Empresa | None) -> list[str]:
     return [clean_text(url, default="") for url in data if clean_text(url, default="")][:7]
 
 
+def managed_gallery_file(empresa: models.Empresa, url: str) -> Path | None:
+    """Resolve an app-managed gallery URL without trusting it as a filesystem path."""
+    parsed = urlparse(clean_text(url, default=""))
+    expected_prefix = f"{MEDIA_URL_PREFIX}/empresas/{empresa.slug}/galeria/"
+    if parsed.scheme or parsed.netloc or not parsed.path.startswith(expected_prefix):
+        return None
+    relative_name = parsed.path.removeprefix(expected_prefix)
+    if not relative_name or relative_name != Path(relative_name).name:
+        return None
+    gallery_dir = get_empresa_media_dir(empresa.slug, "galeria").resolve()
+    candidate = (gallery_dir / relative_name).resolve()
+    try:
+        candidate.relative_to(gallery_dir)
+        gallery_dir.relative_to(STORAGE_DIR)
+    except ValueError:
+        return None
+    return candidate
+
+
 async def append_empresa_gallery_images(empresa: models.Empresa, uploads: list[UploadFile]) -> tuple[list[str], str]:
     current = get_empresa_gallery_urls(empresa)
     available = max(0, 7 - len(current))
@@ -1761,8 +1780,9 @@ def editar_empresa_panel(
     for attr, raw_value in optional_text_fields.items():
         if raw_value is not None:
             setattr(empresa, attr, clean_text(raw_value, default="") or None)
-    if subgrupo is not None:
-        empresa.subgrupo = normalize_subgrupo_for_theme(subgrupo, theme)
+    if subgrupo is not None or normalize_theme(theme) == "servicios":
+        effective_subtype = subtipo if subtipo is not None else empresa.subtipo
+        empresa.subgrupo = normalize_service_group_subtype(subgrupo, effective_subtype, theme)
     if destacado is not None:
         empresa.destacado = str(destacado) == "1"
     if activo is not None:
@@ -2086,6 +2106,11 @@ SERVICIOS_SUBTIPOS = {
 }
 
 
+def service_group_for_subtype(value: str | None) -> str | None:
+    subtype = SERVICIOS_SUBTIPOS.get(normalize_taxonomy_key(value))
+    return subtype[0] if subtype else None
+
+
 def normalize_taxonomy_key(value: str | None) -> str:
     value = clean_text(value, default="").lower().replace("_", "-")
     value = "".join(char for char in unicodedata.normalize("NFKD", value) if not unicodedata.combining(char))
@@ -2099,9 +2124,9 @@ def service_group_key(empresa: models.Empresa) -> str:
     group = aliases.get(group, group)
     if group in SERVICIOS_GRUPOS:
         return group
-    subtype = normalize_taxonomy_key(empresa.subtipo)
-    if subtype in SERVICIOS_SUBTIPOS:
-        return SERVICIOS_SUBTIPOS[subtype][0]
+    inferred_group = service_group_for_subtype(empresa.subtipo)
+    if inferred_group:
+        return inferred_group
     return "otros"
 
 
@@ -2122,6 +2147,15 @@ def normalize_subgrupo_for_theme(value: str | None, theme: str | None) -> str | 
         key = aliases.get(key, key)
         return key if key in SERVICIOS_GRUPOS else None
     return normalize_actividad_subgrupo(value)
+
+
+def normalize_service_group_subtype(
+    group: str | None, subtype: str | None, theme: str | None
+) -> str | None:
+    """Known service rubrics own their group; free-form rubrics keep a valid choice."""
+    if normalize_theme(theme) == "servicios":
+        return service_group_for_subtype(subtype) or normalize_subgrupo_for_theme(group, theme)
+    return normalize_subgrupo_for_theme(group, theme)
 
 
 def normalize_actividad_subgrupo(value: str | None) -> str | None:
@@ -2621,6 +2655,12 @@ def admin_panel(
             "destino_content": get_destino_content(db),
             "destino_media": db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc()).all(),
             "destino_categories": DESTINO_MEDIA_CATEGORIES,
+            "servicios_grupos": SERVICIOS_GRUPOS,
+            "servicios_subtipos": [item[1] for item in SERVICIOS_SUBTIPOS.values() if item[1] not in {"Transporte", "Estacionamiento", "Lavadero"}] + ["Otro"],
+            "servicio_grupo_activo": service_group_key(empresa_activa) if empresa_activa and normalize_theme(empresa_activa.theme) == "servicios" else "",
+            "prestador_section_label": theme_display_label(empresa_activa.theme) if empresa_activa else "",
+            "prestador_taxonomy_label": service_card_kicker(empresa_activa) if empresa_activa and normalize_theme(empresa_activa.theme) == "servicios" else clean_text(empresa_activa.subtipo, default="") if empresa_activa else "",
+            "servicio_subtipo_grupos": {label: group for group, label in SERVICIOS_SUBTIPOS.values()},
         },
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -2865,6 +2905,46 @@ async def actualizar_galeria_empresa_admin(
     db.add(empresa)
     db.commit()
     return panel_redirect(empresa_slug=empresa.slug, msg=message, path="/admin")
+
+
+@app.post("/empresa/{empresa_id}/galeria/eliminar")
+def eliminar_foto_galeria_empresa_admin(
+    empresa_id: int,
+    request: Request,
+    foto_indice: int = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = db.query(models.Empresa).filter(models.Empresa.id == empresa_id).first()
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Prestador no encontrado")
+    gallery = get_empresa_gallery_urls(empresa)
+    if foto_indice < 0 or foto_indice >= len(gallery):
+        raise HTTPException(status_code=400, detail="La foto no pertenece a este prestador")
+
+    removed_url = gallery.pop(foto_indice)
+    managed_file = managed_gallery_file(empresa, removed_url)
+    empresa.galeria_urls = json.dumps(gallery, ensure_ascii=False)
+    try:
+        db.add(empresa)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    if managed_file and managed_file.is_file():
+        try:
+            managed_file.unlink()
+        except OSError:
+            # The database reference is already clean; a storage cleanup failure
+            # must not turn a valid admin action into a server error.
+            pass
+    return panel_redirect(
+        empresa_slug=empresa.slug,
+        msg="Foto eliminada de la galería",
+        path="/admin",
+    )
 
 @app.post("/cliente/empresa/galeria")
 async def cliente_actualizar_galeria_empresa(
@@ -3154,7 +3234,7 @@ async def crear_empresa_panel(
         descripcion=clean_text(descripcion, default="") or None,
         horarios=clean_text(horarios, default="") or None,
         video_url=clean_text(video_url, default="") or None,
-        subgrupo=normalize_subgrupo_for_theme(subgrupo, theme),
+        subgrupo=normalize_service_group_subtype(subgrupo, subtipo, theme),
         subtipo=clean_text(subtipo, default="") or None,
         destacado=str(destacado) == "1",
         activo=str(activo) == "1",
