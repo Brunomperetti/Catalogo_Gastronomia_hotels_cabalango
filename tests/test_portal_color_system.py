@@ -51,7 +51,7 @@ def test_provider_profile_uses_editorial_colors_and_legible_promotion():
 
 
 def test_public_templates_invalidate_cached_portal_styles():
-    expected_version = "?v=20260810-agenda-visual-1"
+    expected_version = "?v=20260810-agenda-polish-1"
 
     for template_path in Path("app/templates").glob("*.html"):
         template = template_path.read_text(encoding="utf-8")
