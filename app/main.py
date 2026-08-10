@@ -20,6 +20,7 @@ import hmac
 import secrets
 import threading
 import urllib.request
+import unicodedata
 from urllib.parse import quote, urlparse, urlencode
 from pathlib import Path
 from io import BytesIO
@@ -1190,7 +1191,7 @@ def theme_display_label(value: str | None) -> str:
         "gastronomia": "Gastronomía",
         "comida": "Gastronomía",
         "alojamiento": "Alojamientos",
-        "servicios": "Servicios útiles",
+        "servicios": "Compras y servicios",
         "actividades": "Actividades y comunidad",
         "default": "Otro / General",
         "autopartes": "Autopartes",
@@ -1761,7 +1762,7 @@ def editar_empresa_panel(
         if raw_value is not None:
             setattr(empresa, attr, clean_text(raw_value, default="") or None)
     if subgrupo is not None:
-        empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
+        empresa.subgrupo = normalize_subgrupo_for_theme(subgrupo, theme)
     if destacado is not None:
         empresa.destacado = str(destacado) == "1"
     if activo is not None:
@@ -2031,7 +2032,10 @@ def get_public_empresas_by_themes(db: Session, themes: set[str]):
     normalized_themes = {normalize_theme(theme) for theme in themes}
     return (
         db.query(models.Empresa)
-        .filter(func.lower(models.Empresa.theme).in_(normalized_themes))
+        .filter(
+            func.lower(models.Empresa.theme).in_(normalized_themes),
+            or_(models.Empresa.activo == True, models.Empresa.activo.is_(None)),
+        )
         .order_by(models.Empresa.nombre.asc())
         .all()
     )
@@ -2054,6 +2058,70 @@ ACTIVIDADES_SUBGRUPOS = {
         "icon": "🧺",
     },
 }
+
+SERVICIOS_GRUPOS = {
+    "compras": "Compras",
+    "transporte": "Transporte",
+    "estacionamiento": "Estacionamiento",
+    "salud": "Salud y bienestar",
+    "otros": "Otros servicios",
+}
+
+SERVICIOS_SUBTIPOS = {
+    "proveeduria": ("compras", "Proveeduría"),
+    "almacen": ("compras", "Almacén"),
+    "minimercado": ("compras", "Minimercado"),
+    "kiosco": ("compras", "Kiosco"),
+    "regionales": ("compras", "Productos regionales"),
+    "fraccionamiento de productos secos": ("compras", "Fraccionamiento de productos secos"),
+    "remis": ("transporte", "Remis"),
+    "transporte": ("transporte", "Transporte"),
+    "playa de estacionamiento": ("estacionamiento", "Playa de estacionamiento"),
+    "estacionamiento": ("estacionamiento", "Estacionamiento"),
+    "kinesiologia": ("salud", "Kinesiología"),
+    "centro de salud": ("salud", "Centro de salud"),
+    "farmacia": ("salud", "Farmacia"),
+    "lavadero": ("otros", "Lavadero"),
+    "lavadero de ropa": ("otros", "Lavadero de ropa"),
+}
+
+
+def normalize_taxonomy_key(value: str | None) -> str:
+    value = clean_text(value, default="").lower().replace("_", "-")
+    value = "".join(char for char in unicodedata.normalize("NFKD", value) if not unicodedata.combining(char))
+    return re.sub(r"\s+", " ", value).strip().replace("-", " ")
+
+
+def service_group_key(empresa: models.Empresa) -> str:
+    """Read-only compatibility mapping; it never rewrites historical rows."""
+    group = normalize_taxonomy_key(empresa.subgrupo)
+    aliases = {"salud y bienestar": "salud", "otros servicios": "otros", "comercios": "compras"}
+    group = aliases.get(group, group)
+    if group in SERVICIOS_GRUPOS:
+        return group
+    subtype = normalize_taxonomy_key(empresa.subtipo)
+    if subtype in SERVICIOS_SUBTIPOS:
+        return SERVICIOS_SUBTIPOS[subtype][0]
+    return "otros"
+
+
+def service_card_kicker(empresa: models.Empresa) -> str:
+    group = service_group_key(empresa)
+    group_label = SERVICIOS_GRUPOS[group]
+    subtype_key = normalize_taxonomy_key(empresa.subtipo)
+    subtype_label = SERVICIOS_SUBTIPOS.get(subtype_key, (group, clean_text(empresa.subtipo, default="")))[1]
+    if not subtype_label or normalize_taxonomy_key(subtype_label) == normalize_taxonomy_key(group_label):
+        return group_label
+    return f"{group_label} · {subtype_label}"
+
+
+def normalize_subgrupo_for_theme(value: str | None, theme: str | None) -> str | None:
+    if normalize_theme(theme) == "servicios":
+        key = normalize_taxonomy_key(value)
+        aliases = {"salud y bienestar": "salud", "otros servicios": "otros"}
+        key = aliases.get(key, key)
+        return key if key in SERVICIOS_GRUPOS else None
+    return normalize_actividad_subgrupo(value)
 
 
 def normalize_actividad_subgrupo(value: str | None) -> str | None:
@@ -2206,6 +2274,12 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
         empresas = filter_alojamientos(empresas, alojamiento_filters)
     if section == "actividades" and subgrupo:
         empresas = [empresa for empresa in empresas if (empresa.subgrupo or "").lower() == subgrupo]
+    active_service_group = ""
+    if section == "servicios":
+        requested_group = normalize_taxonomy_key(request.query_params.get("grupo"))
+        active_service_group = requested_group if requested_group in SERVICIOS_GRUPOS else ""
+        if active_service_group:
+            empresas = [empresa for empresa in empresas if service_group_key(empresa) == active_service_group]
     return templates.TemplateResponse(
         "portal_prestadores.html",
         {
@@ -2218,6 +2292,9 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "theme_display_label": theme_display_label,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if section == "actividades" else {},
             "active_subgrupo": subgrupo if section == "actividades" else None,
+            "service_groups": SERVICIOS_GRUPOS if section == "servicios" else {},
+            "active_service_group": active_service_group,
+            "service_card_kicker": service_card_kicker,
             "get_public_card_main_image": get_public_card_main_image,
             "get_empresa_logo_url": get_empresa_logo_url,
             "build_public_card_chips": build_public_card_chips,
@@ -2285,9 +2362,9 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
     return portal_section_context(
         request,
         db,
-        title="Servicios útiles en Cabalango",
-        eyebrow="Para vecinos y visitantes",
-        description="Farmacia, comisaría, proveedurías, panaderías y lugares clave para resolver necesidades prácticas.",
+        title="Compras y servicios",
+        eyebrow="PARA VECINOS Y VISITANTES",
+        description="Todo lo que podés necesitar durante tu estadía: compras, transporte, salud y servicios locales.",
         themes={"servicios"},
         section="servicios",
     )
@@ -2647,7 +2724,7 @@ def cliente_actualizar_empresa(
     empresa.web_url = normalize_external_url(web_url)
     empresa.direccion = clean_text(direccion, default="") or None
     empresa.maps_url = normalize_external_url(maps_url) or (clean_text(maps_url, default="") or None)
-    empresa.subgrupo = normalize_actividad_subgrupo(subgrupo)
+    empresa.subgrupo = normalize_subgrupo_for_theme(subgrupo, empresa.theme)
     empresa.descripcion = clean_text(descripcion, default="") or None
     empresa.horarios = clean_text(horarios, default="") or None
     empresa.precio_desde = clean_text(precio_desde, default="") or None
@@ -3040,6 +3117,7 @@ async def crear_empresa_panel(
     horarios: str = Form(""),
     video_url: str = Form(""),
     subgrupo: str = Form(""),
+    subtipo: str = Form(""),
     destacado: str = Form("0"),
     activo: str = Form("1"),
     theme: str = Form("default"),
@@ -3076,7 +3154,8 @@ async def crear_empresa_panel(
         descripcion=clean_text(descripcion, default="") or None,
         horarios=clean_text(horarios, default="") or None,
         video_url=clean_text(video_url, default="") or None,
-        subgrupo=normalize_actividad_subgrupo(subgrupo),
+        subgrupo=normalize_subgrupo_for_theme(subgrupo, theme),
+        subtipo=clean_text(subtipo, default="") or None,
         destacado=str(destacado) == "1",
         activo=str(activo) == "1",
         politica_precio_catalogo="automatico",
@@ -3707,6 +3786,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "has_real_photos": has_real_photos,
             "theme_display_label": theme_display_label,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
+            "service_card_kicker": service_card_kicker,
         },
     )
 

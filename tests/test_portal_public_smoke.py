@@ -17,7 +17,7 @@ PUBLIC_SECTIONS = [
     ("/", "Inicio", "Descubrí Cabalango"),
     ("/gastronomia", "Gastronomía", "Gastronomía en Cabalango"),
     ("/alojamientos", "Alojamientos", "Alojamientos en Cabalango"),
-    ("/servicios", "Servicios útiles", "Servicios útiles en Cabalango"),
+    ("/servicios", "Compras y servicios", "Compras y servicios"),
     ("/actividades", "Qué hacer", "Qué hacer"),
 ]
 

@@ -29,7 +29,7 @@ def test_public_templates_load_the_approved_font_families_once():
         assert "Cormorant+Garamond" not in template
         assert 'rel="preconnect" href="https://fonts.googleapis.com"' in template
         assert 'rel="preconnect" href="https://fonts.gstatic.com" crossorigin' in template
-        assert "?v=20260810-agenda-polish-1" in template
+        assert "?v=20260810-commerce-services-1" in template
 
 
 def test_portal_typography_tokens_and_base_face_are_consolidated():
