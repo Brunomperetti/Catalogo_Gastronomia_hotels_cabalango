@@ -1,6 +1,7 @@
 import json
 import re
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 from fastapi.testclient import TestClient
@@ -67,6 +68,78 @@ def assert_server_rendered_panel(html, panel_id, expected_text):
     assert expected_text in html
 
 
+def redirect_query(response):
+    return parse_qs(urlparse(response.headers["location"]).query)
+
+
+@pytest.mark.parametrize(("admin_tab", "expected_tab"), [
+    ("ficha", "ficha"),
+    ("contacto", "contacto"),
+    ("rubro", "rubro"),
+])
+def test_saving_provider_data_preserves_originating_tab(admin_app, admin_tab, expected_tab):
+    client, db, _ = admin_app
+    company = add_company(db)
+    response = client.post("/empresa/editar_panel", data={
+        "empresa_slug_actual": company.slug,
+        "nombre": company.nombre,
+        "theme": "default",
+        "admin_tab": admin_tab,
+    }, follow_redirects=False)
+    assert redirect_query(response) | {"status": [str(response.status_code)]} == {
+        "area": ["prestador"], "empresa": ["demo"], "tab": [expected_tab],
+        "msg": ["Empresa actualizada correctamente."], "status": ["303"],
+    }
+
+
+def test_arbitrary_edit_tab_is_normalized_by_backend(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db)
+    response = client.post("/empresa/editar_panel", data={
+        "empresa_slug_actual": company.slug, "nombre": company.nombre,
+        "theme": "default", "admin_tab": "javascript:alert(1)",
+    }, follow_redirects=False)
+    assert redirect_query(response)["tab"] == ["prestadores"]
+
+
+def test_gallery_upload_and_delete_redirect_to_photos(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db)
+    upload = client.post("/empresa/galeria", data={"empresa_slug": company.slug}, follow_redirects=False)
+    assert redirect_query(upload)["area"] == ["prestador"]
+    assert redirect_query(upload)["empresa"] == [company.slug]
+    assert redirect_query(upload)["tab"] == ["fotos"]
+    company.galeria_urls = json.dumps([gallery_url(company, "photo.jpg")])
+    db.commit()
+    deleted = delete_photo(client, company, 0)
+    assert redirect_query(deleted)["tab"] == ["fotos"]
+
+
+def test_switching_provider_from_photos_preserves_tab(admin_app):
+    client, db, _ = admin_app
+    add_company(db, slug="crisma")
+    add_company(db, slug="farmacia")
+    response = client.post("/empresa/activar_panel", data={
+        "slug": "farmacia", "admin_tab": "fotos",
+    }, follow_redirects=False)
+    assert redirect_query(response) == {
+        "area": ["prestador"], "empresa": ["farmacia"], "tab": ["fotos"],
+    }
+
+
+def test_portal_redirect_omits_provider_context():
+    response = main.panel_redirect(empresa_slug="demo", area="portal", tab="cabalango", msg="Guardado")
+    assert redirect_query(response) == {"area": ["portal"], "tab": ["cabalango"], "msg": ["Guardado"]}
+
+
+def test_admin_gallery_uses_compact_grid():
+    template = Path("app/templates/upload.html").read_text()
+    stylesheet = Path("app/static/css/admin.css").read_text()
+    assert 'class="admin-gallery-grid"' in template
+    assert "repeat(auto-fill, minmax(125px, 150px))" in stylesheet
+    assert "aspect-ratio: 4 / 3" in stylesheet
+
+
 @pytest.mark.parametrize(("tab", "panel_id", "expected_text"), [
     ("leads", "leads", "Tablero comercial"),
     ("usuarios", "usuarios", "Usuarios y accesos"),
@@ -88,15 +161,30 @@ def test_provider_panels_are_complete_server_rendered_pages(admin_app, tab, pane
     assert 'id="panel-tecnico"' not in response.text
 
 
-def test_portal_configuration_is_visible_and_keeps_active_company_context(admin_app):
+def test_portal_configuration_requires_explicit_company_selection(admin_app):
     client, db, _ = admin_app
-    add_company(db)
-    response = client.get("/admin?area=portal&empresa=demo&tab=configuracion")
+    add_company(db, nombre="Demo Company")
+    response = client.get("/admin?area=portal&tab=configuracion")
     assert response.status_code == 200
     assert_server_rendered_panel(response.text, "configuracion", "Backup / Restore empresa completa")
-    assert "/admin/empresa/exportar?empresa=demo" in response.text
+    assert 'form action="/admin/empresa/exportar" method="get"' in response.text
+    assert '<select name="empresa"' in response.text
+    assert '<option value="demo">Demo Company</option>' in response.text
+    assert "/admin/empresa/exportar?empresa=demo" not in response.text
+    import_form = re.search(r'<form action="/admin/empresa/importar".*?</form>', response.text, re.DOTALL)
+    assert import_form
+    assert 'name="empresa_slug"' not in import_form.group(0)
+    assert "No usa una empresa activa implícita" in response.text
     assert 'id="panel-prestadores"' not in response.text
     assert 'id="panel-leads"' not in response.text
+
+
+def test_export_requires_company_instead_of_using_default(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin/empresa/exportar")
+    assert response.status_code == 400
+    assert response.json() == {"error": "Seleccioná una empresa válida para exportar"}
 
 
 def test_cabalango_portal_panel_is_server_rendered(admin_app):
@@ -115,7 +203,20 @@ def test_both_technical_sections_are_visible_without_javascript(admin_app):
     assert response.status_code == 200
     assert_server_rendered_panel(response.text, "tecnico", "Compatibilidad catálogo viejo")
     assert_server_rendered_panel(response.text, "tecnico-extra", "Zona peligrosa")
+    assert response.text.count('<select name="empresa_slug"') == 3
+    assert "Esta acción afecta únicamente al prestador seleccionado abajo" in response.text
+    assert 'action="/delete_all_products"' in response.text
+    assert 'name="empresa_slug" value="demo"' not in response.text
     assert 'id="panel-ficha"' not in response.text
+
+
+def test_portal_navigation_links_never_carry_company(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+    response = client.get("/admin?area=portal&empresa=demo&tab=configuracion")
+    assert '/admin?area=portal&empresa=' not in response.text
+    assert '/admin?area=portal&tab=cabalango' in response.text
+    assert '/admin?area=portal&tab=tecnico' in response.text
 
 
 def test_admin_template_has_no_legacy_client_tab_system():
