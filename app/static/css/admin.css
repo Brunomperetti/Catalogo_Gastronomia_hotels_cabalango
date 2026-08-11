@@ -154,7 +154,7 @@
 .admin-tab,
 .admin-tab:visited {
   background: var(--admin-surface) !important;
-  border: 1px solid var(--admin-border) !important;
+  border: 1px solid var(--admin-border-strong) !important;
   border-radius: 999px !important;
   color: var(--admin-text-deep) !important;
   font-weight: 750;
@@ -165,7 +165,7 @@
 
 .admin-tab:hover,
 .admin-tab:focus-visible {
-  background: rgba(220, 239, 244, .38) !important;
+  background: rgba(168, 214, 226, .24) !important;
   border-color: var(--admin-border-strong) !important;
   color: var(--admin-text-deep) !important;
   box-shadow: 0 0 0 3px var(--admin-focus-ring) !important;
@@ -392,7 +392,7 @@
 
 /* Global destination admin */
 .admin-tabs-divider { border-left: 1px solid var(--admin-border-strong); margin: 4px 4px; min-height: 36px; }
-.admin-tab--global { background: var(--admin-surface) !important; border-color: var(--admin-border) !important; }
+.admin-tab--global { background: var(--admin-surface) !important; border-color: var(--admin-border-strong) !important; }
 .admin-global-banner { align-items: center; background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 28px; box-shadow: 0 18px 42px rgba(78,58,45,.08); display: flex; gap: 18px; justify-content: space-between; margin-bottom: 22px; padding: 24px; }
 .admin-global-banner h2 { color: var(--admin-text-deep); font-family: Georgia, serif; font-size: clamp(1.8rem,3vw,2.7rem); margin: 4px 0 8px; }
 .admin-global-banner p { color: var(--admin-text); margin: 0; max-width: 760px; }
@@ -428,7 +428,7 @@
 .admin-area-link:visited {
   align-items: center;
   background: var(--admin-surface);
-  border: 1px solid var(--admin-border);
+  border: 1px solid var(--admin-border-strong);
   border-radius: 18px;
   color: var(--admin-text-deep) !important;
   display: flex;
@@ -437,7 +437,7 @@
   text-decoration: none;
 }
 .admin-area-link:hover {
-  background: rgba(220, 239, 244, .38);
+  background: rgba(168, 214, 226, .24);
   border-color: var(--admin-border-strong);
   color: var(--admin-text-deep) !important;
 }
@@ -462,7 +462,7 @@
 .admin-nav-group__heading strong { color: var(--admin-text-deep); font-family: Georgia, serif; font-size: 1.1rem; }
 .admin-nav-eyebrow { color: var(--admin-sky-action); font-size: .72rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
 .admin-nav-groups .admin-tabs { background: transparent; border: 0; box-shadow: none; margin: 0; padding: 0; }
-.admin-tabs--portal .admin-tab--global { background: var(--admin-surface) !important; border-color: var(--admin-border) !important; color: var(--admin-text-deep); }
+.admin-tabs--portal .admin-tab--global { background: var(--admin-surface) !important; border-color: var(--admin-border-strong) !important; color: var(--admin-text-deep); }
 .admin-tabs--portal .admin-tab--global.is-active { background: var(--admin-brown-deep) !important; border-color: var(--admin-brown-deep) !important; color: var(--admin-white) !important; }
 .admin-tabs--portal .admin-tab.is-active { box-shadow: 0 10px 22px rgba(56,37,31,.10); }
 @media (max-width: 720px) { .admin-nav-group { border-radius: 20px; padding: 12px; } .admin-nav-group__heading { align-items: flex-start; flex-direction: column; } .admin-area-link { padding-inline: 16px; } }
