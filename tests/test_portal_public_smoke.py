@@ -47,7 +47,25 @@ def test_portal_home_smoke():
     assert "Descubrí Cabalango" in response.text
     for label in ["Historia", "Ubicación", "Naturaleza", "Vida local"]:
         assert label in response.text
-    assert response.text.count("Leer más") == 4
+    for visitor_copy in [
+        "Río, monte y tiempo para disfrutar sin apuro.",
+        "Río y balnearios",
+        "Todo para tu visita",
+        "Viví Cabalango a tu manera",
+        "Escapada de fin de semana",
+        "Plan en familia",
+        "Tip de viaje",
+    ]:
+        assert visitor_copy in response.text
+    for href in [
+        "/actividades",
+        "/alojamientos",
+        "/gastronomia",
+        "/servicios?grupo=compras",
+        "#sobre-cabalango",
+    ]:
+        assert f'href="{href}"' in response.text
+    assert response.text.count("destination-story-more") == 4
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",

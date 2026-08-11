@@ -51,11 +51,12 @@ def test_provider_profile_uses_editorial_colors_and_legible_promotion():
 
 
 def test_public_templates_invalidate_cached_portal_styles():
-    expected_version = "?v=20260810-commerce-services-1"
+    default_version = "?v=20260810-commerce-services-1"
 
     for template_path in Path("app/templates").glob("*.html"):
         template = template_path.read_text(encoding="utf-8")
         if "path='css/portal.css'" in template:
+            expected_version = "?v=20260811-destination-gallery-1" if template_path.name == "descubri_cabalango.html" else default_version
             assert expected_version in template
 
 
@@ -91,8 +92,7 @@ def test_public_ctas_have_semantic_primary_and_secondary_classes():
 
     primary_contexts = (
         (templates["prestador.html"], "Consultar por WhatsApp"),
-        (templates["descubri_cabalango.html"], "Dónde dormir"),
-        (templates["descubri_cabalango.html"], "Ver alojamientos"),
+        (templates["descubri_cabalango.html"], "Explorar Cabalango"),
     )
     for template, label in primary_contexts:
         tag = template.split(label, 1)[0].rsplit("<", 1)[1]
