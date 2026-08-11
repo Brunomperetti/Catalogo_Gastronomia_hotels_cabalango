@@ -76,8 +76,9 @@ def test_all_admin_action_button_families_use_brown_not_sky_fills():
 def test_large_active_navigation_surfaces_use_a_translucent_sky_selection():
     css = Path("app/static/css/admin.css").read_text(encoding="utf-8")
 
-    active_area = css[css.index(".admin-area-link.is-active,"):css.index(".admin-area-link__copy")]
-    assert "background: rgba(168, 214, 226, .22);" in active_area
+    editorial = css[css.index("/* Editorial restraint:"):]
+    active_area = editorial[editorial.index(".admin-area-link.is-active,"):editorial.index(".admin-nav-group,")]
+    assert "background: rgba(168, 214, 226, .12);" in active_area
     assert "border-color: var(--admin-border-strong);" in active_area
     assert "color: var(--admin-brown-deep) !important;" in active_area
     assert "background: var(--admin-brown-deep)" not in active_area
@@ -85,32 +86,27 @@ def test_large_active_navigation_surfaces_use_a_translucent_sky_selection():
     assert "background: linear-gradient" not in css
 
 
-def test_inactive_admin_navigation_uses_visible_sky_borders_and_subtle_hover():
+def test_admin_navigation_uses_editorial_rules_and_subtle_selection():
     css = Path("app/static/css/admin.css").read_text(encoding="utf-8")
 
-    inactive_tabs = css[css.index(".admin-tab,"):css.index(".admin-tab:hover,")]
-    assert "background: var(--admin-surface) !important;" in inactive_tabs
-    assert "border: 1px solid var(--admin-border) !important;" in inactive_tabs
+    editorial = css[css.index("/* Editorial restraint:"):]
+    inactive_tabs = editorial[editorial.index(".admin-tab,"):editorial.index(".admin-tab:hover,")]
+    assert "background: transparent !important;" in inactive_tabs
+    assert "border: 0 !important;" in inactive_tabs
+    assert "border-bottom: 2px solid transparent !important;" in inactive_tabs
 
-    tab_hover = css[css.index(".admin-tab:hover,"):css.index(".admin-tab.is-active,")]
-    assert "background: rgba(168, 214, 226, .12) !important;" in tab_hover
-    assert "background: var(--admin-sky)" not in tab_hover
-
-    active_tabs = css[css.index(".admin-tab.is-active,"):css.index(".admin-tab--warning")]
-    assert "background: rgba(168, 214, 226, .22) !important;" in active_tabs
-    assert "border-color: var(--admin-border-strong) !important;" in active_tabs
+    active_tabs = editorial[editorial.index(".admin-tab.is-active,"):editorial.index(".admin-disclosure-card,")]
+    assert "background: rgba(168, 214, 226, .12) !important;" in active_tabs
+    assert "border-bottom-color: var(--admin-border-strong) !important;" in active_tabs
     assert "background: var(--admin-brown-deep)" not in active_tabs
     assert "background: var(--admin-sky)" not in active_tabs
 
-    inactive_area = css[css.index(".admin-area-link,\n"):css.index(".admin-area-link:hover")]
-    assert "background: var(--admin-surface);" in inactive_area
-    assert "border: 1px solid var(--admin-border);" in inactive_area
+    inactive_area = editorial[editorial.index(".admin-area-link,\n"):editorial.index(".admin-area-link:hover")]
+    assert "background: transparent;" in inactive_area
+    assert "border: 0;" in inactive_area
+    assert "border-bottom: 2px solid transparent;" in inactive_area
 
-    area_hover = css[css.index(".admin-area-link:hover"):css.index(".admin-area-link:focus-visible")]
-    assert "background: rgba(168, 214, 226, .12);" in area_hover
-    assert "background: var(--admin-sky)" not in area_hover
-
-    active_area = css[css.index(".admin-area-link.is-active,"):css.index(".admin-area-link__copy")]
-    assert "background: rgba(168, 214, 226, .22);" in active_area
+    active_area = editorial[editorial.index(".admin-area-link.is-active,"):editorial.index(".admin-nav-group,")]
+    assert "background: rgba(168, 214, 226, .12);" in active_area
     assert "border-color: var(--admin-border-strong);" in active_area
     assert "background: var(--admin-brown-deep)" not in active_area
