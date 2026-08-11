@@ -1,4 +1,5 @@
 import re
+from types import SimpleNamespace
 
 import pytest
 
@@ -47,7 +48,27 @@ def test_portal_home_smoke():
     assert "Descubrí Cabalango" in response.text
     for label in ["Historia", "Ubicación", "Naturaleza", "Vida local"]:
         assert label in response.text
-    assert response.text.count("Leer más") == 4
+    for visitor_copy in [
+        "Río, monte y tiempo para disfrutar sin apuro.",
+        "Río y balnearios",
+        "Todo para tu visita",
+        "Viví Cabalango a tu manera",
+        "Escapada de fin de semana",
+        "Plan en familia",
+        "Tip de viaje",
+    ]:
+        assert visitor_copy in response.text
+    for href in [
+        "/actividades",
+        "/alojamientos",
+        "/gastronomia",
+        "/servicios?grupo=compras",
+        "#como-llegar",
+    ]:
+        assert f'href="{href}"' in response.text
+    assert response.text.count("destination-story-more") == 4
+    assert 'id="como-llegar"' in response.text
+    assert "?v=20260811-home-journeys-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -65,6 +86,43 @@ def test_portal_home_smoke():
     ]:
         assert full_text in response.text
     assert "Logo_Cabalango.png" in response.text
+
+
+def test_home_preserves_editable_hero_content(monkeypatch):
+    import app.main as main_module
+
+    editable_intro = "Una introducción editorial cargada desde administración."
+    editable_photo_title = "El río al caer la tarde"
+    content = SimpleNamespace(
+        introduccion=editable_intro,
+        historia="Historia local",
+        ubicacion="Ubicación serrana",
+        naturaleza="Naturaleza junto al río",
+        recomendaciones="Traé calzado cómodo.",
+        vida_local="Vida local",
+        video_url="",
+    )
+    photo = SimpleNamespace(
+        id=1,
+        destacado=True,
+        image_path="/static/img/no-image.jpg",
+        titulo=editable_photo_title,
+        categoria="rio_naturaleza",
+        descripcion=None,
+    )
+    monkeypatch.setattr(main_module, "get_destino_content", lambda db: content)
+    monkeypatch.setattr(main_module, "get_public_destino_media", lambda db, tipo=None: [photo] if tipo == "foto" else [])
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [])
+
+    response = TestClient(app).get("/")
+    assert response.status_code == 200
+    assert editable_intro in response.text
+    assert editable_photo_title in response.text
+
+    content.introduccion = None
+    fallback_response = TestClient(app).get("/")
+    assert fallback_response.status_code == 200
+    assert "Descubrí balnearios, alojamientos, sabores y experiencias locales en un rincón tranquilo de las sierras de Córdoba." in fallback_response.text
 
 
 def test_descubri_cabalango_redirects_to_home():
