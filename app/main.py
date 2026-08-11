@@ -2113,7 +2113,7 @@ ACTIVIDADES_SUBGRUPOS = {
 }
 
 SERVICIOS_GRUPOS = {
-    "compras": "Compras",
+    "compras": "Almacenes y kioscos",
     "transporte": "Transporte",
     "estacionamiento": "Estacionamiento",
     "salud": "Salud y bienestar",

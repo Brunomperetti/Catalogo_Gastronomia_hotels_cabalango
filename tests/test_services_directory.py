@@ -44,6 +44,7 @@ def test_services_taxonomy_filters_and_compatibility():
         response = client.get("/servicios")
         assert response.status_code == 200
         assert "Compras y servicios" in response.text
+        assert 'href="/servicios?grupo=compras">Almacenes y kioscos</a>' in response.text
         assert "Servicios útiles" not in response.text
         assert "PARA VECINOS Y VISITANTES" in response.text
         assert "Comercio inactivo" not in response.text
@@ -61,6 +62,9 @@ def test_services_taxonomy_filters_and_compatibility():
             assert filtered.status_code == 200
             assert included in filtered.text
             assert excluded not in filtered.text
+
+        compras = client.get("/servicios?grupo=compras")
+        assert 'href="/servicios?grupo=compras">Almacenes y kioscos</a>' in compras.text
 
         assert client.get("/prestador/remis-cabalango").status_code == 200
         for path in ["/gastronomia", "/alojamientos", "/actividades"]:
