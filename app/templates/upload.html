@@ -365,12 +365,10 @@
 <section id="panel-prestadores" class="admin-tab-panel is-active">
             <div class="admin-grid">
                 {% if empresa_activa %}
-                <section class="admin-card admin-card--empresa-main">
-                    <div class="card-header-custom">
-                        <p class="section-eyebrow">Flujo principal</p>
-                        <h2 class="card-title-custom">Editar prestador activo</h2>
-                        <p class="card-subtitle-custom">Este es el prestador seleccionado. La creación de uno nuevo queda separada abajo para evitar confusiones.</p>
-                    </div>
+                <section class="admin-card admin-card--empresa-main admin-disclosure-card">
+                    <details class="admin-disclosure">
+                    <summary class="admin-disclosure__summary"><span class="admin-disclosure__title">Editar prestador activo</span><small class="admin-disclosure__help">Datos generales, categoría, estado y configuración rápida</small></summary>
+                    <div class="admin-disclosure__body">
                     <form action="/empresa/editar_panel" method="post" class="stack-form">
                     <input type="hidden" name="admin_tab" value="{{ active_tab }}">
                         <input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}">
@@ -396,16 +394,20 @@
                         <details class="admin-collapsible"><summary>Editar slug avanzado</summary><input type="hidden" name="editar_slug" value="1"><label class="field-label">Nuevo slug (URL)</label><input class="input-custom" type="text" name="nuevo_slug" value="{{ empresa_activa.slug }}" placeholder="mi-empresa"></details>
                         <button type="submit" class="btn-primary-custom w-100">Guardar datos del prestador activo</button>
                     </form>
+                    </div>
+                    </details>
                 </section>
                 {% endif %}
 
                 <section class="admin-card admin-card--wide admin-create-card">
-                    <details>
-                        <summary><span>🏢 Crear nuevo prestador / lugar</span><small>Alta separada del flujo de edición actual</small></summary>
+                    <details class="admin-disclosure">
+                        <summary class="admin-disclosure__summary"><span class="admin-disclosure__title">Crear nuevo prestador / lugar</span><small class="admin-disclosure__help">Alta separada del flujo de edición actual</small></summary>
+                        <div class="admin-disclosure__body">
                         <form action="/empresa/crear_panel" method="post" enctype="multipart/form-data" class="stack-form mt-3">
                             <div class="form-grid"><div><label class="field-label">Nombre del prestador o lugar</label><input class="input-custom" type="text" name="nombre" placeholder="Cabañas del Río" required></div><div><label class="field-label">Slug (URL)</label><input class="input-custom" type="text" name="slug" placeholder="cabanas-del-rio" required></div><div><label class="field-label">WhatsApp</label><input class="input-custom" type="text" name="whatsapp" placeholder="5493510000000"></div><div><label class="field-label">Rubro / sección</label><select name="theme" class="input-custom select-custom"><option value="gastronomia">Gastronomía</option><option value="alojamiento">Alojamientos</option><option value="servicios">Compras y servicios</option><option value="actividades">Actividades y comunidad</option><option value="default" selected>Otro / General</option></select></div><div><label class="field-label">Grupo (si es servicio)</label><select name="subgrupo" class="input-custom select-custom"><option value="">No aplica</option><option value="compras">Compras</option><option value="transporte">Transporte</option><option value="estacionamiento">Estacionamiento</option><option value="salud">Salud y bienestar</option><option value="otros">Otros servicios</option></select></div><div><label class="field-label">Rubro específico</label><input class="input-custom" name="subtipo" placeholder="Ej: Proveeduría, Remis, Kinesiología"></div><div><label class="field-label">Logo (opcional)</label><input class="input-file-custom" type="file" name="logo" accept="image/*"></div><div><label class="field-label">Banner horizontal (opcional)</label><input class="input-file-custom" type="file" name="banner" accept="image/*"></div></div>
                             <button type="submit" class="btn-primary-custom w-100">Crear prestador / lugar</button>
                         </form>
+                        </div>
                     </details>
                 </section>
             </div>
