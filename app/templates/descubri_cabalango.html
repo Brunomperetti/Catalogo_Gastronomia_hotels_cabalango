@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260811-destination-gallery-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260811-home-journeys-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
 </head>
 <body class="catalog-theme-default portal-body">
@@ -38,7 +38,7 @@
             <p class="portal-kicker">Cabalango · Valle de Punilla</p>
             <h1 id="destination-title">Descubrí Cabalango</h1>
             <p class="destination-hero-lead">Río, monte y tiempo para disfrutar sin apuro.</p>
-            <p class="destination-hero-intro">Descubrí balnearios, alojamientos, sabores y experiencias locales en un rincón tranquilo de las sierras de Córdoba.</p>
+            <p class="destination-hero-intro">{{ content.introduccion or 'Descubrí balnearios, alojamientos, sabores y experiencias locales en un rincón tranquilo de las sierras de Córdoba.' }}</p>
             <ul class="destination-attributes" aria-label="Lo esencial de Cabalango">
                 <li><svg aria-hidden="true"><use href="#icon-water"/></svg>Río y balnearios</li>
                 <li><svg aria-hidden="true"><use href="#icon-mountain"/></svg>Naturaleza serrana</li>
@@ -47,7 +47,7 @@
             </ul>
             <div class="hero-actions" aria-label="Empezar a explorar"><a class="portal-button" href="/actividades">Explorar Cabalango</a><a class="destination-hero-link" href="/alojamientos">Dónde dormir</a><a class="destination-hero-link" href="/gastronomia">Dónde comer</a><a class="destination-hero-link" href="#fotos">Ver fotos y videos</a></div>
         </div>
-        <figure class="destination-hero-image">{% if hero_photo and hero_photo.image_path %}<img src="{{ hero_photo.image_path }}" alt="{{ hero_photo.titulo or 'Río y paisaje serrano de Cabalango' }}"><figcaption><span>Río y naturaleza</span><strong>Balnearios de Cabalango</strong></figcaption>{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Postal cálida de Cabalango"></div>{% endif %}</figure>
+        <figure class="destination-hero-image">{% if hero_photo and hero_photo.image_path %}<img src="{{ hero_photo.image_path }}" alt="{{ hero_photo.titulo or 'Río y paisaje serrano de Cabalango' }}"><figcaption><span>Río y naturaleza</span><strong>{{ hero_photo.titulo or 'Balnearios de Cabalango' }}</strong></figcaption>{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Postal cálida de Cabalango"></div>{% endif %}</figure>
     </section>
 
     <nav class="destination-quick-links" aria-labelledby="quick-links-title">
@@ -57,7 +57,7 @@
             <a href="/gastronomia"><svg aria-hidden="true"><use href="#icon-food"/></svg><span>Dónde comer</span></a>
             <a href="/actividades"><svg aria-hidden="true"><use href="#icon-compass"/></svg><span>Qué hacer</span></a>
             <a href="/servicios?grupo=compras"><svg aria-hidden="true"><use href="#icon-shop"/></svg><span>Almacenes y kioscos</span></a>
-            <a href="#sobre-cabalango"><svg aria-hidden="true"><use href="#icon-pin"/></svg><span>Cómo llegar</span></a>
+            <a href="#como-llegar"><svg aria-hidden="true"><use href="#icon-pin"/></svg><span>Cómo llegar</span></a>
         </div>
     </nav>
 
@@ -74,7 +74,7 @@
         <div class="destination-story-grid">
             {% for key, label, text, icon in destination_stories %}
             {% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}
-            <article class="destination-story-card destination-story-{{ key }}">
+            <article class="destination-story-card destination-story-{{ key }}"{% if key == 'ubicacion' %} id="como-llegar"{% endif %}>
                 <svg aria-hidden="true"><use href="#{{ icon }}"/></svg><span>{{ label }}</span>
                 {% if key == 'naturaleza' %}<h3>El río y el monte marcan el ritmo</h3>{% endif %}
                 <p class="destination-story-summary">{{ story_text|truncate(210 if key == 'naturaleza' else 115, False, '…') }}</p>

@@ -56,7 +56,7 @@ def test_public_templates_invalidate_cached_portal_styles():
     for template_path in Path("app/templates").glob("*.html"):
         template = template_path.read_text(encoding="utf-8")
         if "path='css/portal.css'" in template:
-            expected_version = "?v=20260811-destination-gallery-1" if template_path.name == "descubri_cabalango.html" else default_version
+            expected_version = "?v=20260811-home-journeys-1" if template_path.name == "descubri_cabalango.html" else default_version
             assert expected_version in template
 
 
