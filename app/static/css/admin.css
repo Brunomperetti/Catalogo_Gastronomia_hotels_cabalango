@@ -19,11 +19,8 @@
   --admin-sky-action: #36768A;
   --admin-sky-action-hover: #2F687A;
   --admin-focus-ring: rgba(77, 145, 165, .34);
-  --admin-success: #526B3F;
-  --admin-success-surface: #EEF0E5;
-  --admin-success-border: #B8C0A5;
-  --admin-border: #533A30;
-  --admin-border-strong: #38251F;
+  --admin-border: #B8DCE5;
+  --admin-border-strong: #8FC6D4;
   --admin-earth: #A87449;
   --admin-earth-dark: #7C573A;
   --admin-white: #FAF7F0;
@@ -46,6 +43,8 @@
 
 .admin-body a,
 .admin-body a:visited { color: var(--admin-sky-action); }
+.admin-body a:focus-visible,
+.admin-body button:focus-visible { outline-color: var(--admin-focus-ring); }
 .admin-body code { background: rgba(199, 185, 166, .28); color: var(--admin-text-deep); }
 .admin-body .text-white,
 .admin-body .text-white-50,
@@ -167,7 +166,7 @@
 
 .admin-tab:hover,
 .admin-tab:focus-visible {
-  background: var(--admin-surface-alt) !important;
+  background: var(--admin-sky-light) !important;
   border-color: var(--admin-border-strong) !important;
   color: var(--admin-text-deep) !important;
   box-shadow: 0 0 0 3px var(--admin-focus-ring) !important;
@@ -181,7 +180,7 @@
   background: var(--admin-sky) !important;
   border-color: var(--admin-sky) !important;
   color: var(--admin-text-deep) !important;
-  box-shadow: 0 10px 22px rgba(77, 145, 165, .24) !important;
+  box-shadow: 0 10px 22px rgba(56, 37, 31, .10) !important;
 }
 
 .admin-tab--warning { color: var(--admin-earth-dark) !important; }
@@ -255,7 +254,7 @@
   color: var(--admin-white) !important;
   font-weight: 800;
   min-height: 44px;
-  box-shadow: 0 12px 24px rgba(54, 118, 138, .24) !important;
+  box-shadow: 0 12px 24px rgba(56, 37, 31, .12) !important;
 }
 
 .btn-primary-custom:hover,
@@ -265,6 +264,13 @@
   background: var(--admin-sky-action-hover) !important;
   border-color: var(--admin-sky-action-hover) !important;
   color: var(--admin-white) !important;
+}
+
+.btn-primary-custom:focus-visible,
+.btn-whatsapp-custom:focus-visible,
+.btn-danger-soft:focus-visible,
+.btn-danger-custom:focus-visible {
+  box-shadow: 0 0 0 3px var(--admin-focus-ring) !important;
 }
 
 .btn-secondary-custom,
@@ -283,7 +289,7 @@
 .btn-outline-custom:hover,
 .btn-secondary-custom:focus-visible,
 .btn-outline-custom:focus-visible {
-  background: var(--admin-surface-alt) !important;
+  background: var(--admin-sky-light) !important;
   border-color: var(--admin-border-strong) !important;
   color: var(--admin-text-deep) !important;
   box-shadow: 0 0 0 3px var(--admin-focus-ring) !important;
@@ -332,9 +338,9 @@
 }
 .alert-custom-success,
 .alert-success {
-  background: var(--admin-success-surface) !important;
-  border-color: var(--admin-success-border) !important;
-  color: var(--admin-success) !important;
+  background: var(--admin-sky-light) !important;
+  border-color: var(--admin-sky) !important;
+  color: var(--admin-text-deep) !important;
 }
 .alert-custom-error,
 .alert-danger {
@@ -391,7 +397,7 @@
 .destination-admin-content { padding: 18px; }
 .destination-admin-meta, .destination-admin-badges, .destination-admin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .destination-admin-meta span, .destination-admin-badges span { background: var(--admin-surface-alt); border: 1px solid var(--admin-border); border-radius: 999px; color: var(--admin-text); font-size: .74rem; font-weight: 850; padding: 6px 10px; }
-.destination-admin-badges .is-visible { background: var(--admin-success-surface); border-color: var(--admin-success-border); color: var(--admin-success); }
+.destination-admin-badges .is-visible { background: var(--admin-sky-light); border-color: var(--admin-sky); color: var(--admin-text-deep); }
 .destination-admin-badges .is-hidden { background: #F6E9DF; border-color: #D9A085; color: #743C2C; }
 .destination-admin-content h3 { color: var(--admin-text-deep); font-size: 1.08rem; margin: 12px 0 6px; }
 .destination-admin-content p { color: var(--admin-text-soft); margin: 0 0 14px; }
@@ -423,7 +429,7 @@
   text-decoration: none;
 }
 .admin-area-link:hover {
-  background: var(--admin-surface-alt);
+  background: var(--admin-sky-light);
   border-color: var(--admin-border-strong);
   color: var(--admin-text-deep) !important;
 }
@@ -449,7 +455,7 @@
 .admin-nav-eyebrow { color: var(--admin-sky-action); font-size: .72rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
 .admin-nav-groups .admin-tabs { background: transparent; border: 0; box-shadow: none; margin: 0; padding: 0; }
 .admin-tabs--portal .admin-tab--global { background: rgba(168,214,226,.30) !important; border-color: var(--admin-border) !important; color: var(--admin-text-deep); }
-.admin-tabs--portal .admin-tab.is-active { box-shadow: 0 10px 22px rgba(77,145,165,.22); }
+.admin-tabs--portal .admin-tab.is-active { box-shadow: 0 10px 22px rgba(56,37,31,.10); }
 @media (max-width: 720px) { .admin-nav-group { border-radius: 20px; padding: 12px; } .admin-nav-group__heading { align-items: flex-start; flex-direction: column; } .admin-area-link { padding-inline: 16px; } }
 @media (max-width: 430px) { .admin-area-nav { grid-template-columns: 1fr; } }
 
@@ -461,7 +467,7 @@
 .active-provider-section { color: var(--admin-text-deep); font-weight: 900; }
 .active-provider-taxonomy { color: var(--admin-text-soft); font-weight: 750; }
 .provider-status { border-radius: 999px; font-size: .75rem; font-weight: 900; padding: 5px 10px; }
-.provider-status.is-active { background: var(--admin-success-surface); border: 1px solid var(--admin-success-border); color: var(--admin-success); }
+.provider-status.is-active { background: var(--admin-sky-light); border: 1px solid var(--admin-sky); color: var(--admin-text-deep); }
 .provider-status.is-inactive { background: #F6E9DF; border: 1px solid #D9A085; color: #743C2C; }
 .admin-hero-side { align-items: center; display: grid; gap: 12px; grid-template-columns: auto minmax(220px, 320px); max-width: 430px; }
 .toolbar-form--hero { margin: 0; width: 100%; }
@@ -567,7 +573,7 @@
 
 .admin-disclosure[open] > .admin-disclosure__summary::before { transform: rotate(90deg); }
 .admin-disclosure[open] > .admin-disclosure__summary {
-  background: var(--admin-surface-alt);
+  background: var(--admin-sky-light);
   border-bottom: 1px solid var(--admin-border);
 }
 .admin-disclosure__summary:hover { background: rgba(168, 214, 226, .28); }
