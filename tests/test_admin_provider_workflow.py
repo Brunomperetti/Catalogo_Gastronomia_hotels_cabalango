@@ -140,6 +140,31 @@ def test_admin_gallery_uses_compact_grid():
     assert "aspect-ratio: 4 / 3" in stylesheet
 
 
+def test_provider_management_forms_are_closed_native_disclosures(admin_app):
+    client, db, _ = admin_app
+    add_company(db)
+
+    response = client.get("/admin?area=prestador&empresa=demo&tab=prestadores")
+
+    assert response.status_code == 200
+    disclosures = list(re.finditer(
+        r'<details class="admin-disclosure"(?P<attributes>[^>]*)>\s*'
+        r'<summary[^>]*>(?P<summary>.*?)</summary>',
+        response.text,
+        re.DOTALL,
+    ))
+    edit_disclosure = next(match for match in disclosures if "Editar prestador activo" in match.group("summary"))
+    create_disclosure = next(match for match in disclosures if "Crear nuevo prestador / lugar" in match.group("summary"))
+    assert "open" not in edit_disclosure.group("attributes").split()
+    assert "open" not in create_disclosure.group("attributes").split()
+
+    edit_form = '<form action="/empresa/editar_panel" method="post" class="stack-form">'
+    create_form = '<form action="/empresa/crear_panel" method="post"'
+    assert edit_disclosure.end() < response.text.index(edit_form) < create_disclosure.start()
+    assert create_disclosure.end() < response.text.index(create_form)
+    assert response.text.count('action="/empresa/editar_panel"') == 1
+
+
 @pytest.mark.parametrize(("tab", "panel_id", "expected_text"), [
     ("leads", "leads", "Tablero comercial"),
     ("usuarios", "usuarios", "Usuarios y accesos"),
