@@ -28,12 +28,12 @@ def test_admin_uses_sky_borders_and_interaction_states():
     css = Path("app/static/css/admin.css").read_text(encoding="utf-8")
 
     assert "border: 1px solid var(--admin-border) !important;" in css
-    assert "border: 1px solid var(--admin-border-strong) !important;" in css
-    assert "background: var(--admin-sky) !important;" in css
+    assert "border-color: var(--admin-border-strong) !important;" in css
     assert "box-shadow: 0 0 0 3px var(--admin-focus-ring) !important;" in css
 
     active_tabs = css[css.index(".admin-tab.is-active,"):css.index(".admin-tab--warning")]
-    assert "background: var(--admin-sky) !important;" in active_tabs
+    assert "background: var(--admin-brown-deep) !important;" in active_tabs
+    assert "color: var(--admin-white) !important;" in active_tabs
 
     inputs = css[css.index(".input-custom,"):css.index(".input-custom::placeholder")]
     assert "border: 1px solid var(--admin-border) !important;" in inputs
@@ -54,3 +54,27 @@ def test_admin_primary_actions_use_deep_brown_and_light_text():
     primary_hover = css[css.index(".btn-primary-custom:hover,"):css.index(".btn-primary-custom:focus-visible,", css.index(".btn-primary-custom:focus-visible,") + 1)]
     assert "background: var(--admin-brown) !important;" in primary_hover
     assert "color: var(--admin-white) !important;" in primary_hover
+
+
+def test_all_admin_action_button_families_use_brown_not_sky_fills():
+    css = Path("app/static/css/admin.css").read_text(encoding="utf-8")
+
+    primary_actions = css[css.index(".btn-primary-custom,"):css.index(".btn-primary-custom:hover,")]
+    secondary_actions = css[css.index(".btn-secondary-custom,"):css.index(".btn-secondary-custom:hover,")]
+    file_action = css[css.index('.input-file-custom::file-selector-button,'):css.index('.input-file-custom::file-selector-button:hover,')]
+
+    for action_rules in (primary_actions, secondary_actions, file_action):
+        assert "background: var(--admin-brown-deep) !important;" in action_rules
+        assert "color: var(--admin-white) !important;" in action_rules
+        assert "background: var(--admin-sky)" not in action_rules
+        assert "background: var(--admin-sky-light)" not in action_rules
+
+
+def test_large_active_navigation_surfaces_are_brown_or_cream():
+    css = Path("app/static/css/admin.css").read_text(encoding="utf-8")
+
+    active_area = css[css.index(".admin-area-link.is-active,"):css.index(".admin-area-link__copy")]
+    assert "background: var(--admin-brown-deep);" in active_area
+    assert "color: var(--admin-white) !important;" in active_area
+    assert "background: var(--admin-sky)" not in active_area
+    assert "background: linear-gradient" not in css
