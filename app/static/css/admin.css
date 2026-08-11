@@ -17,7 +17,6 @@
   --admin-sky: #A8D6E2;
   --admin-sky-dark: #4D91A5;
   --admin-sky-action: #36768A;
-  --admin-sky-action-hover: #2F687A;
   --admin-focus-ring: rgba(77, 145, 165, .34);
   --admin-border: #B8DCE5;
   --admin-border-strong: #8FC6D4;
@@ -42,7 +41,7 @@
 .admin-body *::after { border-color: var(--admin-border); }
 
 .admin-body a,
-.admin-body a:visited { color: var(--admin-sky-action); }
+.admin-body a:visited { color: var(--admin-text-deep); }
 .admin-body a:focus-visible,
 .admin-body button:focus-visible { outline-color: var(--admin-focus-ring); }
 .admin-body code { background: rgba(199, 185, 166, .28); color: var(--admin-text-deep); }
@@ -157,7 +156,7 @@
   background: var(--admin-surface) !important;
   border: 1px solid var(--admin-border) !important;
   border-radius: 999px !important;
-  color: var(--admin-text) !important;
+  color: var(--admin-text-deep) !important;
   font-weight: 750;
   min-height: 44px;
   padding: 10px 16px;
@@ -178,7 +177,7 @@
 .admin-tab.is-active:focus-visible,
 .admin-tab.is-active * {
   background: var(--admin-sky) !important;
-  border-color: var(--admin-sky) !important;
+  border-color: var(--admin-border-strong) !important;
   color: var(--admin-text-deep) !important;
   box-shadow: 0 10px 22px rgba(56, 37, 31, .10) !important;
 }
@@ -193,7 +192,7 @@
 .form-check,
 .admin-create-card summary,
 .admin-collapsible summary {
-  color: var(--admin-text) !important;
+  color: var(--admin-text-deep) !important;
   font-weight: 650;
 }
 
@@ -216,6 +215,15 @@
 .admin-body input::placeholder,
 .admin-body textarea::placeholder { color: #9A8A7A !important; }
 
+.input-custom:hover,
+.select-custom:hover,
+.input-file-custom:hover,
+.admin-body input:hover,
+.admin-body select:hover,
+.admin-body textarea:hover {
+  border-color: var(--admin-border-strong) !important;
+}
+
 .input-custom:focus,
 .select-custom:focus,
 .input-file-custom:focus,
@@ -223,7 +231,7 @@
 .admin-body select:focus,
 .admin-body textarea:focus {
   background: var(--admin-white) !important;
-  border-color: var(--admin-sky) !important;
+  border-color: var(--admin-border-strong) !important;
   box-shadow: 0 0 0 3px var(--admin-focus-ring) !important;
   color: var(--admin-text) !important;
   outline: none !important;
@@ -248,8 +256,8 @@
 .btn-primary-custom:visited,
 .btn-whatsapp-custom,
 .btn-whatsapp-custom:visited {
-  background: var(--admin-sky-action) !important;
-  border: 1px solid var(--admin-sky-action) !important;
+  background: var(--admin-brown-deep) !important;
+  border: 1px solid var(--admin-brown-deep) !important;
   border-radius: 999px !important;
   color: var(--admin-white) !important;
   font-weight: 800;
@@ -261,8 +269,8 @@
 .btn-primary-custom:focus-visible,
 .btn-whatsapp-custom:hover,
 .btn-whatsapp-custom:focus-visible {
-  background: var(--admin-sky-action-hover) !important;
-  border-color: var(--admin-sky-action-hover) !important;
+  background: var(--admin-brown) !important;
+  border-color: var(--admin-brown) !important;
   color: var(--admin-white) !important;
 }
 
@@ -278,7 +286,7 @@
 .btn-secondary-custom:visited,
 .btn-outline-custom:visited {
   background: var(--admin-surface) !important;
-  border: 1px solid var(--admin-border-strong) !important;
+  border: 1px solid var(--admin-border) !important;
   border-radius: 999px !important;
   color: var(--admin-text) !important;
   font-weight: 750;
@@ -420,9 +428,9 @@
 .admin-area-link:visited {
   align-items: center;
   background: var(--admin-surface);
-  border: 1px solid var(--admin-border-strong);
+  border: 1px solid var(--admin-border);
   border-radius: 18px;
-  color: var(--admin-text) !important;
+  color: var(--admin-text-deep) !important;
   display: flex;
   min-height: 62px;
   padding: 11px 22px;
@@ -441,7 +449,7 @@
 .admin-area-link.is-active:visited,
 .admin-area-link.is-active:hover {
   background: var(--admin-sky);
-  border-color: var(--admin-sky);
+  border-color: var(--admin-border-strong);
   color: var(--admin-text-deep) !important;
 }
 .admin-area-link__copy { display: grid; gap: 2px; min-width: 0; }

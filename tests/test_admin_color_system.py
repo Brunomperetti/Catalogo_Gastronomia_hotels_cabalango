@@ -30,7 +30,6 @@ def test_admin_uses_sky_borders_and_interaction_states():
     assert "border: 1px solid var(--admin-border) !important;" in css
     assert "border: 1px solid var(--admin-border-strong) !important;" in css
     assert "background: var(--admin-sky) !important;" in css
-    assert "background: var(--admin-sky-action) !important;" in css
     assert "box-shadow: 0 0 0 3px var(--admin-focus-ring) !important;" in css
 
     active_tabs = css[css.index(".admin-tab.is-active,"):css.index(".admin-tab--warning")]
@@ -42,3 +41,16 @@ def test_admin_uses_sky_borders_and_interaction_states():
     positive_badge = css[css.index(".provider-status.is-active"):css.index(".provider-status.is-inactive")]
     assert "background: var(--admin-sky-light)" in positive_badge
     assert "border: 1px solid var(--admin-sky)" in positive_badge
+
+
+def test_admin_primary_actions_use_deep_brown_and_light_text():
+    css = Path("app/static/css/admin.css").read_text(encoding="utf-8")
+
+    primary_actions = css[css.index(".btn-primary-custom,"):css.index(".btn-primary-custom:hover,")]
+    assert "background: var(--admin-brown-deep) !important;" in primary_actions
+    assert "border: 1px solid var(--admin-brown-deep) !important;" in primary_actions
+    assert "color: var(--admin-white) !important;" in primary_actions
+
+    primary_hover = css[css.index(".btn-primary-custom:hover,"):css.index(".btn-primary-custom:focus-visible,", css.index(".btn-primary-custom:focus-visible,") + 1)]
+    assert "background: var(--admin-brown) !important;" in primary_hover
+    assert "color: var(--admin-white) !important;" in primary_hover
