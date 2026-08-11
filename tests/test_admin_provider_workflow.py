@@ -147,6 +147,17 @@ def test_provider_management_forms_are_closed_native_disclosures(admin_app):
     response = client.get("/admin?area=prestador&empresa=demo&tab=prestadores")
 
     assert response.status_code == 200
+    provider_nav = re.search(
+        r'<div class="admin-tabs admin-tabs--provider-sections" aria-label="Secciones del prestador">'
+        r'(?P<links>.*?)</div>',
+        response.text,
+        re.DOTALL,
+    )
+    assert provider_nav
+    assert re.findall(r'tab=([^"&]+)"', provider_nav.group("links")) == [
+        "prestadores", "ficha", "fotos", "contacto", "rubro", "leads", "opiniones", "usuarios",
+    ]
+    assert 'id="tab-empresa" class="admin-tab is-active"' in provider_nav.group("links")
     disclosures = list(re.finditer(
         r'<details class="admin-disclosure"(?P<attributes>[^>]*)>\s*'
         r'<summary[^>]*>(?P<summary>.*?)</summary>',
@@ -157,6 +168,7 @@ def test_provider_management_forms_are_closed_native_disclosures(admin_app):
     create_disclosure = next(match for match in disclosures if "Crear nuevo prestador / lugar" in match.group("summary"))
     assert "open" not in edit_disclosure.group("attributes").split()
     assert "open" not in create_disclosure.group("attributes").split()
+    assert 'class="admin-disclosure__copy"' in edit_disclosure.group("summary")
 
     edit_form = '<form action="/empresa/editar_panel" method="post" class="stack-form">'
     create_form = '<form action="/empresa/crear_panel" method="post"'

@@ -86,7 +86,7 @@
             {% if admin_area == 'prestador' %}
             <section class="admin-nav-group admin-nav-group--provider" aria-labelledby="admin-nav-provider-title">
                 <div class="admin-nav-group__heading"><span class="admin-nav-eyebrow">Prestador activo</span><strong id="admin-nav-provider-title">Contenido del negocio seleccionado</strong></div>
-                <div class="admin-tabs" aria-label="Secciones del prestador">
+                <div class="admin-tabs admin-tabs--provider-sections" aria-label="Secciones del prestador">
                     {% for tab_id, label in [('prestadores','Prestadores / lugares'),('ficha','Ficha'),('fotos','Fotos y video'),('contacto','Contacto / ubicación'),('rubro','Datos por rubro'),('leads','Consultas / leads'),('opiniones','Opiniones'),('usuarios','Usuarios')] %}
                     <a id="tab-{{ 'empresa' if tab_id == 'prestadores' else tab_id }}" class="admin-tab {% if active_tab == tab_id %}is-active{% endif %}" href="/admin?area=prestador&empresa={{ active_empresa }}&tab={{ tab_id }}" {% if active_tab == tab_id %}aria-current="page"{% endif %}>{{ label }}</a>
                     {% endfor %}
@@ -367,7 +367,12 @@
                 {% if empresa_activa %}
                 <section class="admin-card admin-card--empresa-main admin-disclosure-card">
                     <details class="admin-disclosure">
-                    <summary class="admin-disclosure__summary"><span class="admin-disclosure__title">Editar prestador activo</span><small class="admin-disclosure__help">Datos generales, categoría, estado y configuración rápida</small></summary>
+                    <summary class="admin-disclosure__summary">
+                        <span class="admin-disclosure__copy">
+                            <span class="admin-disclosure__title">Editar prestador activo</span>
+                            <small class="admin-disclosure__help">Datos generales, categoría, estado y configuración rápida</small>
+                        </span>
+                    </summary>
                     <div class="admin-disclosure__body">
                     <form action="/empresa/editar_panel" method="post" class="stack-form">
                     <input type="hidden" name="admin_tab" value="{{ active_tab }}">
@@ -401,7 +406,12 @@
 
                 <section class="admin-card admin-card--wide admin-create-card">
                     <details class="admin-disclosure">
-                        <summary class="admin-disclosure__summary"><span class="admin-disclosure__title">Crear nuevo prestador / lugar</span><small class="admin-disclosure__help">Alta separada del flujo de edición actual</small></summary>
+                        <summary class="admin-disclosure__summary">
+                            <span class="admin-disclosure__copy">
+                                <span class="admin-disclosure__title">Crear nuevo prestador / lugar</span>
+                                <small class="admin-disclosure__help">Alta separada del flujo de edición actual</small>
+                            </span>
+                        </summary>
                         <div class="admin-disclosure__body">
                         <form action="/empresa/crear_panel" method="post" enctype="multipart/form-data" class="stack-form mt-3">
                             <div class="form-grid"><div><label class="field-label">Nombre del prestador o lugar</label><input class="input-custom" type="text" name="nombre" placeholder="Cabañas del Río" required></div><div><label class="field-label">Slug (URL)</label><input class="input-custom" type="text" name="slug" placeholder="cabanas-del-rio" required></div><div><label class="field-label">WhatsApp</label><input class="input-custom" type="text" name="whatsapp" placeholder="5493510000000"></div><div><label class="field-label">Rubro / sección</label><select name="theme" class="input-custom select-custom"><option value="gastronomia">Gastronomía</option><option value="alojamiento">Alojamientos</option><option value="servicios">Compras y servicios</option><option value="actividades">Actividades y comunidad</option><option value="default" selected>Otro / General</option></select></div><div><label class="field-label">Grupo (si es servicio)</label><select name="subgrupo" class="input-custom select-custom"><option value="">No aplica</option><option value="compras">Compras</option><option value="transporte">Transporte</option><option value="estacionamiento">Estacionamiento</option><option value="salud">Salud y bienestar</option><option value="otros">Otros servicios</option></select></div><div><label class="field-label">Rubro específico</label><input class="input-custom" name="subtipo" placeholder="Ej: Proveeduría, Remis, Kinesiología"></div><div><label class="field-label">Logo (opcional)</label><input class="input-file-custom" type="file" name="logo" accept="image/*"></div><div><label class="field-label">Banner horizontal (opcional)</label><input class="input-file-custom" type="file" name="banner" accept="image/*"></div></div>
