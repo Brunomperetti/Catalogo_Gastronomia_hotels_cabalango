@@ -79,9 +79,19 @@
     <section class="tabs-shell">
         <nav class="admin-nav-groups" aria-label="Áreas del panel admin">
             {% set active_empresa = empresa_query %}
-            <div class="admin-tabs" aria-label="Área activa">
-                <a class="admin-tab {% if admin_area == 'prestador' %}is-active{% endif %}" href="/admin?area=prestador&empresa={{ active_empresa }}&tab=prestadores" {% if admin_area == 'prestador' %}aria-current="page"{% endif %}>Prestador</a>
-                <a class="admin-tab admin-tab--global {% if admin_area == 'portal' %}is-active{% endif %}" href="/admin?area=portal&tab=cabalango" {% if admin_area == 'portal' %}aria-current="page"{% endif %}>Portal / destino</a>
+            <div class="admin-area-nav" aria-label="Área activa">
+                <a class="admin-area-link {% if admin_area == 'prestador' %}is-active{% endif %}" href="/admin?area=prestador&empresa={{ active_empresa }}&tab=prestadores" {% if admin_area == 'prestador' %}aria-current="page"{% endif %}>
+                    <span class="admin-area-link__copy">
+                        <span class="admin-area-link__title">Prestador activo</span>
+                        <small class="admin-area-link__help">Gestioná negocios y lugares</small>
+                    </span>
+                </a>
+                <a class="admin-area-link {% if admin_area == 'portal' %}is-active{% endif %}" href="/admin?area=portal&tab=cabalango" {% if admin_area == 'portal' %}aria-current="page"{% endif %}>
+                    <span class="admin-area-link__copy">
+                        <span class="admin-area-link__title">Portal / destino</span>
+                        <small class="admin-area-link__help">Gestioná contenido global de Cabalango</small>
+                    </span>
+                </a>
             </div>
             {% if admin_area == 'prestador' %}
             <section class="admin-nav-group admin-nav-group--provider" aria-labelledby="admin-nav-provider-title">
@@ -404,7 +414,7 @@
                 </section>
                 {% endif %}
 
-                <section class="admin-card admin-card--wide admin-create-card">
+                <section class="admin-card admin-card--wide admin-disclosure-card admin-create-card">
                     <details class="admin-disclosure">
                         <summary class="admin-disclosure__summary">
                             <span class="admin-disclosure__copy">

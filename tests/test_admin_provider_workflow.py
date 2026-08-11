@@ -147,6 +147,21 @@ def test_provider_management_forms_are_closed_native_disclosures(admin_app):
     response = client.get("/admin?area=prestador&empresa=demo&tab=prestadores")
 
     assert response.status_code == 200
+    area_nav = re.search(
+        r'<div class="admin-area-nav" aria-label="Área activa">(?P<links>.*?)</div>',
+        response.text,
+        re.DOTALL,
+    )
+    assert area_nav
+    area_links = re.findall(r'<a\s+class="admin-area-link[^>]*href="([^"]+)"([^>]*)>(.*?)</a>', area_nav.group("links"), re.DOTALL)
+    assert len(area_links) == 2
+    assert [re.search(r'admin-area-link__title">([^<]+)', link[2]).group(1) for link in area_links] == [
+        "Prestador activo", "Portal / destino",
+    ]
+    assert area_links[0][0] == "/admin?area=prestador&empresa=demo&tab=prestadores"
+    assert area_links[1][0] == "/admin?area=portal&tab=cabalango"
+    assert 'aria-current="page"' in area_links[0][1]
+    assert 'aria-current="page"' not in area_links[1][1]
     provider_nav = re.search(
         r'<div class="admin-tabs admin-tabs--provider-sections" aria-label="Secciones del prestador">'
         r'(?P<links>.*?)</div>',
@@ -169,6 +184,7 @@ def test_provider_management_forms_are_closed_native_disclosures(admin_app):
     assert "open" not in edit_disclosure.group("attributes").split()
     assert "open" not in create_disclosure.group("attributes").split()
     assert 'class="admin-disclosure__copy"' in edit_disclosure.group("summary")
+    assert response.text.count("admin-disclosure-card") == 2
 
     edit_form = '<form action="/empresa/editar_panel" method="post" class="stack-form">'
     create_form = '<form action="/empresa/crear_panel" method="post"'
