@@ -11,8 +11,10 @@
   --admin-text: #55443B;
   --admin-text-soft: #76685F;
   --admin-river-light: #C4D5D7;
-  --admin-river: #769AA2;
+  --admin-river: #7FA2A9;
   --admin-river-dark: #5F8189;
+  --admin-river-action: #55747B;
+  --admin-river-action-hover: #4F6D74;
   --admin-success: #65704B;
   --admin-success-surface: #EEF0E5;
   --admin-success-border: #B8C0A5;
@@ -163,7 +165,7 @@
   background: var(--admin-surface-alt) !important;
   border-color: var(--admin-border-strong) !important;
   color: var(--admin-text-deep) !important;
-  box-shadow: 0 0 0 3px rgba(118, 154, 162, .14) !important;
+  box-shadow: 0 0 0 3px rgba(127, 162, 169, .18) !important;
 }
 
 .admin-tab.is-active,
@@ -218,7 +220,7 @@
 .admin-body textarea:focus {
   background: var(--admin-white) !important;
   border-color: var(--admin-river) !important;
-  box-shadow: 0 0 0 3px rgba(118, 154, 162, .2) !important;
+  box-shadow: 0 0 0 3px rgba(127, 162, 169, .24) !important;
   color: var(--admin-text) !important;
   outline: none !important;
 }
@@ -242,8 +244,8 @@
 .btn-primary-custom:visited,
 .btn-whatsapp-custom,
 .btn-whatsapp-custom:visited {
-  background: var(--admin-river-dark) !important;
-  border: 1px solid var(--admin-river-dark) !important;
+  background: var(--admin-river-action) !important;
+  border: 1px solid var(--admin-river-action) !important;
   border-radius: 999px !important;
   color: var(--admin-white) !important;
   font-weight: 800;
@@ -255,8 +257,8 @@
 .btn-primary-custom:focus-visible,
 .btn-whatsapp-custom:hover,
 .btn-whatsapp-custom:focus-visible {
-  background: var(--admin-river) !important;
-  border-color: var(--admin-river) !important;
+  background: var(--admin-river-action-hover) !important;
+  border-color: var(--admin-river-action-hover) !important;
   color: var(--admin-white) !important;
 }
 
@@ -420,7 +422,7 @@
   color: var(--admin-text-deep) !important;
 }
 .admin-area-link:focus-visible {
-  outline: 3px solid rgba(118, 154, 162, .5);
+  outline: 3px solid rgba(127, 162, 169, .55);
   outline-offset: 3px;
 }
 .admin-area-link.is-active,
@@ -565,7 +567,7 @@
 .admin-disclosure__summary:hover { background: rgba(196, 213, 215, .24); }
 .admin-disclosure__summary:focus-visible {
   border-radius: 20px;
-  outline: 3px solid rgba(118, 154, 162, .5);
+  outline: 3px solid rgba(127, 162, 169, .55);
   outline-offset: -4px;
 }
 .admin-disclosure__copy {
