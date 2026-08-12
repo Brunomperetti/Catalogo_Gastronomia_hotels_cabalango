@@ -5538,16 +5538,16 @@ body,
 .destination-story-vida-local h3 svg { color: var(--portal-leaf); }
 .destination-journey-number { align-items: center; display: flex; gap: 7px; }
 .destination-journey-number svg { height: 17px; stroke-width: 1.9; width: 17px; }
-.destination-journey-card.is-featured .destination-journey-number svg { color: #9FC8D0; }
-.destination-journey-card:nth-child(2) .destination-journey-number svg { color: #E1BD6C; }
-.destination-journey-card:nth-child(3) .destination-journey-number svg { color: #A9C09C; }
+.destination-journey-card.is-featured .destination-journey-number svg { color: var(--portal-water); }
+.destination-journey-card:nth-child(2) .destination-journey-number svg { color: var(--portal-sun); }
+.destination-journey-card:nth-child(3) .destination-journey-number svg { color: var(--portal-leaf); }
 .destination-river-heading { align-items: center; display: flex; gap: 14px; }
 .destination-river-heading .portal-kicker { margin-bottom: 0; }
 .destination-river-heading > svg { color: var(--portal-water); height: 40px; width: 64px; }
 .destination-travel-tip { border-left-color: var(--portal-water); }
 .destination-travel-tip svg { color: var(--portal-water); }
 .destination-gallery-link svg { color: var(--portal-water); height: 19px; width: 19px; }
-.destination-cta-mark { color: #9FC8D0; height: 44px; margin-bottom: 18px; width: 70px; }
+.destination-cta-mark { color: var(--portal-water); height: 44px; margin-bottom: 18px; width: 70px; }
 .destination-weather-card .weather-current-icon svg,
 .destination-weather-card .weather-day-heading svg { color: var(--portal-sun); }
 .destination-weather-card .weather-advice svg { color: var(--portal-leaf); }
