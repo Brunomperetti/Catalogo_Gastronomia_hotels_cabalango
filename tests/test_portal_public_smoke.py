@@ -100,7 +100,10 @@ def test_portal_home_smoke():
         "Villa Carlos Paz",
         "Tanti",
         "Cosquín",
+        "A pocos minutos",
+        "Muy cerca",
         "A 25 km aprox.",
+        "a 45 km aprox.",
     ]:
         assert nearby_copy in response.text
     assert "aproximadamente 6 km" not in response.text

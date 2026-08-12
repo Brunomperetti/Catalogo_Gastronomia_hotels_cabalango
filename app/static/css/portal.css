@@ -5402,15 +5402,12 @@ body,
   min-width: 0;
 }
 
-.destination-nearby { border-block: 1px solid var(--portal-border); margin: 0 0 clamp(52px, 5vw, 68px); padding: 24px 0; width: 100%; }
-.destination-nearby h2 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(2rem, 4vw, 3.4rem); margin: 8px 0 12px; }
-.destination-nearby p:last-child { line-height: 1.65; margin-bottom: 0; max-width: 72ch; }
 /* Nearby destinations: a compact, scannable guide to complementary experiences. */
-.destination-nearby { border-block: 0; padding: clamp(42px, 5vw, 64px) 0; position: relative; }
+.destination-nearby { border-block: 0; margin: 0 0 clamp(52px, 5vw, 68px); padding: clamp(42px, 5vw, 64px) 0; position: relative; width: 100%; }
 .destination-nearby::before { background: var(--portal-border); content: ""; height: 1px; left: 0; position: absolute; right: 0; top: 0; }
 .destination-nearby-heading { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(280px, .65fr); margin-bottom: clamp(26px, 3.5vw, 38px); }
 .destination-nearby-heading .portal-kicker { grid-column: 1 / -1; }
-.destination-nearby .destination-nearby-heading h2 { font-size: clamp(2.7rem, 5vw, 4.7rem); letter-spacing: -.04em; line-height: .96; margin: 9px 0 0; max-width: 11ch; }
+.destination-nearby .destination-nearby-heading h2 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(2.7rem, 5vw, 4.7rem); letter-spacing: -.04em; line-height: .96; margin: 9px 0 0; max-width: 11ch; }
 .destination-nearby-heading > p:last-child { align-self: end; color: var(--portal-muted); font-size: .95rem; line-height: 1.65; margin: 0; max-width: 53ch; padding-bottom: 4px; }
 .destination-nearby-grid { display: grid; gap: clamp(14px, 1.8vw, 22px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .destination-nearby-card { background: var(--portal-surface); border: 1px solid var(--portal-border); box-shadow: 0 16px 38px rgba(73, 55, 45, .055); box-sizing: border-box; display: flex; flex-direction: column; min-height: 342px; min-width: 0; overflow: hidden; padding: clamp(24px, 2.6vw, 32px); position: relative; }
