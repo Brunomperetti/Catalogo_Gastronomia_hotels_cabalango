@@ -110,20 +110,21 @@
                 {% if hero_photo and hero_photo.image_path %}<img src="{{ hero_photo.image_path }}" alt="Río y naturaleza en Cabalango" loading="lazy">{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Naturaleza serrana"></div>{% endif %}
             </figure>
         </div>
-        <div class="destination-weather-card">
-            <div class="weather-current">
-                <div><p class="portal-kicker">Clima en Cabalango</p><h3>Planificá tu visita</h3></div>
-                {% if weather.available %}<p class="weather-temp">{{ weather.temperature|round|int }}°<span>{{ weather.condition }}</span></p><p class="weather-advice">{{ weather.advice }}</p>{% else %}<p class="weather-advice">{{ weather.message }}</p>{% endif %}
+        <section class="destination-weather-card" aria-labelledby="weather-title">
+            <header class="weather-heading"><div><p class="portal-kicker">Clima en Cabalango</p><h2 id="weather-title">Planificá tu visita</h2></div><p>El clima serrano cambia durante el día. Revisá el pronóstico y prepará tu plan antes de salir.</p></header>
+            <div class="weather-main">
+                <article class="weather-current">
+                    <p class="weather-panel-label">Ahora</p>
+                    {% if weather.available %}<p class="weather-temp">{{ weather.temperature|round|int }}°<span>{{ weather.condition }}</span></p><dl class="weather-current-details"><div><dt>Sensación</dt><dd>{% if weather.apparent_temperature is defined and weather.apparent_temperature is not none %}{{ weather.apparent_temperature|round|int }}°{% else %}No disponible{% endif %}</dd></div><div><dt>Viento</dt><dd>{% if weather.wind is defined and weather.wind is not none %}{{ weather.wind|round|int }} km/h{% else %}—{% endif %}</dd></div><div><dt>Lluvia</dt><dd>{{ weather.rain_probability or 0 }}%</dd></div></dl><p class="weather-advice"><svg aria-hidden="true"><use href="#icon-compass"/></svg><span><strong>Consejo para hoy</strong>{{ weather.advice }}</span></p>{% else %}<p class="weather-unavailable">{{ weather.message }}</p><p class="weather-advice"><svg aria-hidden="true"><use href="#icon-compass"/></svg><span><strong>Antes de salir</strong>Consultá el pronóstico local, llevá agua y un abrigo liviano.</span></p>{% endif %}
+                </article>
+                <div class="weather-forecast" aria-label="Pronóstico de los próximos días">
+                    <p class="weather-panel-label">Próximos días</p>
+                    {% if weather.available %}<div class="weather-days"><article class="weather-day"><span>Hoy</span><strong>{{ weather.min|round|int }}° / {{ weather.max|round|int }}°</strong><small>{{ weather.condition }}</small></article>{% for day in weather.forecast %}<article class="weather-day"><span>{{ day.label }}</span><strong>{{ day.min|round|int if day.min is not none else '—' }}° / {{ day.max|round|int if day.max is not none else '—' }}°</strong><small>{{ day.condition }} · {{ day.rain_probability or 0 }}% lluvia</small></article>{% endfor %}</div>{% else %}<p class="weather-unavailable">El pronóstico dinámico volverá a mostrarse cuando el servicio esté disponible.</p>{% endif %}
+                </div>
             </div>
-            {% if weather.available %}
-            <div class="weather-summary" aria-label="Pronóstico resumido">
-                <div><span>Hoy</span><strong>{{ weather.min|round|int }}° / {{ weather.max|round|int }}°</strong></div>
-                <div><span>Mañana</span>{% if weather.forecast %}<strong>{{ weather.forecast[0].min|round|int if weather.forecast[0].min is not none else '—' }}° / {{ weather.forecast[0].max|round|int if weather.forecast[0].max is not none else '—' }}°</strong>{% else %}<strong>—</strong>{% endif %}</div>
-                <div><span>Lluvia</span><strong>{{ weather.rain_probability or 0 }}%</strong></div>
-            </div>
-            {% endif %}
-            <p class="season-line"><strong>Mejor época para visitar</strong><span>Primavera · Verano · Otoño · Invierno</span></p>
-        </div>
+            <div class="visit-seasons"><div class="season-heading"><p class="weather-panel-label">Mejor época para visitar</p><p>Elegí la estación según el ritmo de viaje que buscás.</p></div><div class="season-grid"><article><span>Primavera</span><strong>12–26 °C</strong><p>Días templados para senderos y río sin el movimiento del verano.</p></article><article><span>Verano</span><strong>18–32 °C</strong><p>La mejor temporada para balnearios; planificá sombra y agua.</p></article><article><span>Otoño</span><strong>10–24 °C</strong><p>Ideal para caminatas, paisajes serranos y una visita tranquila.</p></article><article><span>Invierno</span><strong>3–18 °C</strong><p>Días frescos y secos para descansar; llevá abrigo para la tarde.</p></article></div></div>
+            <aside class="destination-nearby"><div><p class="portal-kicker">Cerca de Cabalango</p><h3>Tranquilidad, con el valle a mano</h3></div><p>Cabalango invita al río, la naturaleza y un ritmo sereno. Para sumar vida nocturna y más movimiento, Villa Carlos Paz está a aproximadamente 6 km; Cosquín y otros puntos de Punilla completan el recorrido.</p></aside>
+        </section>
     </section>
 
     <section id="fotos" class="destination-section destination-gallery-section">

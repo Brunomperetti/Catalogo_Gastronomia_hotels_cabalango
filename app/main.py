@@ -601,10 +601,10 @@ def get_cabalango_weather() -> dict:
     params = urlencode({
         "latitude": -31.395,
         "longitude": -64.562,
-        "current": "temperature_2m,weather_code,wind_speed_10m",
+        "current": "temperature_2m,apparent_temperature,weather_code,wind_speed_10m",
         "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
         "timezone": "America/Argentina/Cordoba",
-        "forecast_days": 4,
+        "forecast_days": 7,
     })
     fallback = {"available": False, "message": "Clima no disponible por el momento."}
     try:
@@ -619,11 +619,15 @@ def get_cabalango_weather() -> dict:
         mins = daily.get("temperature_2m_min") or []
         rains = daily.get("precipitation_probability_max") or []
         codes = daily.get("weather_code") or []
-        labels = ["Mañana", "En 2 días", "En 3 días"]
+        weekday_labels = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
         forecast = []
-        for idx in range(1, min(4, len(times))):
+        for idx in range(1, min(7, len(times))):
+            try:
+                label = "Mañana" if idx == 1 else weekday_labels[datetime.fromisoformat(times[idx]).weekday()]
+            except (TypeError, ValueError):
+                label = "Próximo día"
             forecast.append({
-                "label": labels[idx - 1],
+                "label": label,
                 "min": mins[idx] if idx < len(mins) else None,
                 "max": maxs[idx] if idx < len(maxs) else None,
                 "rain_probability": rains[idx] if idx < len(rains) else 0,
@@ -640,6 +644,7 @@ def get_cabalango_weather() -> dict:
         weather = {
             "available": temp is not None,
             "temperature": temp,
+            "apparent_temperature": current.get("apparent_temperature"),
             "condition": WEATHER_CODE_LABELS.get(current.get("weather_code"), "Clima serrano"),
             "min": (daily.get("temperature_2m_min") or [None])[0],
             "max": (daily.get("temperature_2m_max") or [None])[0],
