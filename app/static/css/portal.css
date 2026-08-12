@@ -5402,9 +5402,46 @@ body,
   min-width: 0;
 }
 
-.destination-nearby { border-block: 1px solid var(--portal-border); margin: 0 0 clamp(52px, 5vw, 68px); padding: 24px 0; width: 100%; }
-.destination-nearby h2 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(2rem, 4vw, 3.4rem); margin: 8px 0 12px; }
-.destination-nearby p:last-child { line-height: 1.65; margin-bottom: 0; max-width: 72ch; }
+/* Nearby destinations: a compact, scannable guide to complementary experiences. */
+.destination-nearby { border-block: 0; margin: 0 0 clamp(52px, 5vw, 68px); padding: clamp(42px, 5vw, 64px) 0; position: relative; width: 100%; }
+.destination-nearby::before { background: var(--portal-border); content: ""; height: 1px; left: 0; position: absolute; right: 0; top: 0; }
+.destination-nearby-heading { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(280px, .65fr); margin-bottom: clamp(26px, 3.5vw, 38px); }
+.destination-nearby-heading .portal-kicker { grid-column: 1 / -1; }
+.destination-nearby .destination-nearby-heading h2 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(2.7rem, 5vw, 4.7rem); letter-spacing: -.04em; line-height: .96; margin: 9px 0 0; max-width: 11ch; }
+.destination-nearby-heading > p:last-child { align-self: end; color: var(--portal-muted); font-size: .95rem; line-height: 1.65; margin: 0; max-width: 53ch; padding-bottom: 4px; }
+.destination-nearby-grid { display: grid; gap: clamp(14px, 1.8vw, 22px); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.destination-nearby-card { background: var(--portal-surface); border: 1px solid var(--portal-border); box-shadow: 0 16px 38px rgba(73, 55, 45, .055); box-sizing: border-box; display: flex; flex-direction: column; min-height: 342px; min-width: 0; overflow: hidden; padding: clamp(24px, 2.6vw, 32px); position: relative; }
+.destination-nearby-card::before { background: currentColor; content: ""; height: 3px; left: 0; position: absolute; right: 0; top: 0; }
+.destination-nearby-card-top { align-items: center; display: flex; gap: 14px; justify-content: space-between; }
+.destination-nearby-icon { align-items: center; background: color-mix(in srgb, currentColor 10%, transparent); border-radius: 50%; display: inline-flex; flex: 0 0 auto; height: 48px; justify-content: center; width: 48px; }
+.destination-nearby-icon svg { height: 25px; stroke-width: 1.55; width: 25px; }
+.destination-nearby-distance { align-items: center; background: var(--portal-bg); border: 1px solid var(--portal-border); border-radius: 999px; color: var(--portal-text-strong); display: inline-flex; font-size: .68rem; font-weight: 900; gap: 6px; letter-spacing: .055em; padding: 7px 10px; text-transform: uppercase; white-space: nowrap; }
+.destination-nearby-distance svg { color: currentColor; height: 14px; width: 14px; }
+.destination-nearby-card h3 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(1.75rem, 2.6vw, 2.25rem); letter-spacing: -.025em; line-height: 1; margin: 25px 0 12px; }
+.destination-nearby-card > p { color: var(--portal-text); font-size: .86rem; line-height: 1.62; margin: 0 0 24px; }
+.destination-nearby-tags { display: flex; flex-wrap: wrap; gap: 7px; list-style: none; margin: auto 0 0; padding: 0; }
+.destination-nearby-tags li { border: 1px solid currentColor; border-radius: 999px; color: var(--portal-muted); font-size: .66rem; font-weight: 800; line-height: 1; padding: 7px 10px; }
+.destination-nearby-carlos-paz { color: var(--portal-earth); }
+.destination-nearby-tanti { color: var(--portal-leaf); }
+.destination-nearby-cosquin { color: var(--portal-water); }
+.destination-nearby-card > p, .destination-nearby-card h3 { color: var(--portal-text); }
+.destination-nearby-card h3 { color: var(--portal-heading); }
+.destination-nearby .destination-nearby-footnote { border-left: 2px solid var(--portal-sun); color: var(--portal-muted); font-size: .78rem; line-height: 1.55; margin: 24px 0 0; max-width: none; padding: 2px 0 2px 13px; }
+.destination-nearby-footnote strong { color: var(--portal-heading); }
+@media (max-width: 900px) {
+  .destination-nearby-heading { gap: 18px; grid-template-columns: 1fr; }
+  .destination-nearby-heading .portal-kicker { grid-column: auto; }
+  .destination-nearby-heading > p:last-child { max-width: 62ch; }
+  .destination-nearby-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .destination-nearby-card:last-child { grid-column: 1 / -1; min-height: 300px; }
+}
+@media (max-width: 520px) {
+  .destination-nearby { padding: 42px 20px; }
+  .destination-nearby .destination-nearby-heading h2 { font-size: clamp(2.55rem, 12vw, 3.5rem); }
+  .destination-nearby-grid { grid-template-columns: 1fr; }
+  .destination-nearby-card, .destination-nearby-card:last-child { grid-column: auto; min-height: 0; }
+  .destination-nearby-card-top { align-items: flex-start; }
+}
 /* Weather planning: an editorial tool with live, useful and seasonal layers. */
 .destination-guide .destination-weather-card {
   background: var(--portal-surface);

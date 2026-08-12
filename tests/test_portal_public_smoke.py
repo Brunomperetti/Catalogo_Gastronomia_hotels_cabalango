@@ -95,7 +95,17 @@ def test_portal_home_smoke():
     assert 'href="/gastronomia">Gastronomía' in response.text
     assert 'href="/actividades">Qué hacer' in response.text
     assert "Rangos orientativos" in response.text
-    assert "Villa Carlos Paz está a pocos kilómetros" in response.text
+    for nearby_copy in [
+        "Ciudades cerca de Cabalango",
+        "Villa Carlos Paz",
+        "Tanti",
+        "Cosquín",
+        "A pocos minutos",
+        "Muy cerca",
+        "A 25 km aprox.",
+        "a 45 km aprox.",
+    ]:
+        assert nearby_copy in response.text
     assert "aproximadamente 6 km" not in response.text
 
 

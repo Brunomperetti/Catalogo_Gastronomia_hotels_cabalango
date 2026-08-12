@@ -42,6 +42,9 @@
         <symbol id="icon-snowflake" viewBox="0 0 24 24"><path d="M12 2v20M3.3 7l17.4 10M3.3 17l17.4-10M9 4l3 3 3-3M9 20l3-3 3 3M4.5 10.5l4.1-1.1-1.1-4.1M19.5 13.5l-4.1 1.1 1.1 4.1"/></symbol>
         <symbol id="icon-river-mark" viewBox="0 0 64 40"><circle cx="48" cy="10" r="5"/><path d="M4 24 17 10l10 11L36 9l15 15M5 30c7 0 7-4 14-4s7 4 14 4 7-4 14-4 7 4 13 4M10 36c6 0 6-3 12-3s6 3 12 3 6-3 12-3"/></symbol>
         <symbol id="icon-open" viewBox="0 0 24 24"><path d="M8 16 16 8M9 8h7v7"/></symbol>
+        <symbol id="icon-city-night" viewBox="0 0 24 24"><path d="M14.5 4.5a6.5 6.5 0 1 0 5 10 7 7 0 0 1-5-10Z"/><path d="M5 20v-5h4v5M9 20V9h5v11M14 20v-7h5v7M7 7h.01M18 5h.01"/></symbol>
+        <symbol id="icon-waterfall" viewBox="0 0 24 24"><path d="m3 18 5-8 3 4 3-6 7 10M8 10l2-4 2 3M5 21c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5"/></symbol>
+        <symbol id="icon-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 10l10-2"/><ellipse cx="6.5" cy="18" rx="2.5" ry="2"/><ellipse cx="16.5" cy="16" rx="2.5" ry="2"/></symbol>
     </svg>
 
     <section class="destination-editorial-hero" aria-labelledby="destination-title">
@@ -100,9 +103,32 @@
     </section>
 
     <section class="destination-nearby" aria-labelledby="nearby-title">
-        <p class="portal-kicker">Cerca de Cabalango</p>
-        <h2 id="nearby-title">Otros ritmos de Punilla, a mano</h2>
-        <p>Cabalango invita a la tranquilidad, el río y la naturaleza. Villa Carlos Paz está a pocos kilómetros y ofrece más movimiento y vida nocturna; Cosquín y otros puntos de Punilla suman opciones cercanas para recorrer.</p>
+        <header class="destination-nearby-heading">
+            <p class="portal-kicker">CERCA DE CABALANGO</p>
+            <h2 id="nearby-title">Ciudades cerca de Cabalango</h2>
+            <p>Si buscás más movimiento, cultura o paseos para complementar tu estadía, a pocos minutos de Cabalango tenés otras postales clásicas del Valle de Punilla.</p>
+        </header>
+        <div class="destination-nearby-grid">
+            <article class="destination-nearby-card destination-nearby-carlos-paz">
+                <div class="destination-nearby-card-top"><span class="destination-nearby-icon"><svg aria-hidden="true" focusable="false"><use href="#icon-city-night"/></svg></span><span class="destination-nearby-distance"><svg aria-hidden="true" focusable="false"><use href="#icon-pin"/></svg>A pocos minutos</span></div>
+                <h3>Villa Carlos Paz</h3>
+                <p>La alternativa cercana para sumar más movimiento: peatonal, teatros, gastronomía y vida nocturna, especialmente durante el verano.</p>
+                <ul class="destination-nearby-tags" aria-label="Experiencias en Villa Carlos Paz"><li>Teatros</li><li>Peatonal</li><li>Vida nocturna</li><li>Gastronomía</li></ul>
+            </article>
+            <article class="destination-nearby-card destination-nearby-tanti">
+                <div class="destination-nearby-card-top"><span class="destination-nearby-icon"><svg aria-hidden="true" focusable="false"><use href="#icon-waterfall"/></svg></span><span class="destination-nearby-distance"><svg aria-hidden="true" focusable="false"><use href="#icon-pin"/></svg>Muy cerca</span></div>
+                <h3>Tanti</h3>
+                <p>Una escapada serrana muy cercana para seguir en clave naturaleza, con balnearios, cascadas, senderos y paseos tranquilos.</p>
+                <ul class="destination-nearby-tags" aria-label="Experiencias en Tanti"><li>Balnearios</li><li>Cascadas</li><li>Senderos</li><li>Tranquilidad</li></ul>
+            </article>
+            <article class="destination-nearby-card destination-nearby-cosquin">
+                <div class="destination-nearby-card-top"><span class="destination-nearby-icon"><svg aria-hidden="true" focusable="false"><use href="#icon-music"/></svg></span><span class="destination-nearby-distance"><svg aria-hidden="true" focusable="false"><use href="#icon-pin"/></svg>A 25 km aprox.</span></div>
+                <h3>Cosquín</h3>
+                <p>Una referencia cultural del Valle de Punilla, reconocida por su folklore, sus peñas y una agenda artística marcada por sus grandes festivales.</p>
+                <ul class="destination-nearby-tags" aria-label="Experiencias en Cosquín"><li>Folklore</li><li>Peñas</li><li>Cultura</li><li>Eventos</li></ul>
+            </article>
+        </div>
+        <p class="destination-nearby-footnote"><strong>Para seguir camino:</strong> La Falda, a 45 km aprox., suma Siete Cascadas, miradores, paseos y festivales a una escapada por el valle.</p>
     </section>
 
     <section class="destination-journeys" aria-labelledby="journeys-title">
