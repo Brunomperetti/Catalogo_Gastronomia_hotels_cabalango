@@ -5438,7 +5438,7 @@ body,
 .weather-section-heading svg { height: 19px; width: 19px; }
 .weather-section-heading strong { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: 1.25rem; }
 .weather-section-heading span { color: var(--portal-muted); font-size: .7rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
-.weather-days { display: grid; gap: 10px; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); width: 100%; }
+.weather-days { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); width: 100%; }
 .weather-day { align-content: start; background: var(--portal-bg); border: 1px solid var(--portal-border); border-radius: 14px; box-sizing: border-box; display: grid; gap: 5px; min-height: 124px; padding: 13px 14px; }
 .weather-day-heading { align-items: center; display: flex; justify-content: space-between; }
 .weather-day-heading span { color: var(--portal-primary); font-size: .66rem; letter-spacing: .1em; }
