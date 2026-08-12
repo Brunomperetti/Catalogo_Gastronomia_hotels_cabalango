@@ -5259,18 +5259,19 @@ body,
 .destination-quick-links a:first-child { border-left: 0; }
 
 /* One image, one introduction and three quiet editorial links. */
-.destination-guide .destination-about { background: transparent; border: 0; border-radius: 0; box-shadow: none; margin-bottom: clamp(48px, 4.5vw, 60px); padding: 0; }
-.destination-about-intro { align-items: start; display: grid; gap: clamp(44px, 4vw, 56px); grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr); max-width: 100%; width: 100%; }
+.destination-guide .destination-about { background: transparent; border: 0; border-radius: 0; box-shadow: none; margin-bottom: clamp(44px, 4vw, 56px); padding: 0; }
+.destination-about-intro { align-items: center; display: grid; gap: clamp(48px, 5.4vw, 68px); grid-template-columns: minmax(0, 42fr) minmax(0, 58fr); max-width: 100%; width: 100%; }
 .destination-about-intro > div { min-width: 0; }
-.destination-about-intro h2 { font-size: clamp(2.8rem, 3.9vw, 4rem); letter-spacing: -.04em; line-height: .98; margin: 10px 0 22px; max-width: none; }
-.destination-about-intro > div > p:last-child { font-size: clamp(1rem, 1.4vw, 1.15rem); line-height: 1.58; margin-bottom: 0; max-width: 52ch; }
-.destination-about-intro figure { aspect-ratio: 16 / 10; margin: 0; max-height: 380px; max-width: 100%; min-width: 0; width: 100%; }
+.destination-about-intro h2 { font-size: clamp(2.6rem, 3.7vw, 4rem); letter-spacing: -.04em; line-height: .98; margin: 10px 0 18px; max-width: 14ch; }
+.destination-about-intro > div > p:last-child { font-size: clamp(1rem, 1.25vw, 1.1rem); line-height: 1.62; margin: 0; max-width: 48ch; }
+.destination-about-intro figure { aspect-ratio: 16 / 10; border-radius: 24px; height: clamp(360px, 32vw, 420px); margin: 0; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; }
 .destination-about-intro img { display: block; height: 100%; max-width: 100%; min-width: 0; object-fit: cover; width: 100%; }
-.destination-guide .destination-story-grid { align-items: stretch; border-top: 1px solid var(--portal-border); display: grid; gap: clamp(36px, 3.5vw, 48px); grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(28px, 2.5vw, 34px); padding-top: 22px; }
-.destination-guide .destination-story-card { background: transparent; border: 0; border-radius: 0; box-shadow: none; display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 0; }
+.destination-guide .destination-story-grid { align-items: start; border-top: 0; display: grid; gap: clamp(38px, 4.5vw, 56px); grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(36px, 3.5vw, 46px); padding-top: 0; }
+.destination-guide .destination-story-card { background: transparent; border: 0; border-radius: 0; box-shadow: none; display: block; min-height: 0; min-width: 0; padding: 0; }
 .destination-story-card h3 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: 1.65rem; margin: 0 0 10px; }
-.destination-story-card .destination-story-summary { flex: 1 1 auto; font-size: .9rem; line-height: 1.55; margin: 0 0 14px; }
+.destination-story-card .destination-story-summary { font-size: .9rem; line-height: 1.6; margin: 0; max-width: 34ch; }
 .destination-story-more { background: transparent; border: 0; color: var(--portal-primary); cursor: pointer; font: inherit; font-size: .8rem; font-weight: 900; margin-top: auto; padding: 3px 0; text-align: left; }
+.destination-guide .destination-story-more { margin-top: 20px; }
 
 /* A photographic triptych instead of service cards. */
 .destination-journeys { margin: 0 0 clamp(52px, 5vw, 68px); }
@@ -5322,14 +5323,18 @@ body,
 @media (max-width: 1024px) {
   .destination-guide .destination-editorial-hero { grid-template-columns: minmax(0, 1fr) minmax(290px, .65fr); }
   .destination-quick-links a { flex-direction: column; justify-content: center; padding-inline: 8px; text-align: center; }
-  .destination-about-intro { gap: 36px; }
+  .destination-about-intro { gap: 40px; grid-template-columns: minmax(0, 43fr) minmax(0, 57fr); }
+  .destination-about-intro h2 { font-size: clamp(2.6rem, 4.8vw, 3.25rem); }
+  .destination-about-intro figure { height: clamp(360px, 39vw, 400px); }
   .destination-river-layout { gap: 32px; }
   .destination-guide .destination-weather-card { grid-template-columns: 1fr; }
   .season-line { grid-column: auto; }
 }
 @media (max-width: 900px) {
   .destination-about-intro, .destination-river-layout { grid-template-columns: minmax(0, 1fr); }
-  .destination-about-intro { gap: 28px; }
+  .destination-about-intro { gap: 26px; }
+  .destination-about-intro h2 { max-width: 16ch; }
+  .destination-about-intro figure { height: auto; }
   .destination-guide .destination-story-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .destination-river-media { max-height: none; order: initial; }
 }
@@ -5339,8 +5344,8 @@ body,
   .destination-quick-links > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .destination-quick-links a { border-bottom: 1px solid var(--portal-border); }
   .destination-about-intro figure { aspect-ratio: 3 / 2; }
-  .destination-about-intro h2 { font-size: clamp(2.55rem, 9vw, 3.4rem); }
-  .destination-guide .destination-story-grid { gap: 28px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .destination-about-intro h2 { font-size: clamp(2.45rem, 7.5vw, 3.25rem); }
+  .destination-guide .destination-story-grid { gap: 30px 36px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 38px; }
   .destination-journey-grid { grid-template-columns: 1fr; grid-template-rows: none; height: auto; }
   .destination-journey-card, .destination-journey-card.is-featured { aspect-ratio: 4 / 3; grid-row: auto; }
   .destination-river-media { min-height: 0; }
@@ -5362,8 +5367,8 @@ body,
   .destination-quick-links a { min-width: 0; }
   .destination-about-intro, .destination-journeys, .destination-river-block { padding-inline: 20px; }
   .destination-about-intro figure { aspect-ratio: 4 / 3; }
-  .destination-about-intro h2 { font-size: clamp(2.35rem, 11vw, 3rem); margin-bottom: 20px; }
-  .destination-guide .destination-story-grid { gap: 26px; grid-template-columns: 1fr; margin-inline: 20px; }
+  .destination-about-intro h2 { font-size: clamp(2.3rem, 11vw, 3.3rem); margin-bottom: 16px; }
+  .destination-guide .destination-story-grid { gap: 30px; grid-template-columns: 1fr; margin-inline: 20px; margin-top: 34px; }
   .destination-journey-card, .destination-journey-card.is-featured { aspect-ratio: 4 / 5; }
   .destination-river-media { min-height: 0; }
   .destination-weather-card .weather-current { grid-template-columns: 1fr; }
