@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 
@@ -84,9 +85,9 @@ def test_public_ctas_have_semantic_primary_and_secondary_classes():
 
     for label in ("Dónde comer", "Qué hacer", "Gastronomía", "Qué hacer"):
         matching_markup = [
-            markup.split(label, 1)[0].rsplit("<", 1)[1]
+            tag
             for markup in templates.values()
-            if label in markup
+            for tag in re.findall(r"<a\b[^>]*>[^<]*" + re.escape(label), markup)
         ]
         assert any("portal-button-secondary" in tag for tag in matching_markup)
 
