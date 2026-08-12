@@ -66,9 +66,9 @@ def test_portal_home_smoke():
         "#como-llegar",
     ]:
         assert f'href="{href}"' in response.text
-    assert response.text.count("destination-story-more") == 4
+    assert response.text.count("destination-story-more") == 3
     assert 'id="como-llegar"' in response.text
-    assert "?v=20260811-home-journeys-1" in response.text
+    assert "?v=20260812-home-editorial-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -86,6 +86,29 @@ def test_portal_home_smoke():
     ]:
         assert full_text in response.text
     assert "Logo_Cabalango.png" in response.text
+    assert "Fotos destacadas" in response.text
+    assert "Ver foto destacada" in response.text
+    assert "Todas las fotos" not in response.text
+    assert "Organizá tu visita a tu ritmo" in response.text
+    assert 'href="/alojamientos">Alojamientos' in response.text
+    assert 'href="/gastronomia">Gastronomía' in response.text
+    assert 'href="/actividades">Qué hacer' in response.text
+
+
+def test_home_hides_empty_video_section(monkeypatch):
+    import app.main as main_module
+
+    content = main_module.get_destino_content(next(main_module.get_db()))
+    monkeypatch.setattr(content, "video_url", "")
+    monkeypatch.setattr(main_module, "get_destino_content", lambda db: content)
+    monkeypatch.setattr(main_module, "get_public_destino_media", lambda db, tipo=None: [])
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [])
+
+    response = TestClient(app).get("/")
+    assert response.status_code == 200
+    assert "Recorré el destino" not in response.text
+    assert "Estamos preparando recorridos en video" not in response.text
+    assert "destination-video-section" not in response.text
 
 
 def test_home_preserves_editable_hero_content(monkeypatch):
