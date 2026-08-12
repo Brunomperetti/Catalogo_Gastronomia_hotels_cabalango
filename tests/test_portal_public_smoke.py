@@ -106,6 +106,8 @@ def test_portal_home_smoke():
         "a 45 km aprox.",
     ]:
         assert nearby_copy in response.text
+    assert "destination-nearby-map" in response.text
+    assert "Si buscás más movimiento" not in response.text
     assert "aproximadamente 6 km" not in response.text
 
 
