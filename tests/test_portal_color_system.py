@@ -56,7 +56,7 @@ def test_public_templates_invalidate_cached_portal_styles():
     for template_path in Path("app/templates").glob("*.html"):
         template = template_path.read_text(encoding="utf-8")
         if "path='css/portal.css'" in template:
-            expected_version = "?v=20260811-home-journeys-1" if template_path.name == "descubri_cabalango.html" else default_version
+            expected_version = "?v=20260812-home-editorial-1" if template_path.name == "descubri_cabalango.html" else default_version
             assert expected_version in template
 
 
@@ -82,7 +82,7 @@ def test_public_ctas_have_semantic_primary_and_secondary_classes():
     for label in ("Cómo llegar", "Ver fotos"):
         assert f'portal-button-secondary"' in templates["prestador.html"].split(label, 1)[0].rsplit("<", 1)[1]
 
-    for label in ("Dónde comer", "Qué hacer", "Ver gastronomía", "Ver actividades"):
+    for label in ("Dónde comer", "Qué hacer", "Gastronomía", "Qué hacer"):
         matching_markup = [
             markup.split(label, 1)[0].rsplit("<", 1)[1]
             for markup in templates.values()
