@@ -87,7 +87,7 @@ def test_portal_home_smoke():
         assert full_text in response.text
     assert "Logo_Cabalango.png" in response.text
     assert "Fotos destacadas" in response.text
-    assert "Explorar la galería" in response.text
+    assert "Ver foto destacada" in response.text
     assert "Todas las fotos" not in response.text
     assert "Organizá tu visita a tu ritmo" in response.text
     assert 'href="/alojamientos">Alojamientos' in response.text
