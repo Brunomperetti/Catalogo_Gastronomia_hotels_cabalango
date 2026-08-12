@@ -69,7 +69,7 @@ def test_portal_home_smoke():
         assert f'href="{href}"' in response.text
     assert response.text.count("destination-story-more") == 3
     assert 'id="como-llegar"' in response.text
-    assert "?v=20260812-home-editorial-1" in response.text
+    assert "?v=20260812-home-art-2" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
