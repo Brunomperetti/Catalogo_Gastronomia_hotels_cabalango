@@ -1,3 +1,4 @@
+import json
 import re
 from types import SimpleNamespace
 
@@ -93,6 +94,84 @@ def test_portal_home_smoke():
     assert 'href="/alojamientos">Alojamientos' in response.text
     assert 'href="/gastronomia">Gastronomía' in response.text
     assert 'href="/actividades">Qué hacer' in response.text
+    assert "Rangos orientativos" in response.text
+    assert "Villa Carlos Paz está a pocos kilómetros" in response.text
+    assert "aproximadamente 6 km" not in response.text
+
+
+def test_weather_parses_apparent_temperature_and_up_to_seven_days(monkeypatch):
+    import app.main as main_module
+
+    payload = {
+        "current": {"temperature_2m": 21, "apparent_temperature": 19.5, "weather_code": 1, "wind_speed_10m": 12},
+        "daily": {
+            "time": [f"2026-08-{day:02d}" for day in range(12, 19)],
+            "weather_code": [1] * 7,
+            "temperature_2m_max": [24] * 7,
+            "temperature_2m_min": [10] * 7,
+            "precipitation_probability_max": [5] * 7,
+        },
+    }
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def read(self):
+            return json.dumps(payload).encode()
+
+    monkeypatch.setattr(main_module.urllib.request, "urlopen", lambda *args, **kwargs: Response())
+    main_module._weather_cache.update({"expires_at": None, "data": None})
+    weather = main_module.get_cabalango_weather()
+
+    assert weather["apparent_temperature"] == 19.5
+    assert len(weather["forecast"]) == 6
+    assert weather["forecast"][0]["label"] == "Mañana"
+
+
+def test_weather_fallback_keeps_seasonal_guidance_without_dynamic_values(monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "get_cabalango_weather", lambda: {
+        "available": False,
+        "message": "Clima no disponible por el momento.",
+    })
+    response = TestClient(app).get("/")
+
+    assert response.status_code == 200
+    assert "Clima no disponible por el momento" in response.text
+    assert "Rangos orientativos" in response.text
+    assert "Primavera" in response.text
+    assert "None" not in response.text
+    assert "weather-temp" not in response.text
+
+
+def test_weather_service_failure_returns_explicit_fallback(monkeypatch):
+    import app.main as main_module
+
+    def fail_request(*args, **kwargs):
+        raise TimeoutError("Open-Meteo unavailable")
+
+    monkeypatch.setattr(main_module.urllib.request, "urlopen", fail_request)
+    main_module._weather_cache.update({"expires_at": None, "data": None})
+
+    assert main_module.get_cabalango_weather() == {
+        "available": False,
+        "message": "Clima no disponible por el momento.",
+    }
+
+
+def test_destination_guide_uses_real_width_containment_not_master_clipping():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    guide_rules = re.findall(r"\.destination-guide\s*\{([^}]*)\}", css)
+
+    assert guide_rules
+    assert all("overflow: clip" not in rule for rule in guide_rules)
+    assert "grid-template-columns: repeat(6, minmax(0, 1fr))" in css
+    assert ".destination-nearby," in css
 
 
 def test_home_hides_empty_video_section(monkeypatch):
