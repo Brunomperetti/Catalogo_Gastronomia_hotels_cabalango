@@ -31,6 +31,15 @@
         <symbol id="icon-leaf" viewBox="0 0 24 24"><path d="M20 4C11 4 5 8 5 15c0 3 2 5 5 5 7 0 10-7 10-16Z"/><path d="M4 21c3-5 7-8 12-11"/></symbol>
         <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></symbol>
         <symbol id="icon-cloud" viewBox="0 0 24 24"><path d="M6 18h11a4 4 0 0 0 .5-8A6 6 0 0 0 6 11a3.5 3.5 0 0 0 0 7Z"/></symbol>
+        <symbol id="icon-cloud-sun" viewBox="0 0 24 24"><path d="M8.5 8.5a4 4 0 0 1 7.5 1.9M12 3V1.5M18.4 5.6l1-1M18.5 11H21"/><path d="M5.5 20h11a4 4 0 0 0 .5-8 6 6 0 0 0-11.5 1A3.5 3.5 0 0 0 5.5 20Z"/></symbol>
+        <symbol id="icon-rain" viewBox="0 0 24 24"><path d="M6 15h11a4 4 0 0 0 .5-8A6 6 0 0 0 6 8a3.5 3.5 0 0 0 0 7Z"/><path d="m8 18-1 2M13 18l-1 2M18 18l-1 2"/></symbol>
+        <symbol id="icon-thermometer" viewBox="0 0 24 24"><path d="M10 14.8V5a2 2 0 0 1 4 0v9.8a4 4 0 1 1-4 0Z"/><path d="M12 17V8"/></symbol>
+        <symbol id="icon-wind" viewBox="0 0 24 24"><path d="M3 8h11.5a2.5 2.5 0 1 0-2.3-3.5M3 12h16a2 2 0 1 1-1.8 3M3 16h8"/></symbol>
+        <symbol id="icon-drop" viewBox="0 0 24 24"><path d="M12 3S6.5 9.3 6.5 14a5.5 5.5 0 0 0 11 0C17.5 9.3 12 3 12 3Z"/></symbol>
+        <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></symbol>
+        <symbol id="icon-sprout" viewBox="0 0 24 24"><path d="M12 21v-9M12 13c-5 0-7-3-7-7 4 0 7 2 7 7ZM12 16c5 0 7-3 7-7-4 0-7 2-7 7Z"/></symbol>
+        <symbol id="icon-autumn-leaf" viewBox="0 0 24 24"><path d="M19.5 4.5C12 5 6 8.5 6 14.5a4 4 0 0 0 4 4c6 0 9-6.5 9.5-14Z"/><path d="M4 21c3-4.5 7-7.5 12-10"/></symbol>
+        <symbol id="icon-snowflake" viewBox="0 0 24 24"><path d="M12 2v20M3.3 7l17.4 10M3.3 17l17.4-10M9 4l3 3 3-3M9 20l3-3 3 3M4.5 10.5l4.1-1.1-1.1-4.1M19.5 13.5l-4.1 1.1 1.1 4.1"/></symbol>
     </svg>
 
     <section class="destination-editorial-hero" aria-labelledby="destination-title">
@@ -116,28 +125,31 @@
                 {% if hero_photo and hero_photo.image_path %}<img src="{{ hero_photo.image_path }}" alt="Río y naturaleza en Cabalango" loading="lazy">{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Naturaleza serrana"></div>{% endif %}
             </figure>
         </div>
-        <div class="destination-weather-card">
+        <section class="destination-weather-card" aria-labelledby="weather-title">
             <div class="weather-current">
-                <div><p class="portal-kicker">Clima en Cabalango</p><h3>Planificá tu visita</h3></div>
-                {% if weather.available %}<p class="weather-temp">{{ weather.temperature|round|int }}°<span>{{ weather.condition }}</span></p><p class="weather-advice">{{ weather.advice }}</p>{% else %}<p class="weather-advice">Clima no disponible por el momento</p>{% endif %}
+                <header class="weather-intro"><p class="portal-kicker">Clima en Cabalango</p><h3 id="weather-title">Planificá tu visita</h3>{% if weather.available %}<p class="weather-advice">{{ weather.advice }}</p>{% else %}<p class="weather-advice weather-unavailable">Clima no disponible por el momento.</p>{% endif %}</header>
+                {% if weather.available %}
+                {% set current_condition = weather.condition|default('', true)|lower %}
+                {% set current_icon = 'icon-rain' if 'lluv' in current_condition or 'torment' in current_condition else ('icon-sun' if 'despej' in current_condition or 'soleado' in current_condition else ('icon-cloud-sun' if 'parcial' in current_condition else 'icon-cloud')) %}
+                <div class="weather-current-main"><svg aria-hidden="true" focusable="false"><use href="#{{ current_icon }}"/></svg><div><p class="weather-temp">{{ weather.temperature|round|int }}°<span>{{ weather.condition }}</span></p><p class="weather-today-range">Hoy · {{ weather.min|round|int if weather.min is not none else '—' }}° / {{ weather.max|round|int if weather.max is not none else '—' }}°</p></div></div>
+                {% endif %}
             </div>
             {% if weather.available %}
             <div class="weather-summary" aria-label="Pronóstico resumido">
-                <div><span>Hoy</span><strong>{{ weather.min|round|int if weather.min is not none else '—' }}° / {{ weather.max|round|int if weather.max is not none else '—' }}°</strong></div>
-                <div><span>Sensación térmica</span><strong>{{ weather.apparent_temperature|round|int if weather.apparent_temperature is not none else '—' }}°</strong></div>
-                <div><span>Viento</span><strong>{{ weather.wind|round|int if weather.wind is not none else '—' }} km/h</strong></div>
-                <div><span>Lluvia</span><strong>{{ weather.rain_probability or 0 }}%</strong></div>
+                <div><svg aria-hidden="true" focusable="false"><use href="#icon-thermometer"/></svg><span>Sensación</span><strong>{{ weather.apparent_temperature|round|int if weather.apparent_temperature is not none else '—' }}°</strong></div>
+                <div><svg aria-hidden="true" focusable="false"><use href="#icon-drop"/></svg><span>Lluvia</span><strong>{{ weather.rain_probability or 0 }}%</strong></div>
+                <div><svg aria-hidden="true" focusable="false"><use href="#icon-wind"/></svg><span>Viento</span><strong>{{ weather.wind|round|int if weather.wind is not none else '—' }} km/h</strong></div>
             </div>
             <div class="weather-forecast" aria-label="Pronóstico extendido">
-                <strong>Próximos días · pronóstico extendido</strong>
-                <div class="weather-days">{% for day in weather.forecast %}<div class="weather-day"><span>{{ day.label }}</span><strong>{{ day.min|round|int if day.min is not none else '—' }}° / {{ day.max|round|int if day.max is not none else '—' }}°</strong><small>{{ day.condition }} · Lluvia {{ day.rain_probability or 0 }}%</small></div>{% endfor %}</div>
+                <div class="weather-section-heading"><svg aria-hidden="true" focusable="false"><use href="#icon-calendar"/></svg><strong>Próximos días</strong><span>Pronóstico extendido</span></div>
+                <div class="weather-days">{% for day in weather.forecast %}{% set day_condition = day.condition|default('', true)|lower %}{% set day_icon = 'icon-rain' if 'lluv' in day_condition or 'torment' in day_condition else ('icon-sun' if 'despej' in day_condition or 'soleado' in day_condition else ('icon-cloud-sun' if 'parcial' in day_condition else 'icon-cloud')) %}<article class="weather-day"><div class="weather-day-heading"><span>{{ day.label }}</span><svg aria-hidden="true" focusable="false"><use href="#{{ day_icon }}"/></svg></div><p class="weather-day-temperatures"><span>{{ day.min|round|int if day.min is not none else '—' }}°</span><i aria-hidden="true">/</i><strong>{{ day.max|round|int if day.max is not none else '—' }}°</strong></p><small class="weather-day-condition">{{ day.condition }}</small><small class="weather-day-rain"><svg aria-hidden="true" focusable="false"><use href="#icon-drop"/></svg><span>Lluvia {{ day.rain_probability or 0 }}%</span></small></article>{% endfor %}</div>
             </div>
             {% endif %}
             <div class="season-grid" aria-label="Temperaturas estacionales orientativas">
-                <p><strong>Mejor época para visitar</strong> <span class="season-guidance">Rangos orientativos</span></p>
-                <div><span>Primavera</span><strong>12–26 °C</strong></div><div><span>Verano</span><strong>18–32 °C</strong></div><div><span>Otoño</span><strong>10–24 °C</strong></div><div><span>Invierno</span><strong>3–18 °C</strong></div>
+                <p><strong>Mejor época para visitar</strong><span class="season-guidance">Rangos orientativos</span></p>
+                <div><svg aria-hidden="true" focusable="false"><use href="#icon-sprout"/></svg><span>Primavera</span><strong>12–26 °C</strong></div><div><svg aria-hidden="true" focusable="false"><use href="#icon-sun"/></svg><span>Verano</span><strong>18–32 °C</strong></div><div><svg aria-hidden="true" focusable="false"><use href="#icon-autumn-leaf"/></svg><span>Otoño</span><strong>10–24 °C</strong></div><div><svg aria-hidden="true" focusable="false"><use href="#icon-snowflake"/></svg><span>Invierno</span><strong>3–18 °C</strong></div>
             </div>
-        </div>
+        </section>
     </section>
 
     <section id="fotos" class="destination-section destination-gallery-section">

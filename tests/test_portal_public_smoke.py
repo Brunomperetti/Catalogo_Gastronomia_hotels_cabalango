@@ -170,7 +170,7 @@ def test_destination_guide_uses_real_width_containment_not_master_clipping():
 
     assert guide_rules
     assert all("overflow: clip" not in rule for rule in guide_rules)
-    assert "grid-template-columns: repeat(6, minmax(0, 1fr))" in css
+    assert "grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))" in css
     assert ".destination-nearby," in css
 
 
