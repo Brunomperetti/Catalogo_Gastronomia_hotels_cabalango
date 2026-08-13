@@ -465,7 +465,7 @@ def intake_is_authorized(request: Request) -> bool:
     return bool(
         configured_secret and len(configured_secret) >= 32 and separator
         and scheme.lower() == "bearer" and token
-        and hmac.compare_digest(token, configured_secret)
+        and hmac.compare_digest(token.encode("utf-8"), configured_secret.encode("utf-8"))
     )
 
 
@@ -597,6 +597,9 @@ async def receive_google_form_media(external_id: str, request: Request, kind: st
             solicitud_id=solicitud.id, kind=kind, drive_file_id=drive_file_id).first()
         if existing:
             return {"status": "already_received", **intake_file_payload(existing)}
+        raise
+    except Exception:
+        db.rollback(); destination.unlink(missing_ok=True)
         raise
     return JSONResponse({"status": "received", **intake_file_payload(record)}, status_code=201)
 

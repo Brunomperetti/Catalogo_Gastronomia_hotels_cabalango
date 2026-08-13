@@ -1,7 +1,9 @@
+import asyncio
 import json
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.requests import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -90,6 +92,37 @@ def test_intake_rejects_short_configured_secret(intake_app, payload, monkeypatch
     assert response.json() == {"detail": "Unauthorized"}
 
 
+def test_intake_accepts_matching_unicode_secret_and_rejects_wrong_token(intake_app, payload, monkeypatch):
+    _, db = intake_app
+    unicode_secret = "secreto-válido-para-intake-año-123456789"
+    monkeypatch.setenv("FORM_INTAKE_SECRET", unicode_secret)
+
+    async def call_endpoint(token, body):
+        body_bytes = json.dumps(body).encode("utf-8")
+        sent = False
+
+        async def receive():
+            nonlocal sent
+            if sent:
+                return {"type": "http.disconnect"}
+            sent = True
+            return {"type": "http.request", "body": body_bytes, "more_body": False}
+
+        request = Request({
+            "type": "http", "method": "POST", "path": "/api/internal/intake/google-form",
+            "headers": [(b"authorization", f"Bearer {token}".encode("latin-1"))],
+        }, receive)
+        return await main.receive_google_form_intake(request, db)
+
+    response = asyncio.run(call_endpoint(unicode_secret, payload))
+    assert response.status_code == 201
+    assert json.loads(response.body)["status"] == "received"
+
+    wrong = asyncio.run(call_endpoint(unicode_secret + "x", dict(payload, external_id="unicode-wrong")))
+    assert wrong.status_code == 401
+    assert json.loads(wrong.body) == {"detail": "Unauthorized"}
+
+
 def test_valid_payload_is_pending_preserved_and_does_not_publish(intake_app, payload):
     client, db = intake_app
     response = post_intake(client, payload)
@@ -151,6 +184,26 @@ def test_media_is_idempotent_private_and_does_not_publish_or_change_state(intake
     assert db.query(Empresa).count() == db.query(ActividadAgenda).count() == 0
     assert db.get(SolicitudPrestador, item_id).status == "pendiente"
     assert client.get(f"/media/{record.relative_path}").status_code == 404
+
+
+def test_media_removes_physical_file_when_persistence_fails(intake_app, payload, monkeypatch):
+    client, db = intake_app
+    item_id = post_intake(client, payload).json()["id"]
+    original_commit = db.commit
+
+    def fail_commit():
+        raise RuntimeError("forced persistence failure")
+
+    monkeypatch.setattr(db, "commit", fail_commit)
+    with pytest.raises(RuntimeError, match="forced persistence failure"):
+        post_media(client, payload["external_id"], "cover", "orphan-test")
+    monkeypatch.setattr(db, "commit", original_commit)
+
+    assert list((main.INTAKE_MEDIA_DIR / str(item_id)).rglob("*.*")) == []
+    assert db.query(SolicitudPrestadorArchivo).count() == 0
+    assert db.get(SolicitudPrestador, item_id).status == "pendiente"
+    assert db.query(Empresa).count() == 0
+    assert db.query(ActividadAgenda).count() == 0
 
 
 def test_media_limits_types_and_size(intake_app, payload):
