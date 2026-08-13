@@ -86,3 +86,52 @@ Importar no cambia el estado de la solicitud ni crea `Empresa` o
 será una etapa posterior. El rechazo no borra staging en esta etapa: una política
 futura deberá definir retención, auditoría y una limpieza segura y transaccional
 antes de habilitar cualquier borrado automático.
+
+## Conversión administrativa
+
+La tercera etapa conserva la separación entre ingreso no confiable y contenido
+público:
+
+```text
+Google Form → Solicitud → Media staging → Revisión
+→ Aprobar y crear borrador → Empresa/ActividadAgenda inactiva
+→ revisión manual → publicación manual
+```
+
+La conversión sólo se ejecuta mediante una acción `POST` autenticada como
+administrador. Exige nombre, un rubro conocido, autorización de publicación y
+confirmación de datos explícitamente afirmativas. El mapping central es:
+
+- Alojamiento y Camping → `Empresa` de alojamiento (Camping conserva el subtipo).
+- Gastronomía → `Empresa` de gastronomía.
+- Almacén/kiosco/proveeduría y regionales/artesanías → `Empresa` de servicios,
+  grupo real `compras`; sólo se acepta un subtipo existente en la taxonomía.
+- Estacionamiento, Transporte/remis, Salud y bienestar y Otro servicio →
+  `Empresa` de servicios en los grupos reales `estacionamiento`, `transporte`,
+  `salud` y `otros`, respectivamente.
+- Actividad turística/recreativa y Evento → `ActividadAgenda` con tipo
+  `actividad` y `evento`, respectivamente.
+
+Toda `Empresa` se crea con `activo=false` y `destacado=false`; toda actividad se
+crea con `publicado=false` y `destacado=false`. Nunca se busca, actualiza o fusiona
+un destino por nombre. Los slugs transliteran Unicode y resuelven colisiones con
+`-2`, `-3`, etc. Una coincidencia exacta de nombre sólo produce una advertencia
+para el administrador.
+
+`SolicitudPrestador` conserva `converted_entity_type`, `converted_entity_id` y
+`processed_at`. Estas columnas se agregan de manera aditiva e idempotente en
+SQLite. Un reintento usa esa referencia persistente y redirige al mismo editor, sin
+crear otra entidad ni volver a copiar archivos.
+
+Logo, portada y galería se **copian** desde staging a las carpetas existentes
+`empresas/<slug>/logo`, `banner` y `galeria`. La portada de una actividad se copia
+a `actividades/<slug>` (o, si falta, la primera imagen de galería). El video y la
+media sin campo compatible permanecen privados para revisión manual. Staging no
+se mueve ni se borra; una política de retención y limpieza queda expresamente para
+un trabajo futuro.
+
+La entidad, sus URLs y la trazabilidad se persisten en una sola transacción de
+base de datos. Si falla la copia o el commit se hace rollback y se eliminan sólo
+los archivos definitivos creados por ese intento; staging permanece intacto. La
+limpieza nunca utiliza paths enviados por el navegador: resuelve las relaciones de
+base de datos y comprueba que origen y destino estén confinados a `STORAGE_DIR`.

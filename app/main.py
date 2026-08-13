@@ -353,9 +353,22 @@ def ensure_actividad_agenda_table():
 
 
 def ensure_solicitud_prestador_table():
-    """Create only the independent intake table; never touches published data."""
+    """Create or add intake-only columns without rebuilding existing SQLite data."""
     if "solicitudes_prestadores" not in set(inspect(engine).get_table_names()):
         Base.metadata.create_all(bind=engine, tables=[models.SolicitudPrestador.__table__])
+    else:
+        columns = {column["name"] for column in inspect(engine).get_columns("solicitudes_prestadores")}
+        with engine.begin() as conn:
+            for name, sql_type in {
+                "converted_entity_type": "VARCHAR(30)",
+                "converted_entity_id": "INTEGER",
+                "processed_at": "TIMESTAMP",
+            }.items():
+                if name not in columns:
+                    conn.execute(text(f"ALTER TABLE solicitudes_prestadores ADD COLUMN {name} {sql_type}"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_solicitudes_prestadores_converted_entity_type ON solicitudes_prestadores(converted_entity_type)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_solicitudes_prestadores_converted_entity_id ON solicitudes_prestadores(converted_entity_id)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_solicitudes_prestadores_processed_at ON solicitudes_prestadores(processed_at)"))
     Base.metadata.create_all(bind=engine, tables=[models.SolicitudPrestadorArchivo.__table__])
 
 # ---------------------------------------------------
@@ -2740,11 +2753,11 @@ async def save_agenda_image(upload: UploadFile, slug: str):
 
 
 @app.get("/admin/actividades", response_class=HTMLResponse)
-def admin_activities(request: Request, edit: int | None = None, error: str = "", db: Session = Depends(get_db)):
+def admin_activities(request: Request, edit: int | None = None, error: str = "", msg: str = "", db: Session = Depends(get_db)):
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     items = db.query(models.ActividadAgenda).order_by(models.ActividadAgenda.fecha_inicio.desc(), models.ActividadAgenda.titulo).all()
-    return templates.TemplateResponse("admin_actividades.html", {"request": request, "items": items, "editing": db.get(models.ActividadAgenda, edit) if edit else None, "categories": CATEGORIES, "moments": MOMENTS, "types": TYPES, "status": derived_status, "error": error})
+    return templates.TemplateResponse("admin_actividades.html", {"request": request, "items": items, "editing": db.get(models.ActividadAgenda, edit) if edit else None, "categories": CATEGORIES, "moments": MOMENTS, "types": TYPES, "status": derived_status, "error": error, "msg": msg})
 
 
 @app.post("/admin/actividades/guardar")
@@ -2810,6 +2823,214 @@ def parse_intake_json(value: str | None, fallback):
         return fallback
 
 
+# This is deliberately the single authority for turning an untrusted form rubric
+# into an editable content type.  Values are the existing provider taxonomy keys.
+INTAKE_CONVERSION_MAP = {
+    "Alojamiento": {"entity": "empresa", "theme": "alojamiento"},
+    "Gastronomía": {"entity": "empresa", "theme": "gastronomia"},
+    "Almacén / kiosco / proveeduría": {"entity": "empresa", "theme": "servicios", "subgrupo": "compras"},
+    "Productos regionales / artesanías": {"entity": "empresa", "theme": "servicios", "subgrupo": "compras", "subtipo": "Productos regionales"},
+    "Camping": {"entity": "empresa", "theme": "alojamiento", "subtipo": "Camping"},
+    "Estacionamiento": {"entity": "empresa", "theme": "servicios", "subgrupo": "estacionamiento", "subtipo": "Estacionamiento"},
+    "Transporte / remis": {"entity": "empresa", "theme": "servicios", "subgrupo": "transporte", "subtipo": "Remis"},
+    "Salud y bienestar": {"entity": "empresa", "theme": "servicios", "subgrupo": "salud"},
+    "Otro servicio": {"entity": "empresa", "theme": "servicios", "subgrupo": "otros"},
+    "Actividad turística / recreativa": {"entity": "actividad_agenda", "tipo": "actividad"},
+    "Evento": {"entity": "actividad_agenda", "tipo": "evento"},
+}
+
+
+def intake_key(value: Any) -> str:
+    normalized = "".join(char for char in unicodedata.normalize("NFKD", clean_text(value, default="").lower())
+                         if not unicodedata.combining(char))
+    return re.sub(r"[^a-z0-9]+", " ", normalized).strip()
+
+
+def get_intake_specific_value(payload: dict, *names: str):
+    wanted = {intake_key(name) for name in names}
+    containers = [payload.get("specific_data"), payload.get("raw"), payload]
+    for container in containers:
+        if not isinstance(container, dict):
+            continue
+        for key, value in container.items():
+            if intake_key(key) in wanted:
+                return value
+    return None
+
+
+def intake_yes(value: Any) -> bool:
+    return intake_key(value) in {"si", "si autorizo", "si confirmo"}
+
+
+def intake_bool(payload: dict, *names: str) -> bool | None:
+    value = get_intake_specific_value(payload, *names)
+    if value is None or intake_key(value) not in {"si", "si autorizo", "si confirmo", "no"}:
+        return None
+    return intake_yes(value)
+
+
+def intake_safe_datetime(value: Any) -> datetime | None:
+    text_value = clean_text(value, default="")
+    if not text_value:
+        return None
+    normalized = text_value.replace("Z", "+00:00")
+    for parser in (
+        lambda: datetime.fromisoformat(normalized),
+        lambda: datetime.strptime(text_value, "%d/%m/%Y %H:%M"),
+        lambda: datetime.strptime(text_value, "%d/%m/%Y"),
+    ):
+        try:
+            return parser()
+        except (ValueError, TypeError):
+            pass
+    return None
+
+
+def intake_slug_base(value: str, fallback: str) -> str:
+    normalized = "".join(char for char in unicodedata.normalize("NFKD", clean_text(value, default="").lower())
+                         if not unicodedata.combining(char))
+    return re.sub(r"[^a-z0-9]+", "-", normalized).strip("-") or fallback
+
+
+def generate_unique_intake_slug(db: Session, model, value: str, fallback: str) -> str:
+    base = intake_slug_base(value, fallback)
+    candidate, suffix = base, 2
+    while db.query(model).filter(model.slug == candidate).first():
+        candidate, suffix = f"{base}-{suffix}", suffix + 1
+    return candidate
+
+
+def _known_service_subtype(payload: dict) -> str | None:
+    proposed = get_intake_specific_value(payload, "Tipo de comercio", "Tipo de servicio")
+    known = SERVICIOS_SUBTIPOS.get(normalize_taxonomy_key(proposed))
+    return known[1] if known else None
+
+
+def build_empresa_from_intake(item: models.SolicitudPrestador, payload: dict, db: Session) -> models.Empresa:
+    mapping = INTAKE_CONVERSION_MAP[item.business_type]
+    subtype = mapping.get("subtipo") or _known_service_subtype(payload)
+    group = mapping.get("subgrupo")
+    if mapping["theme"] == "servicios" and subtype:
+        group = service_group_for_subtype(subtype) or group
+    digits = re.sub(r"\D+", "", clean_text(item.public_whatsapp, default="")) or None
+    empresa = models.Empresa(
+        nombre=item.business_name.strip(),
+        slug=generate_unique_intake_slug(db, models.Empresa, item.business_name, "prestador"),
+        theme=mapping["theme"], subgrupo=group, subtipo=subtype,
+        whatsapp=digits, telefono=clean_text(item.phone, default="") or None,
+        instagram=clean_text(item.instagram, default="") or None,
+        facebook=normalize_external_url(item.facebook), web_url=normalize_external_url(item.website),
+        direccion=clean_text(item.address, default="") or None, maps_url=normalize_external_url(item.maps_url),
+        descripcion=clean_text(item.description, default="") or None,
+        horarios=clean_text(item.opening_hours, default="") or None,
+        activo=False, destacado=False,
+    )
+    direct_values = {
+        "capacidad": ("Capacidad",), "habitaciones": ("Habitaciones",),
+        "banos": ("Baños", "Banos"), "precio_desde": ("Precio desde", "Tarifa desde", "Precio/tarifa desde"),
+    }
+    for field, names in direct_values.items():
+        value = get_intake_specific_value(payload, *names)
+        if value is not None and clean_text(value, default=""):
+            setattr(empresa, field, clean_text(value, default=""))
+    boolean_values = {
+        "pileta": ("Pileta",), "mascotas": ("Mascotas",), "wifi": ("Wi-Fi", "Wifi"),
+        "cochera": ("Estacionamiento/cochera", "Cochera", "Estacionamiento"), "parrilla": ("Parrilla",),
+        "aire_acondicionado": ("Aire acondicionado",), "calefaccion": ("Calefacción", "Calefaccion"),
+        "delivery": ("¿Hacen delivery?", "¿Tienen delivery?", "Delivery"),
+        "take_away": ("¿Retiro / take away?", "Take away", "Retiro"),
+        "comer_en_lugar": ("¿Se puede comer en el lugar?", "Comer en el lugar"),
+        # Only the explicit river-front question maps to the project's `rio` amenity.
+        "rio": ("Frente al río", "Frente al rio"),
+    }
+    for field, names in boolean_values.items():
+        value = intake_bool(payload, *names)
+        if value is not None:
+            setattr(empresa, field, value)
+    return empresa
+
+
+def build_actividad_from_intake(item: models.SolicitudPrestador, payload: dict, db: Session) -> models.ActividadAgenda:
+    category_value = get_intake_specific_value(payload, "Categoría", "Categoria")
+    category_key = intake_key(category_value).replace(" ", "_")
+    categoria = category_key if category_key in CATEGORIES else "otros"
+    lugar = get_intake_specific_value(payload, "Lugar", "Punto de encuentro")
+    horarios = get_intake_specific_value(payload, "Horarios") or item.opening_hours
+    return models.ActividadAgenda(
+        tipo=INTAKE_CONVERSION_MAP[item.business_type]["tipo"], titulo=item.business_name.strip(),
+        slug=generate_unique_intake_slug(db, models.ActividadAgenda, item.business_name, "actividad"),
+        descripcion=clean_text(item.description, default="") or None, categoria=categoria, momento="todo_el_dia",
+        fecha_inicio=intake_safe_datetime(get_intake_specific_value(payload, "Fecha inicio", "Fecha de inicio", "fecha_inicio")),
+        fecha_fin=intake_safe_datetime(get_intake_specific_value(payload, "Fecha fin", "Fecha de fin", "fecha_fin")),
+        lugar=clean_text(lugar, default="") or None, direccion=clean_text(item.address, default="") or None,
+        maps_url=normalize_external_url(item.maps_url), whatsapp=re.sub(r"\D+", "", clean_text(item.public_whatsapp, default="")) or None,
+        instagram=clean_text(item.instagram, default="") or None, url_externa=normalize_external_url(item.website),
+        horarios=clean_text(horarios, default="") or None, publicado=False, destacado=False,
+        created_at=utc_now(), updated_at=utc_now(),
+    )
+
+
+def converted_admin_url(item: models.SolicitudPrestador, db: Session, message: str = "") -> str | None:
+    if not item.converted_entity_type or not item.converted_entity_id:
+        return None
+    if item.converted_entity_type == "empresa":
+        target = db.get(models.Empresa, item.converted_entity_id)
+        if target:
+            params = {"area": "prestador", "empresa": target.slug, "tab": "ficha"}
+            if message: params["msg"] = message
+            return f"/admin?{urlencode(params)}"
+    if item.converted_entity_type == "actividad_agenda" and db.get(models.ActividadAgenda, item.converted_entity_id):
+        params = {"edit": item.converted_entity_id}
+        if message: params["msg"] = message
+        return f"/admin/actividades?{urlencode(params)}"
+    return None
+
+
+def promote_intake_media(item: models.SolicitudPrestador, target, entity_type: str) -> list[Path]:
+    """Copy DB-owned staging files, returning only paths created by this attempt."""
+    created: list[Path] = []
+    staging_root, storage_root = INTAKE_MEDIA_DIR.resolve(), STORAGE_DIR.resolve()
+    try:
+        for record in sorted(item.archivos, key=lambda row: row.id):
+            if record.kind == "video" or (entity_type == "actividad_agenda" and record.kind not in {"cover", "gallery"}):
+                continue
+            if entity_type == "actividad_agenda" and target.imagen_url:
+                continue
+            source = (STORAGE_DIR / record.relative_path).resolve()
+            if staging_root not in source.parents or not source.is_file():
+                continue
+            extension = Path(record.stored_name).suffix.lower()
+            if extension not in ALLOWED_IMAGE_EXTENSIONS:
+                continue
+            if entity_type == "empresa":
+                media_type = {"cover": "banner", "logo": "logo", "gallery": "galeria"}.get(record.kind)
+                if not media_type: continue
+                destination_dir = (STORAGE_DIR / "empresas" / target.slug / media_type).resolve()
+                filename = f"{'foto' if media_type == 'galeria' else media_type}-{uuid.uuid4().hex}{extension}"
+                destination = destination_dir / filename
+            else:
+                destination_dir = (STORAGE_DIR / "actividades" / target.slug).resolve()
+                destination = destination_dir / f"principal-{uuid.uuid4().hex}{extension}"
+            if storage_root not in destination.resolve().parents:
+                raise ValueError("Ruta de media fuera del almacenamiento")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+            created.append(destination)
+            if entity_type == "empresa":
+                url = build_media_url(target.slug, media_type, destination.name)
+                if media_type == "logo": target.logo_url = url
+                elif media_type == "banner": target.banner_url = url
+                else:
+                    gallery = get_empresa_gallery_urls(target)
+                    gallery.append(url); target.galeria_urls = json.dumps(gallery[:7], ensure_ascii=False)
+            else:
+                target.imagen_url = f"{MEDIA_URL_PREFIX}/actividades/{target.slug}/{destination.name}"
+        return created
+    except Exception:
+        for path in reversed(created): path.unlink(missing_ok=True)
+        raise
+
+
 @app.get("/admin/solicitudes", response_class=HTMLResponse)
 def admin_intake_list(request: Request, status: str = "", business_type: str = "", db: Session = Depends(get_db)):
     auth = require_admin(request, db)
@@ -2839,6 +3060,11 @@ def admin_intake_detail(solicitud_id: int, request: Request, db: Session = Depen
     if not item:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     payload = parse_intake_json(item.raw_payload, {})
+    duplicate_empresa = None
+    if item.business_name:
+        duplicate_empresa = db.query(models.Empresa).filter(
+            func.lower(func.trim(models.Empresa.nombre)) == item.business_name.strip().lower()
+        ).first()
     stored_by_key = {(stored.kind, stored.drive_file_id): stored for stored in item.archivos}
     file_groups = {}
     metadata_groups = payload.get("files", {}) if isinstance(payload, dict) else {}
@@ -2858,7 +3084,76 @@ def admin_intake_detail(solicitud_id: int, request: Request, db: Session = Depen
         "specific_data": payload.get("specific_data", {}) if isinstance(payload, dict) else {},
         "files": metadata_groups, "file_groups": file_groups,
         "formatted_payload": json.dumps(payload, ensure_ascii=False, indent=2),
+        "duplicate_empresa": duplicate_empresa,
+        "converted_url": converted_admin_url(item, db),
+        "error": request.query_params.get("error", ""),
     })
+
+
+@app.post("/admin/solicitudes/{solicitud_id}/convertir")
+def admin_intake_convert(solicitud_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    item = db.get(models.SolicitudPrestador, solicitud_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    existing_url = converted_admin_url(item, db, "Esta solicitud ya fue procesada.")
+    if item.converted_entity_type or item.converted_entity_id or item.processed_at:
+        if existing_url:
+            return RedirectResponse(existing_url, status_code=303)
+        return RedirectResponse(f"/admin/solicitudes/{item.id}?error={quote('La solicitud tiene una conversión previa inconsistente; revisá la base antes de reintentar.')}", 303)
+    if item.status == "rechazada":
+        return RedirectResponse(f"/admin/solicitudes/{item.id}?error={quote('Una solicitud rechazada no puede convertirse.')}", 303)
+    if item.status == "procesada":
+        return RedirectResponse(f"/admin/solicitudes/{item.id}?error={quote('Esta solicitud ya fue procesada.')}", 303)
+    payload = parse_intake_json(item.raw_payload, {})
+    error = None
+    if not clean_text(item.business_name, default=""):
+        error = "El nombre o título es obligatorio para crear el borrador."
+    elif item.business_type not in INTAKE_CONVERSION_MAP:
+        error = "El rubro no tiene un destino de conversión válido."
+    elif not intake_yes(get_intake_specific_value(
+        payload, "autorización_publicacion", "autorizacion_publicacion", "Autorización de publicación", "¿Autoriza la publicación?"
+    )):
+        error = "Falta una autorización de publicación explícitamente afirmativa."
+    elif not intake_yes(get_intake_specific_value(
+        payload, "confirmacion_datos", "confirmación_datos", "Confirmación de datos", "¿Confirma que los datos son correctos?"
+    )):
+        error = "Falta una confirmación de datos explícitamente afirmativa."
+    if error:
+        return RedirectResponse(f"/admin/solicitudes/{item.id}?error={quote(error)}", 303)
+
+    entity_type = INTAKE_CONVERSION_MAP[item.business_type]["entity"]
+    target = (build_empresa_from_intake(item, payload, db) if entity_type == "empresa"
+              else build_actividad_from_intake(item, payload, db))
+    created_files: list[Path] = []
+    try:
+        # `aprobada` and the destination are deliberately committed together;
+        # observers can never see approval without a completed destination.
+        item.status = "aprobada"
+        db.add(target)
+        db.flush()
+        created_files = promote_intake_media(item, target, entity_type)
+        db.flush()
+        item.converted_entity_type = entity_type
+        item.converted_entity_id = target.id
+        item.processed_at = utc_now()
+        item.status = "procesada"
+        item.updated_at = utc_now()
+        db.commit()
+    except Exception:
+        db.rollback()
+        for path in reversed(created_files):
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+        return RedirectResponse(
+            f"/admin/solicitudes/{item.id}?error={quote('No se pudo crear el borrador. La solicitud y el staging se conservaron para reintentar.')}", 303
+        )
+    destination = converted_admin_url(item, db, "Borrador creado desde la solicitud. Revisalo antes de activarlo.")
+    return RedirectResponse(destination or f"/admin/solicitudes/{item.id}", status_code=303)
 
 
 @app.get("/admin/solicitudes/{solicitud_id}/archivo/{archivo_id}")

@@ -242,3 +242,136 @@ def test_specific_data_unicode_is_human_readable(intake_app, payload):
     client.post("/login", data={"username": "intake-admin", "password": "secret", "next": f"/admin/solicitudes/{item_id}"}, follow_redirects=False)
     html = client.get(f"/admin/solicitudes/{item_id}").text
     assert "¿Tienen delivery?" in html and "Sí" in html and "Pendiente de importar" in html
+
+
+def authorized_payload(payload, **changes):
+    body = json.loads(json.dumps(payload))
+    body["specific_data"].update({
+        "autorización_publicacion": "Sí, autorizo",
+        "confirmacion_datos": "Sí, confirmo",
+    })
+    body.update(changes)
+    return body
+
+
+def login_admin(client):
+    client.post("/login", data={"username": "intake-admin", "password": "secret", "next": "/admin/solicitudes"})
+
+
+def test_conversion_requires_admin_and_missing_is_404(intake_app, payload):
+    client, _ = intake_app
+    item_id = post_intake(client, authorized_payload(payload)).json()["id"]
+    assert client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False).status_code in {302, 303, 307}
+    login_admin(client)
+    assert client.post("/admin/solicitudes/9999/convertir").status_code == 404
+
+
+@pytest.mark.parametrize("field,message", [
+    ("autorización_publicacion", "autorización"),
+    ("confirmacion_datos", "confirmación"),
+])
+def test_conversion_requires_explicit_consent(intake_app, payload, field, message):
+    client, db = intake_app
+    body = authorized_payload(payload)
+    body["specific_data"].pop(field)
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+    response = client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=True)
+    assert message in response.text
+    assert db.query(Empresa).count() == 0
+    assert db.get(SolicitudPrestador, item_id).status == "pendiente"
+
+
+def test_rejected_and_empty_name_do_not_convert(intake_app, payload):
+    client, db = intake_app
+    body = authorized_payload(payload, business_name="")
+    empty_id = post_intake(client, body).json()["id"]
+    rejected_body = authorized_payload(payload, external_id="rejected")
+    rejected_id = post_intake(client, rejected_body).json()["id"]
+    db.get(SolicitudPrestador, rejected_id).status = "rechazada"; db.commit()
+    login_admin(client)
+    assert "obligatorio" in client.post(f"/admin/solicitudes/{empty_id}/convertir", follow_redirects=True).text
+    assert "rechazada" in client.post(f"/admin/solicitudes/{rejected_id}/convertir", follow_redirects=True).text
+    assert db.query(Empresa).count() == 0
+
+
+@pytest.mark.parametrize("business_type,theme,group,subtype", [
+    ("Gastronomía", "gastronomia", None, None),
+    ("Alojamiento", "alojamiento", None, None),
+    ("Almacén / kiosco / proveeduría", "servicios", "compras", "Kiosco"),
+    ("Productos regionales / artesanías", "servicios", "compras", "Productos regionales"),
+    ("Camping", "alojamiento", None, "Camping"),
+    ("Transporte / remis", "servicios", "transporte", "Remis"),
+    ("Estacionamiento", "servicios", "estacionamiento", "Estacionamiento"),
+    ("Salud y bienestar", "servicios", "salud", "Farmacia"),
+    ("Otro servicio", "servicios", "otros", None),
+])
+def test_empresa_rubric_mapping_is_draft(intake_app, payload, business_type, theme, group, subtype):
+    client, db = intake_app
+    body = authorized_payload(payload, external_id=f"type-{intake_key_for_test(business_type)}", business_type=business_type)
+    if business_type.startswith("Almacén"):
+        body["specific_data"]["Tipo de comercio"] = "Kiosco"
+    if business_type == "Salud y bienestar":
+        body["specific_data"]["Tipo de servicio"] = "Farmacia"
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+    response = client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+    assert response.status_code == 303
+    company = db.query(Empresa).one()
+    assert (company.theme, company.subgrupo, company.subtipo) == (theme, group, subtype)
+    assert company.activo is False and company.destacado is False
+    request = db.get(SolicitudPrestador, item_id)
+    assert request.status == "procesada" and request.converted_entity_type == "empresa"
+    assert request.converted_entity_id == company.id and request.processed_at is not None
+
+
+def intake_key_for_test(value):
+    return "".join(character if character.isalnum() else "-" for character in value.lower())
+
+
+@pytest.mark.parametrize("business_type,expected", [
+    ("Actividad turística / recreativa", "actividad"), ("Evento", "evento")
+])
+def test_agenda_conversion_is_unpublished(intake_app, payload, business_type, expected):
+    client, db = intake_app
+    body = authorized_payload(payload, external_id=f"agenda-{expected}", business_type=business_type)
+    body["specific_data"].update({"Categoría": "Naturaleza", "Fecha inicio": "fecha inválida", "Punto de encuentro": "Puente"})
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+    assert client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False).status_code == 303
+    activity = db.query(ActividadAgenda).one()
+    assert activity.tipo == expected and activity.categoria == "naturaleza"
+    assert activity.publicado is False and activity.destacado is False and activity.fecha_inicio is None
+    assert activity.lugar == "Puente"
+
+
+def test_slug_collision_and_double_post_are_idempotent(intake_app, payload):
+    client, db = intake_app
+    db.add(Empresa(nombre="Existente", slug="posada-del-rio", activo=True)); db.commit()
+    item_id = post_intake(client, authorized_payload(payload)).json()["id"]
+    login_admin(client)
+    first = client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+    second = client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+    assert first.status_code == second.status_code == 303
+    assert db.query(Empresa).count() == 2
+    created = db.query(Empresa).filter(Empresa.nombre == payload["business_name"]).one()
+    assert created.slug == "posada-del-rio-2"
+    assert str(created.id) in second.headers["location"] or created.slug in second.headers["location"]
+
+
+def test_conversion_copies_media_keeps_staging_and_maps_fields(intake_app, payload):
+    client, db = intake_app
+    body = authorized_payload(payload, business_type="Gastronomía")
+    body["specific_data"].update({"¿Hacen delivery?": "Sí", "¿Retiro / take away?": "No", "¿Se puede comer en el lugar?": "Sí"})
+    item_id = post_intake(client, body).json()["id"]
+    for kind, drive_id in [("logo", "l"), ("cover", "c"), ("gallery", "g1"), ("gallery", "g2")]:
+        assert post_media(client, body["external_id"], kind, drive_id).status_code == 201
+    staging = [main.STORAGE_DIR / row.relative_path for row in db.query(SolicitudPrestadorArchivo).all()]
+    login_admin(client)
+    client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+    company = db.query(Empresa).one()
+    assert company.delivery is True and company.take_away is False and company.comer_en_lugar is True
+    assert company.logo_url and company.banner_url and len(main.get_empresa_gallery_urls(company)) == 2
+    urls = [company.logo_url, company.banner_url, *main.get_empresa_gallery_urls(company)]
+    assert all((main.STORAGE_DIR / url.removeprefix("/media/")).is_file() for url in urls)
+    assert all(path.is_file() for path in staging)
