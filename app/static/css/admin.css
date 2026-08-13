@@ -950,3 +950,20 @@
   .admin-hero-side .hero-logo-fallback { height: 64px; width: 64px; }
   .hero-actions--compact { align-items: stretch; flex-direction: column; }
 }
+/* Private Google Forms intake previews. */
+.intake-specific-list { display: grid; gap: 10px; margin: 0 0 18px; }
+.intake-specific-list div { border-bottom: 1px solid var(--admin-border); padding-bottom: 10px; }
+.intake-specific-list dt { font-weight: 850; }
+.intake-specific-list dd { margin: 4px 0 0; }
+.intake-file-group { margin-top: 20px; }
+.intake-file-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.intake-file-card { display: grid; gap: 8px; min-width: 0; }
+.intake-file-card img, .intake-file-card video, .intake-file-pending { background: #f4f1eb; border: 1px solid var(--admin-border); border-radius: 14px; height: 150px; object-fit: cover; width: 100%; }
+.intake-file-grid--logo .intake-file-card img { object-fit: contain; }
+.intake-file-grid--cover .intake-file-card img { height: 230px; }
+.intake-file-card video { height: auto; max-height: 300px; }
+.intake-file-pending { align-items: center; color: var(--admin-text); display: flex; justify-content: center; }
+.intake-file-card small { overflow-wrap: anywhere; }
+.intake-status { font-size: .82rem; }
+.intake-status.imported { color: #23623b; }
+.intake-status.pending { color: #8a5a12; }

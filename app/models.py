@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Text, CheckConstraint
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Text, CheckConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from .database import Base
@@ -278,3 +278,25 @@ class SolicitudPrestador(Base):
     review_notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    archivos = relationship("SolicitudPrestadorArchivo", back_populates="solicitud", cascade="all, delete-orphan")
+
+
+class SolicitudPrestadorArchivo(Base):
+    """Private, provisional media received for an intake request."""
+    __tablename__ = "solicitudes_prestadores_archivos"
+    __table_args__ = (
+        UniqueConstraint("solicitud_id", "kind", "drive_file_id", name="uq_intake_file_external_kind"),
+        CheckConstraint("kind IN ('logo','cover','gallery','video')", name="ck_intake_file_kind"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    solicitud_id = Column(Integer, ForeignKey("solicitudes_prestadores.id"), nullable=False, index=True)
+    kind = Column(String(20), nullable=False, index=True)
+    drive_file_id = Column(String(255), nullable=False)
+    original_name = Column(String(500), nullable=False)
+    stored_name = Column(String(500), nullable=False)
+    mime_type = Column(String(100), nullable=False)
+    size = Column(Integer, nullable=False)
+    relative_path = Column(String(1000), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    solicitud = relationship("SolicitudPrestador", back_populates="archivos")

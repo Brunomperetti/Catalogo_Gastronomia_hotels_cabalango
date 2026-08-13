@@ -1,20 +1,22 @@
+import asyncio
 import json
 
 import pytest
 from fastapi.testclient import TestClient
+from starlette.requests import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app import main
 from app.database import Base
-from app.models import ActividadAgenda, Empresa, SolicitudPrestador, Usuario
+from app.models import ActividadAgenda, Empresa, SolicitudPrestador, SolicitudPrestadorArchivo, Usuario
 
 VALID_INTAKE_SECRET = "test-only-secret-with-32-characters"
 
 
 @pytest.fixture()
-def intake_app(monkeypatch):
+def intake_app(monkeypatch, tmp_path):
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine)
@@ -22,6 +24,8 @@ def intake_app(monkeypatch):
     db.add(Usuario(username="intake-admin", password_hash=main.hash_password("secret"), rol="admin", activo=True))
     db.commit()
     monkeypatch.setenv("FORM_INTAKE_SECRET", VALID_INTAKE_SECRET)
+    monkeypatch.setattr(main, "STORAGE_DIR", tmp_path)
+    monkeypatch.setattr(main, "INTAKE_MEDIA_DIR", tmp_path / "intake")
 
     def override_db():
         yield db
@@ -56,6 +60,21 @@ def post_intake(client, payload, token=VALID_INTAKE_SECRET):
     return client.post("/api/internal/intake/google-form", json=payload, headers={"Authorization": f"Bearer {token}"})
 
 
+def png_file(name="photo.png"):
+    from io import BytesIO
+    from PIL import Image
+    output = BytesIO()
+    Image.new("RGB", (8, 8), "red").save(output, "PNG")
+    return name, output.getvalue(), "application/octet-stream"
+
+
+def post_media(client, external_id, kind, drive_id, upload=None, token=VALID_INTAKE_SECRET):
+    upload = upload or png_file()
+    headers = {"Authorization": f"Bearer {token}"} if token is not None else {}
+    return client.post(f"/api/internal/intake/google-form/{external_id}/media",
+                       data={"kind": kind, "drive_file_id": drive_id}, files={"file": upload}, headers=headers)
+
+
 def test_intake_requires_bearer_authentication(intake_app, payload, monkeypatch):
     client, _ = intake_app
     assert client.post("/api/internal/intake/google-form", json=payload).status_code == 401
@@ -71,6 +90,37 @@ def test_intake_rejects_short_configured_secret(intake_app, payload, monkeypatch
     response = post_intake(client, payload, "too-short")
     assert response.status_code == 401
     assert response.json() == {"detail": "Unauthorized"}
+
+
+def test_intake_accepts_matching_unicode_secret_and_rejects_wrong_token(intake_app, payload, monkeypatch):
+    _, db = intake_app
+    unicode_secret = "secreto-válido-para-intake-año-123456789"
+    monkeypatch.setenv("FORM_INTAKE_SECRET", unicode_secret)
+
+    async def call_endpoint(token, body):
+        body_bytes = json.dumps(body).encode("utf-8")
+        sent = False
+
+        async def receive():
+            nonlocal sent
+            if sent:
+                return {"type": "http.disconnect"}
+            sent = True
+            return {"type": "http.request", "body": body_bytes, "more_body": False}
+
+        request = Request({
+            "type": "http", "method": "POST", "path": "/api/internal/intake/google-form",
+            "headers": [(b"authorization", f"Bearer {token}".encode("latin-1"))],
+        }, receive)
+        return await main.receive_google_form_intake(request, db)
+
+    response = asyncio.run(call_endpoint(unicode_secret, payload))
+    assert response.status_code == 201
+    assert json.loads(response.body)["status"] == "received"
+
+    wrong = asyncio.run(call_endpoint(unicode_secret + "x", dict(payload, external_id="unicode-wrong")))
+    assert wrong.status_code == 401
+    assert json.loads(wrong.body) == {"detail": "Unauthorized"}
 
 
 def test_valid_payload_is_pending_preserved_and_does_not_publish(intake_app, payload):
@@ -113,3 +163,82 @@ def test_admin_lists_reviews_and_rejects_request(intake_app, payload):
     item = db.get(SolicitudPrestador, item_id)
     assert item.status == "rechazada"
     assert item.review_notes == "Datos incompletos"
+
+
+def test_media_auth_and_missing_request(intake_app):
+    client, _ = intake_app
+    assert post_media(client, "missing", "cover", "a", token=None).status_code == 401
+    assert post_media(client, "missing", "cover", "a", token="wrong").status_code == 401
+    assert post_media(client, "missing", "cover", "a").status_code == 404
+
+
+def test_media_is_idempotent_private_and_does_not_publish_or_change_state(intake_app, payload):
+    client, db = intake_app
+    item_id = post_intake(client, payload).json()["id"]
+    first = post_media(client, payload["external_id"], "cover", "cover-1", png_file("../../evil.png"))
+    second = post_media(client, payload["external_id"], "cover", "cover-1")
+    assert first.status_code == 201
+    assert second.status_code == 200 and second.json()["status"] == "already_received"
+    record = db.query(SolicitudPrestadorArchivo).one()
+    assert record.original_name == "evil.png" and ".." not in record.stored_name
+    assert db.query(Empresa).count() == db.query(ActividadAgenda).count() == 0
+    assert db.get(SolicitudPrestador, item_id).status == "pendiente"
+    assert client.get(f"/media/{record.relative_path}").status_code == 404
+
+
+def test_media_removes_physical_file_when_persistence_fails(intake_app, payload, monkeypatch):
+    client, db = intake_app
+    item_id = post_intake(client, payload).json()["id"]
+    original_commit = db.commit
+
+    def fail_commit():
+        raise RuntimeError("forced persistence failure")
+
+    monkeypatch.setattr(db, "commit", fail_commit)
+    with pytest.raises(RuntimeError, match="forced persistence failure"):
+        post_media(client, payload["external_id"], "cover", "orphan-test")
+    monkeypatch.setattr(db, "commit", original_commit)
+
+    assert list((main.INTAKE_MEDIA_DIR / str(item_id)).rglob("*.*")) == []
+    assert db.query(SolicitudPrestadorArchivo).count() == 0
+    assert db.get(SolicitudPrestador, item_id).status == "pendiente"
+    assert db.query(Empresa).count() == 0
+    assert db.query(ActividadAgenda).count() == 0
+
+
+def test_media_limits_types_and_size(intake_app, payload):
+    client, db = intake_app
+    post_intake(client, payload)
+    for index in range(5):
+        assert post_media(client, payload["external_id"], "gallery", f"gallery-{index}").status_code == 201
+    assert post_media(client, payload["external_id"], "gallery", "gallery-6").status_code == 409
+    assert post_media(client, payload["external_id"], "logo", "logo-1").status_code == 201
+    assert post_media(client, payload["external_id"], "logo", "logo-2").status_code == 409
+    mp4 = ("clip.mp4", b"\0\0\0\x18ftypisom" + b"0" * 20, "image/png")
+    assert post_media(client, payload["external_id"], "video", "video-1", mp4).status_code == 201
+    assert post_media(client, payload["external_id"], "video", "video-2", mp4).status_code == 409
+    assert post_media(client, payload["external_id"], "cover", "bad", ("fake.jpg", b"not an image", "image/jpeg")).status_code == 415
+    assert post_media(client, payload["external_id"], "cover", "large", ("big.png", b"x" * (main.INTAKE_MEDIA_MAX_BYTES + 1), "image/png")).status_code == 413
+
+
+def test_admin_file_access_is_authenticated_and_scoped(intake_app, payload):
+    client, db = intake_app
+    first_id = post_intake(client, payload).json()["id"]
+    record_id = post_media(client, payload["external_id"], "cover", "cover").json()["id"]
+    other = dict(payload, external_id="other-response")
+    other_id = post_intake(client, other).json()["id"]
+    url = f"/admin/solicitudes/{first_id}/archivo/{record_id}"
+    assert client.get(url, follow_redirects=False).status_code in {302, 303, 307}
+    client.post("/login", data={"username": "intake-admin", "password": "secret", "next": url}, follow_redirects=False)
+    response = client.get(url)
+    assert response.status_code == 200 and response.headers["content-type"].startswith("image/png")
+    assert client.get(f"/admin/solicitudes/{other_id}/archivo/{record_id}").status_code == 404
+
+
+def test_specific_data_unicode_is_human_readable(intake_app, payload):
+    client, _ = intake_app
+    payload["specific_data"] = {"¿Tienen delivery?": "Sí"}
+    item_id = post_intake(client, payload).json()["id"]
+    client.post("/login", data={"username": "intake-admin", "password": "secret", "next": f"/admin/solicitudes/{item_id}"}, follow_redirects=False)
+    html = client.get(f"/admin/solicitudes/{item_id}").text
+    assert "¿Tienen delivery?" in html and "Sí" in html and "Pendiente de importar" in html

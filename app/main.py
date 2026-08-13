@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Depends, Request, Form, Query, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -25,6 +25,7 @@ import unicodedata
 from urllib.parse import quote, urlparse, urlencode
 from pathlib import Path
 from io import BytesIO
+from PIL import Image, UnidentifiedImageError
 from datetime import datetime, timezone, timedelta
 
 # PDF
@@ -41,6 +42,7 @@ MEDIA_ROOT_ENV = os.getenv("MEDIA_ROOT")
 MEDIA_URL_PREFIX = (os.getenv("MEDIA_URL", "/media").strip() or "/media").rstrip("/") or "/media"
 STORAGE_DIR = Path(MEDIA_ROOT_ENV or os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
+INTAKE_MEDIA_DIR = STORAGE_DIR / "intake"
 PRODUCTOS_MEDIA_TYPE = "productos"
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 ALLOWED_MENU_IMAGE_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS
@@ -55,6 +57,14 @@ app.add_middleware(
     same_site="lax",
     https_only=False,
 )
+
+@app.middleware("http")
+async def keep_intake_staging_private(request: Request, call_next):
+    """The legacy media mount is public; staging is never served through it."""
+    media_intake_prefix = f"{MEDIA_URL_PREFIX}/intake"
+    if request.url.path == media_intake_prefix or request.url.path.startswith(media_intake_prefix + "/"):
+        return JSONResponse({"detail": "Not Found"}, status_code=404)
+    return await call_next(request)
 
 # ---------------------------------------------------
 # STARTUP (Render-safe)
@@ -346,6 +356,7 @@ def ensure_solicitud_prestador_table():
     """Create only the independent intake table; never touches published data."""
     if "solicitudes_prestadores" not in set(inspect(engine).get_table_names()):
         Base.metadata.create_all(bind=engine, tables=[models.SolicitudPrestador.__table__])
+    Base.metadata.create_all(bind=engine, tables=[models.SolicitudPrestadorArchivo.__table__])
 
 # ---------------------------------------------------
 # DB Dependency
@@ -448,14 +459,19 @@ def intake_unauthorized():
     return JSONResponse({"detail": "Unauthorized"}, status_code=401, headers={"WWW-Authenticate": "Bearer"})
 
 
+def intake_is_authorized(request: Request) -> bool:
+    configured_secret = os.getenv("FORM_INTAKE_SECRET")
+    scheme, separator, token = request.headers.get("authorization", "").partition(" ")
+    return bool(
+        configured_secret and len(configured_secret) >= 32 and separator
+        and scheme.lower() == "bearer" and token
+        and hmac.compare_digest(token.encode("utf-8"), configured_secret.encode("utf-8"))
+    )
+
+
 @app.post("/api/internal/intake/google-form")
 async def receive_google_form_intake(request: Request, db: Session = Depends(get_db)):
-    configured_secret = os.getenv("FORM_INTAKE_SECRET")
-    authorization = request.headers.get("authorization", "")
-    scheme, separator, token = authorization.partition(" ")
-    if not configured_secret or len(configured_secret) < 32:
-        return intake_unauthorized()
-    if not separator or scheme.lower() != "bearer" or not token or not hmac.compare_digest(token, configured_secret):
+    if not intake_is_authorized(request):
         return intake_unauthorized()
 
     content_length = request.headers.get("content-length")
@@ -504,6 +520,88 @@ async def receive_google_form_intake(request: Request, db: Session = Depends(get
             return {"status": "already_received", "id": existing.id}
         raise
     return JSONResponse({"status": "received", "id": item.id}, status_code=201)
+
+
+INTAKE_MEDIA_KINDS = {"logo": 1, "cover": 1, "gallery": 5, "video": 1}
+INTAKE_MEDIA_MAX_BYTES = 10 * 1024 * 1024
+VIDEO_SIGNATURES = ((b"\x1aE\xdf\xa3", "video/webm", ".webm"), (b"OggS", "video/ogg", ".ogv"))
+
+
+def detect_intake_media(data: bytes, kind: str) -> tuple[str, str] | None:
+    if kind != "video":
+        try:
+            with Image.open(BytesIO(data)) as image:
+                image.verify()
+                formats = {"JPEG": ("image/jpeg", ".jpg"), "PNG": ("image/png", ".png"), "WEBP": ("image/webp", ".webp")}
+                return formats.get(image.format)
+        except (UnidentifiedImageError, OSError, ValueError):
+            return None
+    if len(data) >= 12 and data[4:8] == b"ftyp":
+        return "video/mp4", ".mp4"
+    for signature, mime, extension in VIDEO_SIGNATURES:
+        if data.startswith(signature):
+            return mime, extension
+    return None
+
+
+def intake_file_payload(item: models.SolicitudPrestadorArchivo) -> dict:
+    return {"id": item.id, "kind": item.kind, "drive_file_id": item.drive_file_id,
+            "name": item.original_name, "mime_type": item.mime_type, "size": item.size}
+
+
+@app.post("/api/internal/intake/google-form/{external_id}/media")
+async def receive_google_form_media(external_id: str, request: Request, kind: str = Form(...),
+                                    drive_file_id: str = Form(...), file: UploadFile = File(...),
+                                    db: Session = Depends(get_db)):
+    if not intake_is_authorized(request):
+        return intake_unauthorized()
+    solicitud = db.query(models.SolicitudPrestador).filter_by(external_id=external_id).first()
+    if not solicitud:
+        raise HTTPException(404, "Solicitud no encontrada")
+    kind = kind.strip().lower()
+    drive_file_id = drive_file_id.strip()
+    if kind not in INTAKE_MEDIA_KINDS or not drive_file_id or len(drive_file_id) > 255:
+        raise HTTPException(422, "Campos de archivo inválidos")
+    existing = db.query(models.SolicitudPrestadorArchivo).filter_by(
+        solicitud_id=solicitud.id, kind=kind, drive_file_id=drive_file_id).first()
+    if existing:
+        return {"status": "already_received", **intake_file_payload(existing)}
+    if db.query(models.SolicitudPrestadorArchivo).filter_by(solicitud_id=solicitud.id, kind=kind).count() >= INTAKE_MEDIA_KINDS[kind]:
+        raise HTTPException(409, f"Límite de archivos alcanzado para {kind}")
+    data = await file.read(INTAKE_MEDIA_MAX_BYTES + 1)
+    if len(data) > INTAKE_MEDIA_MAX_BYTES:
+        raise HTTPException(413, "Archivo demasiado grande")
+    detected = detect_intake_media(data, kind)
+    if not data or not detected:
+        raise HTTPException(415, "Tipo de archivo no permitido")
+    mime_type, extension = detected
+    original_name = Path((file.filename or "archivo").replace("\\", "/")).name
+    original_name = re.sub(r"[\x00-\x1f\x7f]", "", original_name).strip()[:500] or f"archivo{extension}"
+    stored_name = f"{kind}-{uuid.uuid4().hex}{extension}"
+    relative_path = Path("intake") / str(solicitud.id) / kind / stored_name
+    destination = (STORAGE_DIR / relative_path).resolve()
+    staging_root = INTAKE_MEDIA_DIR.resolve()
+    if staging_root not in destination.parents:
+        raise HTTPException(422, "Nombre de archivo inválido")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(data)
+    record = models.SolicitudPrestadorArchivo(
+        solicitud_id=solicitud.id, kind=kind, drive_file_id=drive_file_id,
+        original_name=original_name, stored_name=stored_name, mime_type=mime_type,
+        size=len(data), relative_path=relative_path.as_posix())
+    try:
+        db.add(record); db.commit(); db.refresh(record)
+    except IntegrityError:
+        db.rollback(); destination.unlink(missing_ok=True)
+        existing = db.query(models.SolicitudPrestadorArchivo).filter_by(
+            solicitud_id=solicitud.id, kind=kind, drive_file_id=drive_file_id).first()
+        if existing:
+            return {"status": "already_received", **intake_file_payload(existing)}
+        raise
+    except Exception:
+        db.rollback(); destination.unlink(missing_ok=True)
+        raise
+    return JSONResponse({"status": "received", **intake_file_payload(record)}, status_code=201)
 
 
 # ---------------------------------------------------
@@ -2741,14 +2839,42 @@ def admin_intake_detail(solicitud_id: int, request: Request, db: Session = Depen
     if not item:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
     payload = parse_intake_json(item.raw_payload, {})
+    stored_by_key = {(stored.kind, stored.drive_file_id): stored for stored in item.archivos}
+    file_groups = {}
+    metadata_groups = payload.get("files", {}) if isinstance(payload, dict) else {}
+    for kind in INTAKE_MEDIA_KINDS:
+        rows = []
+        metadata = metadata_groups.get(kind, []) if isinstance(metadata_groups, dict) else []
+        for entry in metadata if isinstance(metadata, list) else []:
+            if isinstance(entry, dict):
+                rows.append({"metadata": entry, "stored": stored_by_key.pop((kind, str(entry.get("drive_file_id") or "")), None)})
+        rows.extend({"metadata": {}, "stored": stored} for (stored_kind, _), stored in list(stored_by_key.items()) if stored_kind == kind)
+        stored_by_key = {key: value for key, value in stored_by_key.items() if key[0] != kind}
+        file_groups[kind] = rows
     return templates.TemplateResponse("admin_solicitud_detalle.html", {
         "request": request, "item": item, "payload": payload,
         "payment_methods": parse_intake_json(item.payment_methods, []),
         "highlights": parse_intake_json(item.highlights, []),
         "specific_data": payload.get("specific_data", {}) if isinstance(payload, dict) else {},
-        "files": payload.get("files", {}) if isinstance(payload, dict) else {},
+        "files": metadata_groups, "file_groups": file_groups,
         "formatted_payload": json.dumps(payload, ensure_ascii=False, indent=2),
     })
+
+
+@app.get("/admin/solicitudes/{solicitud_id}/archivo/{archivo_id}")
+def admin_intake_file(solicitud_id: int, archivo_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    record = db.query(models.SolicitudPrestadorArchivo).filter_by(id=archivo_id, solicitud_id=solicitud_id).first()
+    if not record:
+        raise HTTPException(404, "Archivo no encontrado")
+    candidate = (STORAGE_DIR / record.relative_path).resolve()
+    if INTAKE_MEDIA_DIR.resolve() not in candidate.parents or not candidate.is_file():
+        raise HTTPException(404, "Archivo no encontrado")
+    safe_name = re.sub(r"[^A-Za-z0-9._ -]", "_", record.original_name).strip(" .") or record.stored_name
+    return FileResponse(candidate, media_type=record.mime_type, filename=safe_name,
+                        content_disposition_type="inline", headers={"X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store"})
 
 
 @app.post("/admin/solicitudes/{solicitud_id}/revisar")
