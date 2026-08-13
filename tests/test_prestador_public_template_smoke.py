@@ -135,6 +135,24 @@ def test_provider_identity_renders_aside_with_any_essential_data():
     assert 'class="provider-identity__aside"' in html
 
 
+def test_provider_single_column_state_is_preserved_at_tablet_breakpoint():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    tablet_css = css.split("@media (max-width: 1024px) {", 1)[1].split("/* Mobile */", 1)[0]
+
+    assert ".tourism-heading-card.provider-identity--single { grid-template-columns: 1fr; }" in tablet_css
+
+
+def test_single_photo_grid_is_preserved_at_mobile_breakpoint():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    mobile_css = css.split("/* Mobile */", 1)[1]
+
+    assert ".public-gallery--count-1 .public-gallery__mosaic { grid-template-columns: 1fr; grid-template-rows: 1fr; }" in mobile_css
+    assert ".public-gallery--count-1 .public-gallery__item { grid-column: 1 / -1; grid-row: 1; }" in mobile_css
+    assert ".public-gallery--count-2 .public-gallery__mosaic" in mobile_css
+    assert ".public-gallery--count-3 .public-gallery__mosaic" in mobile_css
+    assert ".public-gallery__item:nth-child(n + 4)" in mobile_css
+
+
 def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():
     html = render_prestador("alojamiento", ["/media/empresas/demo/galeria/foto-1.webp"])
     hero = re.search(
