@@ -11,7 +11,7 @@ class UrlForStub:
         return "/"
 
 
-def render_prestador(theme="alojamiento", galeria_urls=None):
+def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=None):
     template = Environment(loader=FileSystemLoader("app/templates")).get_template("prestador.html")
     empresa = SimpleNamespace(
         nombre="Cabañas Demo",
@@ -44,6 +44,10 @@ def render_prestador(theme="alojamiento", galeria_urls=None):
         organizador="",
         lugar_encuentro="",
     )
+    identity_overrides = identity_overrides or {}
+    for field in ("direccion", "horarios", "whatsapp"):
+        if field in identity_overrides:
+            setattr(empresa, field, identity_overrides[field])
     galeria_urls = galeria_urls or []
     return template.render(
         request=SimpleNamespace(url_for=UrlForStub()),
@@ -57,7 +61,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None):
         facebook_url=None,
         web_url=None,
         whatsapp_url="https://wa.me/5493510000000",
-        empresa_logo_url="/static/images/logo.png",
+        empresa_logo_url=identity_overrides.get("empresa_logo_url", "/static/images/logo.png"),
         empresa_banner_url="/static/images/banner.jpg",
         galeria_urls=galeria_urls,
         gallery_tiles=galeria_urls[1:5] or ["/static/images/banner.jpg"],
@@ -95,6 +99,40 @@ def test_public_gallery_renders_one_photo_without_mutating_empresa():
     assert f'src="{photo}"' in html
     assert 'data-gallery-open="0"' in html
     assert "Cabañas Demo" in html
+
+
+def test_public_gallery_single_photo_css_uses_the_full_mosaic_width():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+
+    mosaic_rule = re.findall(
+        r"\.public-gallery--count-1 \.public-gallery__mosaic \{([^}]*)\}", css
+    )[-1]
+    item_rule = re.findall(
+        r"\.public-gallery--count-1 \.public-gallery__item \{([^}]*)\}", css
+    )[-1]
+
+    assert "grid-template-columns: 1fr" in mosaic_rule
+    assert "grid-template-rows: 1fr" in mosaic_rule
+    assert "grid-column: 1 / -1" in item_rule
+    assert "grid-row: 1" in item_rule
+
+
+def test_provider_identity_omits_empty_aside_and_uses_single_column_state():
+    html = render_prestador(identity_overrides={
+        "empresa_logo_url": "", "direccion": "", "horarios": "", "whatsapp": ""
+    })
+
+    assert 'class="tourism-heading-card provider-identity provider-identity--single"' in html
+    assert 'class="provider-identity__aside"' not in html
+
+
+def test_provider_identity_renders_aside_with_any_essential_data():
+    html = render_prestador(identity_overrides={
+        "empresa_logo_url": "", "direccion": "Ruta demo 123", "horarios": "", "whatsapp": ""
+    })
+
+    assert 'class="tourism-heading-card provider-identity"' in html
+    assert 'class="provider-identity__aside"' in html
 
 
 def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():

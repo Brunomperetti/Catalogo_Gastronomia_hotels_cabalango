@@ -44,7 +44,8 @@
                 {% if galeria_urls %}<button class="gallery-see-all" type="button" data-gallery-open>Ver todas las fotos</button>{% endif %}
             </div>
 
-            <div class="tourism-heading-card provider-identity">
+            {% set has_identity_aside = empresa_logo_url or empresa.direccion or empresa.horarios or empresa.whatsapp %}
+            <div class="tourism-heading-card provider-identity{% if not has_identity_aside %} provider-identity--single{% endif %}">
                 <div class="provider-identity__main">
                     <div class="tourism-heading-meta">
                         <span>{% if kind == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ theme_display_label(empresa.theme) }}{% endif %}</span>
@@ -60,14 +61,14 @@
                     {% if kind == 'gastronomia' and menu_url %}<a class="portal-button portal-button-secondary portal-button-ghost" href="{{ menu_url }}" target="_blank" rel="noopener noreferrer">Ver carta online</a>{% endif %}
                     </div>
                 </div>
-                <aside class="provider-identity__aside" aria-label="Información esencial">
+                {% if has_identity_aside %}<aside class="provider-identity__aside" aria-label="Información esencial">
                     {% if empresa_logo_url %}<div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>{% endif %}
                     <div class="prestador-contact-lines">
                         {% if empresa.direccion %}<div><span class="provider-meta-icon" aria-hidden="true">⌖</span><span><strong>Ubicación</strong>{{ empresa.direccion }}</span></div>{% endif %}
                         {% if empresa.horarios %}<div><span class="provider-meta-icon" aria-hidden="true">◷</span><span><strong>Horarios</strong>{% for part in empresa.horarios.split(' | ') %}<span class="schedule-line">{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}</span></div>{% endif %}
                         {% if empresa.whatsapp %}<div><span class="provider-meta-icon" aria-hidden="true">◌</span><span><strong>WhatsApp</strong>{{ empresa.whatsapp }}</span></div>{% endif %}
                     </div>
-                </aside>
+                </aside>{% endif %}
             </div>
         </section>
 

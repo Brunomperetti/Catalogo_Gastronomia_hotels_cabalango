@@ -5886,6 +5886,7 @@ body,
   padding: var(--provider-padding);
   position: static;
 }
+.portal-body .prestador-page .tourism-heading-card.provider-identity--single { grid-template-columns: 1fr; }
 .provider-identity__main, .provider-identity__aside { min-width: 0; }
 .portal-body .prestador-page .tourism-heading-meta { margin: 0 0 14px; }
 .portal-body .prestador-page .tourism-heading-meta span { background: transparent; border: 0; padding: 0; }
@@ -5923,7 +5924,8 @@ body,
 .portal-body .prestador-page .photos-summary-card { margin-top: var(--provider-gap); }
 .portal-body .prestador-page .public-gallery__mosaic { border-radius: 20px; height: clamp(360px, 42vw, 470px); }
 .portal-body .prestador-page .public-gallery__item, .portal-body .prestador-page .public-gallery__item--main, .portal-body .prestador-page .public-gallery__item--secondary { aspect-ratio: auto; min-height: 0; }
-.portal-body .prestador-page .public-gallery--count-1 .public-gallery__mosaic { display: grid; max-width: none; }
+.portal-body .prestador-page .public-gallery--count-1 .public-gallery__mosaic { display: grid; grid-template-columns: 1fr; grid-template-rows: 1fr; max-width: none; }
+.portal-body .prestador-page .public-gallery--count-1 .public-gallery__item { grid-column: 1 / -1; grid-row: 1; }
 .portal-body .prestador-page .public-gallery--count-2 .public-gallery__mosaic { grid-template-columns: minmax(0, 7fr) minmax(220px, 3fr); }
 .portal-body .prestador-page .public-gallery > p { font-size: .84rem; margin: 12px 0; }
 
