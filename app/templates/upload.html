@@ -93,6 +93,7 @@
                     </span>
                 </a>
             </div>
+            <a class="admin-tab admin-tab--global" href="/admin/solicitudes">Solicitudes recibidas{% if pending_intake_count %} ({{ pending_intake_count }} pendientes){% endif %}</a>
             {% if admin_area == 'prestador' %}
             <section class="admin-nav-group admin-nav-group--provider" aria-labelledby="admin-nav-provider-title">
                 <div class="admin-nav-group__heading"><span class="admin-nav-eyebrow">Prestador activo</span><strong id="admin-nav-provider-title">Contenido del negocio seleccionado</strong></div>

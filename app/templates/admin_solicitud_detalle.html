@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revisar solicitud | Admin Cabalango</title><link rel="stylesheet" href="/static/css/catalogo.css"><link rel="stylesheet" href="/static/css/admin.css"></head>
+<body class="admin-body"><main class="admin-shell">
+<header class="admin-global-banner"><div><span class="global-eyebrow">Solicitud #{{ item.id }} · {{ item.status }}</span><h1>{{ item.business_name or 'Solicitud sin nombre comercial' }}</h1><p>Esta información es privada y todavía no crea ni publica un prestador o actividad.</p></div><a class="btn-secondary-custom" href="/admin/solicitudes">Volver a solicitudes</a></header>
+<div class="admin-content-grid">
+<section class="admin-card"><h2>Datos generales</h2><p><strong>Tipo / rubro:</strong> {{ item.business_type or '—' }}</p><p><strong>ID externo:</strong> {{ item.external_id }}</p><p><strong>Recibida:</strong> {{ item.received_at.strftime('%d/%m/%Y %H:%M') if item.received_at else '—' }}</p></section>
+<section class="admin-card"><h2>Contacto</h2><p>{{ item.contact_name or '—' }}</p><p>{{ item.phone or '—' }} · WhatsApp público: {{ item.public_whatsapp or '—' }}</p><p>{{ item.email or '—' }}</p><p>Instagram: {{ item.instagram or '—' }}<br>Facebook: {{ item.facebook or '—' }}<br>Web: {{ item.website or '—' }}</p></section>
+<section class="admin-card"><h2>Ubicación</h2><p><strong>Dirección:</strong> {{ item.address or '—' }}</p><p><strong>Indicaciones:</strong> {{ item.directions or '—' }}</p><p><strong>Maps:</strong> {{ item.maps_url or '—' }}</p></section>
+<section class="admin-card"><h2>Descripción</h2><p>{{ item.description or '—' }}</p><h3>Horarios</h3><p>{{ item.opening_hours or '—' }}</p></section>
+<section class="admin-card"><h2>Características</h2><p><strong>Medios de pago:</strong> {{ payment_methods|join(', ') if payment_methods else '—' }}</p><p><strong>Destacados:</strong> {{ highlights|join(', ') if highlights else '—' }}</p></section>
+<section class="admin-card"><h2>Datos específicos del rubro</h2><pre class="admin-code-block">{{ specific_data|tojson(indent=2) }}</pre></section>
+<section class="admin-card"><h2>Archivos recibidos</h2><p>Solo se conserva metadata; no se descargaron archivos de Google Drive.</p><pre class="admin-code-block">{{ files|tojson(indent=2) }}</pre></section>
+<section class="admin-card"><h2>Revisión</h2><form method="post" action="/admin/solicitudes/{{ item.id }}/revisar" class="stack-form"><label class="field-label" for="review_notes">Notas internas</label><textarea class="input-custom" id="review_notes" name="review_notes" maxlength="10000" rows="6">{{ item.review_notes or '' }}</textarea><div class="feature-list"><button class="btn-primary-custom" name="status" value="revisando">Marcar como revisando</button><button class="btn-danger-custom" name="status" value="rechazada">Rechazar</button></div></form><p class="field-help">La creación de Empresa o ActividadAgenda se implementará en una etapa posterior.</p></section>
+</div>
+<details class="admin-disclosure"><summary><span class="admin-disclosure__copy"><strong>Payload original (técnico)</strong><small>Contenido íntegro recibido; puede contener datos personales.</small></span></summary><div class="admin-disclosure-card"><pre class="admin-code-block">{{ formatted_payload }}</pre></div></details>
+</main></body></html>
