@@ -345,6 +345,71 @@ def test_agenda_conversion_is_unpublished(intake_app, payload, business_type, ex
     assert activity.lugar == "Puente"
 
 
+def test_empresa_conversion_maps_short_description_and_promotion(intake_app, payload):
+    client, db = intake_app
+    body = authorized_payload(payload)
+    body["specific_data"].update({
+        "Descripción corta del negocio": "  Cerca del río  ",
+        "Promoción o beneficio vigente": "  10% en efectivo  ",
+    })
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+
+    assert client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False).status_code == 303
+    company = db.query(Empresa).one()
+    assert company.descripcion_corta == "Cerca del río"
+    assert company.promocion == "10% en efectivo"
+    assert company.activo is False
+
+
+def test_agenda_conversion_maps_only_short_description(intake_app, payload):
+    client, db = intake_app
+    body = authorized_payload(payload, business_type="Evento")
+    body["specific_data"].update({
+        "Descripción corta del negocio": "  Festival local  ",
+        "Promoción o beneficio vigente": "  Entrada anticipada  ",
+    })
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+
+    assert client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False).status_code == 303
+    activity = db.query(ActividadAgenda).one()
+    assert activity.descripcion_corta == "Festival local"
+    assert activity.descripcion == payload["description"]
+    assert activity.url_externa == payload["social"]["website"]
+    assert not hasattr(activity, "promocion")
+    assert activity.publicado is False
+    request = db.get(SolicitudPrestador, item_id)
+    assert json.loads(request.raw_payload)["specific_data"]["Promoción o beneficio vigente"] == "  Entrada anticipada  "
+
+
+@pytest.mark.parametrize("commerce_type,expected", [
+    ("Despensa", "Almacén"),
+    ("despensa", "Almacén"),
+    ("DESPENSA", "Almacén"),
+    ("  Almacén  ", "Almacén"),
+    ("Kiosco", "Kiosco"),
+    ("Proveeduría", "Proveeduría"),
+    ("Tipo desconocido", None),
+])
+def test_commerce_type_uses_known_subtype_or_safe_fallback(intake_app, payload, commerce_type, expected):
+    client, db = intake_app
+    body = authorized_payload(
+        payload,
+        external_id=f"commerce-{intake_key_for_test(commerce_type)}",
+        business_type="Almacén / kiosco / proveeduría",
+    )
+    body["specific_data"]["Tipo de comercio"] = commerce_type
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+
+    assert client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False).status_code == 303
+    company = db.query(Empresa).one()
+    assert company.subgrupo == "compras"
+    assert company.subtipo == expected
+    assert company.activo is False
+
+
 def test_slug_collision_and_double_post_are_idempotent(intake_app, payload):
     client, db = intake_app
     db.add(Empresa(nombre="Existente", slug="posada-del-rio", activo=True)); db.commit()
