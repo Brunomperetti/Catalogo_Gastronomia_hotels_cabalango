@@ -2902,7 +2902,11 @@ def generate_unique_intake_slug(db: Session, model, value: str, fallback: str) -
 
 def _known_service_subtype(payload: dict) -> str | None:
     proposed = get_intake_specific_value(payload, "Tipo de comercio", "Tipo de servicio")
-    known = SERVICIOS_SUBTIPOS.get(normalize_taxonomy_key(proposed))
+    subtype_key = normalize_taxonomy_key(proposed)
+    # The form calls this commerce type "Despensa"; the existing taxonomy's
+    # equivalent accepted rubric is "Almacén".
+    subtype_key = {"despensa": "almacen"}.get(subtype_key, subtype_key)
+    known = SERVICIOS_SUBTIPOS.get(subtype_key)
     return known[1] if known else None
 
 
@@ -2921,7 +2925,9 @@ def build_empresa_from_intake(item: models.SolicitudPrestador, payload: dict, db
         instagram=clean_text(item.instagram, default="") or None,
         facebook=normalize_external_url(item.facebook), web_url=normalize_external_url(item.website),
         direccion=clean_text(item.address, default="") or None, maps_url=normalize_external_url(item.maps_url),
+        descripcion_corta=clean_text(get_intake_specific_value(payload, "Descripción corta del negocio"), default="") or None,
         descripcion=clean_text(item.description, default="") or None,
+        promocion=clean_text(get_intake_specific_value(payload, "Promoción o beneficio vigente"), default="") or None,
         horarios=clean_text(item.opening_hours, default="") or None,
         activo=False, destacado=False,
     )
@@ -2959,6 +2965,7 @@ def build_actividad_from_intake(item: models.SolicitudPrestador, payload: dict, 
     return models.ActividadAgenda(
         tipo=INTAKE_CONVERSION_MAP[item.business_type]["tipo"], titulo=item.business_name.strip(),
         slug=generate_unique_intake_slug(db, models.ActividadAgenda, item.business_name, "actividad"),
+        descripcion_corta=clean_text(get_intake_specific_value(payload, "Descripción corta del negocio"), default="") or None,
         descripcion=clean_text(item.description, default="") or None, categoria=categoria, momento="todo_el_dia",
         fecha_inicio=intake_safe_datetime(get_intake_specific_value(payload, "Fecha inicio", "Fecha de inicio", "fecha_inicio")),
         fecha_fin=intake_safe_datetime(get_intake_specific_value(payload, "Fecha fin", "Fecha de fin", "fecha_fin")),
