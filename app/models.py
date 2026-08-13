@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, DateTime, Text, CheckConstraint
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from .database import Base
@@ -239,5 +239,42 @@ class ActividadAgenda(Base):
     publicado = Column(Boolean, nullable=False, default=False, index=True)
     destacado = Column(Boolean, nullable=False, default=False, index=True)
     orden = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class SolicitudPrestador(Base):
+    """Untrusted provider intake, kept separate from publishable content."""
+    __tablename__ = "solicitudes_prestadores"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pendiente','revisando','aprobada','rechazada','procesada')",
+            name="ck_solicitudes_prestadores_status",
+        ),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    external_id = Column(String(255), nullable=False, unique=True, index=True)
+    source = Column(String(50), nullable=False, default="google_form")
+    received_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
+    status = Column(String(20), nullable=False, default="pendiente", index=True)
+    business_type = Column(String(100), nullable=True, index=True)
+    business_name = Column(String(255), nullable=True)
+    contact_name = Column(String(255), nullable=True)
+    phone = Column(String(100), nullable=True)
+    public_whatsapp = Column(String(100), nullable=True)
+    email = Column(String(320), nullable=True)
+    instagram = Column(String(500), nullable=True)
+    facebook = Column(String(500), nullable=True)
+    website = Column(String(500), nullable=True)
+    address = Column(String(500), nullable=True)
+    directions = Column(Text, nullable=True)
+    maps_url = Column(String(1000), nullable=True)
+    description = Column(Text, nullable=True)
+    opening_hours = Column(Text, nullable=True)
+    payment_methods = Column(Text, nullable=True)
+    highlights = Column(Text, nullable=True)
+    raw_payload = Column(Text, nullable=False)
+    review_notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

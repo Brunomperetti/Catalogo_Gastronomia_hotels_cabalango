@@ -4,9 +4,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import inspect, text, func, case, or_
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from typing import Any, List, Literal
 import pandas as pd
 import zipfile
 import shutil
@@ -75,6 +76,7 @@ def run_startup_db_maintenance():
         ensure_destino_media_table()
         ensure_destino_contenido_table()
         ensure_actividad_agenda_table()
+        ensure_solicitud_prestador_table()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
     except Exception as exc:
@@ -339,6 +341,12 @@ def ensure_actividad_agenda_table():
     if "actividades_agenda" not in set(inspect(engine).get_table_names()):
         Base.metadata.create_all(bind=engine, tables=[models.ActividadAgenda.__table__])
 
+
+def ensure_solicitud_prestador_table():
+    """Create only the independent intake table; never touches published data."""
+    if "solicitudes_prestadores" not in set(inspect(engine).get_table_names()):
+        Base.metadata.create_all(bind=engine, tables=[models.SolicitudPrestador.__table__])
+
 # ---------------------------------------------------
 # DB Dependency
 # ---------------------------------------------------
@@ -348,6 +356,154 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+# ---------------------------------------------------
+# PRIVATE PROVIDER INTAKE
+# ---------------------------------------------------
+INTAKE_MAX_BODY_BYTES = 256 * 1024
+INTAKE_BUSINESS_TYPES = {
+    "Alojamiento", "Gastronomía", "Almacén / kiosco / proveeduría",
+    "Productos regionales / artesanías", "Actividad turística / recreativa",
+    "Evento", "Camping", "Estacionamiento", "Transporte / remis",
+    "Salud y bienestar", "Otro servicio",
+}
+
+
+class IntakeOptionalModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def empty_strings_are_none(cls, value):
+        return None if isinstance(value, str) and not value.strip() else value
+
+
+class IntakeContact(IntakeOptionalModel):
+    name: str | None = Field(None, max_length=255)
+    phone: str | None = Field(None, max_length=100)
+    public_whatsapp: str | None = Field(None, max_length=100)
+    email: str | None = Field(None, max_length=320)
+
+
+class IntakeSocial(IntakeOptionalModel):
+    instagram: str | None = Field(None, max_length=500)
+    facebook: str | None = Field(None, max_length=500)
+    website: str | None = Field(None, max_length=500)
+
+
+class IntakeLocation(IntakeOptionalModel):
+    address: str | None = Field(None, max_length=500)
+    directions: str | None = Field(None, max_length=4000)
+    maps_url: str | None = Field(None, max_length=1000)
+
+
+class IntakeFile(IntakeOptionalModel):
+    drive_file_id: str | None = Field(None, max_length=255)
+    name: str | None = Field(None, max_length=500)
+    mime_type: str | None = Field(None, max_length=255)
+
+
+class IntakeFiles(IntakeOptionalModel):
+    logo: list[IntakeFile] = Field(default_factory=list, max_length=20)
+    cover: list[IntakeFile] = Field(default_factory=list, max_length=20)
+    gallery: list[IntakeFile] = Field(default_factory=list, max_length=50)
+    video: list[IntakeFile] = Field(default_factory=list, max_length=20)
+
+
+class GoogleFormIntake(IntakeOptionalModel):
+    external_id: str = Field(min_length=1, max_length=255)
+    submitted_at: datetime | None = None
+    business_type: Literal[
+        "Alojamiento", "Gastronomía", "Almacén / kiosco / proveeduría",
+        "Productos regionales / artesanías", "Actividad turística / recreativa",
+        "Evento", "Camping", "Estacionamiento", "Transporte / remis",
+        "Salud y bienestar", "Otro servicio",
+    ] | None = None
+    business_name: str | None = Field(None, max_length=255)
+    contact: IntakeContact | None = None
+    social: IntakeSocial | None = None
+    location: IntakeLocation | None = None
+    description: str | None = Field(None, max_length=10000)
+    opening_hours: str | None = Field(None, max_length=4000)
+    payment_methods: list[str] = Field(default_factory=list, max_length=50)
+    highlights: list[str] = Field(default_factory=list, max_length=100)
+    specific_data: dict[str, Any] = Field(default_factory=dict)
+    files: IntakeFiles = Field(default_factory=IntakeFiles)
+    raw: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("payment_methods", "highlights")
+    @classmethod
+    def validate_short_list_strings(cls, values):
+        cleaned = []
+        for value in values:
+            if not isinstance(value, str) or len(value) > 255:
+                raise ValueError("list items must be strings of at most 255 characters")
+            if value.strip():
+                cleaned.append(value.strip())
+        return cleaned
+
+
+def intake_unauthorized():
+    return JSONResponse({"detail": "Unauthorized"}, status_code=401, headers={"WWW-Authenticate": "Bearer"})
+
+
+@app.post("/api/internal/intake/google-form")
+async def receive_google_form_intake(request: Request, db: Session = Depends(get_db)):
+    configured_secret = os.getenv("FORM_INTAKE_SECRET")
+    authorization = request.headers.get("authorization", "")
+    scheme, separator, token = authorization.partition(" ")
+    if not configured_secret or len(configured_secret) < 32:
+        return intake_unauthorized()
+    if not separator or scheme.lower() != "bearer" or not token or not hmac.compare_digest(token, configured_secret):
+        return intake_unauthorized()
+
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > INTAKE_MAX_BODY_BYTES:
+                raise HTTPException(status_code=413, detail="Payload too large")
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid Content-Length")
+    body = await request.body()
+    if len(body) > INTAKE_MAX_BODY_BYTES:
+        raise HTTPException(status_code=413, detail="Payload too large")
+    try:
+        original_payload = json.loads(body)
+        payload = GoogleFormIntake.model_validate(original_payload)
+    except (json.JSONDecodeError, UnicodeDecodeError, ValidationError) as exc:
+        raise HTTPException(status_code=422, detail="Invalid intake payload") from exc
+
+    existing = db.query(models.SolicitudPrestador).filter_by(external_id=payload.external_id).first()
+    if existing:
+        return {"status": "already_received", "id": existing.id}
+
+    contact, social, location = payload.contact, payload.social, payload.location
+    item = models.SolicitudPrestador(
+        external_id=payload.external_id, source="google_form", status="pendiente",
+        received_at=payload.submitted_at or datetime.now(timezone.utc),
+        business_type=payload.business_type, business_name=payload.business_name,
+        contact_name=contact.name if contact else None, phone=contact.phone if contact else None,
+        public_whatsapp=contact.public_whatsapp if contact else None, email=contact.email if contact else None,
+        instagram=social.instagram if social else None, facebook=social.facebook if social else None,
+        website=social.website if social else None, address=location.address if location else None,
+        directions=location.directions if location else None, maps_url=location.maps_url if location else None,
+        description=payload.description, opening_hours=payload.opening_hours,
+        payment_methods=json.dumps(payload.payment_methods, ensure_ascii=False),
+        highlights=json.dumps(payload.highlights, ensure_ascii=False),
+        raw_payload=json.dumps(original_payload, ensure_ascii=False, separators=(",", ":")),
+    )
+    try:
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+    except IntegrityError:
+        db.rollback()
+        existing = db.query(models.SolicitudPrestador).filter_by(external_id=payload.external_id).first()
+        if existing:
+            return {"status": "already_received", "id": existing.id}
+        raise
+    return JSONResponse({"status": "received", "id": item.id}, status_code=201)
 
 
 # ---------------------------------------------------
@@ -2549,6 +2705,72 @@ def redirect_cabalango_legacy():
     return RedirectResponse(url="/", status_code=308)
 
 
+def parse_intake_json(value: str | None, fallback):
+    try:
+        return json.loads(value) if value else fallback
+    except (TypeError, json.JSONDecodeError):
+        return fallback
+
+
+@app.get("/admin/solicitudes", response_class=HTMLResponse)
+def admin_intake_list(request: Request, status: str = "", business_type: str = "", db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    query = db.query(models.SolicitudPrestador)
+    if status in {"pendiente", "revisando", "aprobada", "rechazada", "procesada"}:
+        query = query.filter(models.SolicitudPrestador.status == status)
+    if business_type in INTAKE_BUSINESS_TYPES:
+        query = query.filter(models.SolicitudPrestador.business_type == business_type)
+    items = query.order_by(models.SolicitudPrestador.received_at.desc(), models.SolicitudPrestador.id.desc()).all()
+    pending_count = db.query(models.SolicitudPrestador).filter_by(status="pendiente").count()
+    return templates.TemplateResponse("admin_solicitudes.html", {
+        "request": request, "items": items, "pending_count": pending_count,
+        "selected_status": status, "selected_business_type": business_type,
+        "statuses": ["pendiente", "revisando", "aprobada", "rechazada", "procesada"],
+        "business_types": sorted(INTAKE_BUSINESS_TYPES),
+    })
+
+
+@app.get("/admin/solicitudes/{solicitud_id}", response_class=HTMLResponse)
+def admin_intake_detail(solicitud_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    item = db.get(models.SolicitudPrestador, solicitud_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    payload = parse_intake_json(item.raw_payload, {})
+    return templates.TemplateResponse("admin_solicitud_detalle.html", {
+        "request": request, "item": item, "payload": payload,
+        "payment_methods": parse_intake_json(item.payment_methods, []),
+        "highlights": parse_intake_json(item.highlights, []),
+        "specific_data": payload.get("specific_data", {}) if isinstance(payload, dict) else {},
+        "files": payload.get("files", {}) if isinstance(payload, dict) else {},
+        "formatted_payload": json.dumps(payload, ensure_ascii=False, indent=2),
+    })
+
+
+@app.post("/admin/solicitudes/{solicitud_id}/revisar")
+def admin_intake_review(solicitud_id: int, request: Request, status: str = Form(...), review_notes: str = Form(""), db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    item = db.get(models.SolicitudPrestador, solicitud_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    if status not in {"revisando", "rechazada"}:
+        raise HTTPException(status_code=422, detail="Estado de revisión no permitido")
+    notes = review_notes.strip()
+    if len(notes) > 10000:
+        raise HTTPException(status_code=422, detail="Notas demasiado extensas")
+    item.status = status
+    item.review_notes = notes or None
+    item.updated_at = datetime.now(timezone.utc)
+    db.commit()
+    return RedirectResponse(url=f"/admin/solicitudes/{item.id}", status_code=303)
+
+
 @app.get("/admin", response_class=HTMLResponse)
 def admin_panel(
     request: Request,
@@ -2666,6 +2888,7 @@ def admin_panel(
             "galeria_urls": get_empresa_gallery_urls(empresa_activa) if empresa_activa else [],
             "menu_fotos_urls": get_empresa_menu_photo_urls(empresa_activa) if empresa_activa else [],
             "pending_reviews": db.query(models.Review).filter(models.Review.estado == "pendiente").order_by(models.Review.created_at.desc()).limit(30).all(),
+            "pending_intake_count": db.query(models.SolicitudPrestador).filter(models.SolicitudPrestador.status == "pendiente").count(),
             "time": int(time.time()),
             "using_default_admin_password": using_default_admin_password,
             "admin_username": os.getenv("ADMIN_USER", "admin"),
