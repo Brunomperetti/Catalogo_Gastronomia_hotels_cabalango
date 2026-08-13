@@ -1,4 +1,6 @@
 from types import SimpleNamespace
+import re
+
 from jinja2 import Environment, FileSystemLoader
 
 
@@ -82,6 +84,64 @@ def test_prestador_template_empty_gallery_does_not_break():
     assert "Todavía no hay fotos cargadas" in html
     assert "Compatibilidad catálogo viejo" not in html
     assert "Abrir catálogo heredado" not in html
+
+
+def test_public_gallery_renders_one_photo_without_mutating_empresa():
+    photo = "/media/empresas/demo/galeria/vertical.webp"
+    html = render_prestador("alojamiento", [photo])
+
+    assert 'class="public-gallery public-gallery--count-1"' in html
+    assert html.count('class="public-gallery__item ') == 1
+    assert f'src="{photo}"' in html
+    assert 'data-gallery-open="0"' in html
+    assert "Cabañas Demo" in html
+
+
+def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():
+    html = render_prestador("alojamiento", ["/media/empresas/demo/galeria/foto-1.webp"])
+    hero = re.search(
+        r'<section class="tourism-hero">(.*?)<div class="tourism-heading-card">',
+        html,
+        re.DOTALL,
+    ).group(1)
+    photos_section = re.search(
+        r'<section class="portal-card photos-summary-card" id="fotos">(.*?)</section>',
+        html,
+        re.DOTALL,
+    ).group(1)
+
+    assert 'class="tourism-gallery ' in hero
+    assert 'class="tourism-gallery-main ' in hero
+    assert 'class="tourism-gallery-side"' in hero
+    assert "public-gallery" not in hero
+    assert "Fotos del lugar" in photos_section
+    assert 'class="public-gallery public-gallery--count-1"' in photos_section
+    assert html.count('class="public-gallery ') == 1
+    assert html.count('id="fotos"') == 1
+
+
+def test_public_gallery_limits_preview_and_exposes_every_lightbox_url():
+    photos = [f"/media/empresas/demo/galeria/foto-{number}.webp" for number in range(1, 7)]
+    html = render_prestador("alojamiento", photos)
+
+    assert 'class="public-gallery public-gallery--count-4"' in html
+    assert html.count('class="public-gallery__item ') == 4
+    assert "+2 fotos" in html
+    assert "Ver todas las fotos" in html
+    assert html.count("/media/empresas/demo/galeria/foto-6.webp") == 1
+    for photo in photos:
+        assert photo in html
+
+
+def test_public_gallery_has_accessible_lightbox_controls():
+    html = render_prestador("alojamiento", ["/one.webp", "/two.webp"])
+
+    assert 'role="dialog"' in html
+    assert 'aria-modal="true"' in html
+    assert 'aria-label="Cerrar galería"' in html
+    assert 'aria-label="Foto anterior"' in html
+    assert 'aria-label="Foto siguiente"' in html
+    assert "ArrowLeft" in html and "ArrowRight" in html and "Escape" in html
 
 
 def test_prestador_template_uses_normalized_external_contact_links():

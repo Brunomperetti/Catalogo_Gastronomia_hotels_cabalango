@@ -24,7 +24,7 @@
         {% include "partials/portal_nav.html" %}
 
         <section class="tourism-hero">
-            <div class="tourism-gallery {% if not has_real_photos %}tourism-gallery--empty{% endif %}" id="fotos" aria-label="Galería de fotos de {{ empresa.nombre }}">
+            <div class="tourism-gallery {% if not has_real_photos %}tourism-gallery--empty{% endif %}" aria-label="Galería de fotos de {{ empresa.nombre }}">
                 <figure class="tourism-gallery-main {% if not has_real_photos %}is-empty{% endif %}">
                     {% if has_real_photos %}
                     <img src="{{ hero_image }}" alt="Foto principal de {{ empresa.nombre }}" onerror="this.closest('.tourism-gallery-main').classList.add('is-empty');">
@@ -129,48 +129,46 @@
         {% endif %}
         {% endif %}
 
-        <section class="portal-card photos-summary-card" id="galeria-completa">
+        <section class="portal-card photos-summary-card" id="fotos">
             <p class="portal-card-label">Fotos</p>
             <h2>Fotos del lugar</h2>
-            {% if galeria_urls %}
-            <p>La galería principal usa recortes editoriales para el impacto visual. Abrí la vista completa para ver cada imagen sin recortes.</p>
-            <button class="portal-button portal-button-secondary" type="button" data-gallery-open>Ver todas las fotos</button>
-            {% else %}
-            <p>Todavía no hay fotos cargadas. El administrador puede subir fotos normales desde “Fotos y video”.</p>
-            {% endif %}
+            <div class="public-gallery public-gallery--count-{{ [galeria_urls|length, 4]|min }}" aria-label="Galería de fotos de {{ empresa.nombre }}" data-public-gallery>
+                {% if galeria_urls %}
+                <div class="public-gallery__mosaic">
+                    {% for foto in galeria_urls[:4] %}
+                    <button class="public-gallery__item {% if loop.first %}public-gallery__item--main{% else %}public-gallery__item--secondary{% endif %}" type="button" data-gallery-open="{{ loop.index0 }}" aria-label="Abrir foto {{ loop.index }} de {{ empresa.nombre }}">
+                        <img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}"{% if not loop.first %} loading="lazy"{% endif %}>
+                        {% if loop.index == 4 and galeria_urls|length > 4 %}<span class="public-gallery__more" aria-hidden="true">+{{ galeria_urls|length - 4 }} fotos</span>{% endif %}
+                    </button>
+                    {% endfor %}
+                </div>
+                <p>La galería usa recortes editoriales para el impacto visual. Abrí la vista completa para ver cada imagen sin recortes.</p>
+                <button class="portal-button portal-button-secondary" type="button" data-gallery-open="0">Ver todas las fotos</button>
+                {% else %}
+                <p class="public-gallery__empty">No hay fotos disponibles.</p>
+                {% endif %}
+            </div>
         </section>
 
         {% if galeria_urls %}
-        <section class="gallery-lightbox" id="galeria-lightbox" role="dialog" aria-modal="true" aria-labelledby="galeria-lightbox-title" aria-hidden="true">
+        <section class="public-gallery-lightbox" role="dialog" aria-modal="true" aria-labelledby="galeria-lightbox-title" aria-hidden="true" data-gallery-lightbox>
             <button class="gallery-lightbox-backdrop" type="button" data-gallery-close aria-label="Cerrar galería"></button>
-            <div class="gallery-lightbox-panel" tabindex="-1">
+            <div class="public-gallery-lightbox__panel" tabindex="-1">
                 <header class="gallery-lightbox-header">
                     <div>
                         <p class="portal-card-label">Galería completa</p>
                         <h2 id="galeria-lightbox-title">Fotos de {{ empresa.nombre }}</h2>
-                        <span><strong data-gallery-counter>Foto 1 de {{ galeria_urls|length }}</strong> · imágenes completas sin recorte</span>
+                        <span><strong data-gallery-counter>1 / {{ galeria_urls|length }}</strong> · imágenes completas sin recorte</span>
                     </div>
-                    <button class="gallery-lightbox-close" type="button" data-gallery-close aria-label="Cerrar galería">Cerrar</button>
+                    <button class="gallery-lightbox-close" type="button" data-gallery-close aria-label="Cerrar galería">×</button>
                 </header>
-                <div class="gallery-lightbox-stage">
+                <div class="public-gallery-lightbox__stage">
                     {% if galeria_urls|length > 1 %}<button class="gallery-lightbox-nav gallery-lightbox-prev" type="button" data-gallery-prev aria-label="Foto anterior">‹</button>{% endif %}
-                    {% for foto in galeria_urls %}
-                    <figure class="gallery-lightbox-slide {% if loop.first %}is-active{% endif %}" data-gallery-slide>
-                        <img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }} completa">
-                        <figcaption>Foto {{ loop.index }} de {{ galeria_urls|length }}</figcaption>
-                    </figure>
-                    {% endfor %}
+                    <img class="public-gallery-lightbox__image" src="{{ galeria_urls[0] }}" alt="Foto 1 de {{ empresa.nombre }} completa" data-gallery-image>
                     {% if galeria_urls|length > 1 %}<button class="gallery-lightbox-nav gallery-lightbox-next" type="button" data-gallery-next aria-label="Foto siguiente">›</button>{% endif %}
                 </div>
-                <footer class="gallery-lightbox-footer">
-                    {% if galeria_urls|length > 1 %}
-                    <div class="gallery-lightbox-thumbs" aria-label="Miniaturas de galería">
-                        {% for foto in galeria_urls %}<button class="gallery-thumb {% if loop.first %}is-active{% endif %}" type="button" data-gallery-thumb="{{ loop.index0 }}" aria-label="Ver foto {{ loop.index }}"><img src="{{ foto }}" alt="Miniatura {{ loop.index }}"></button>{% endfor %}
-                    </div>
-                    {% endif %}
-                    <p class="gallery-lightbox-footer-counter" data-gallery-footer-counter>Foto 1 de {{ galeria_urls|length }}</p>
-                </footer>
             </div>
+            <script type="application/json" data-gallery-urls>{{ galeria_urls|tojson }}</script>
         </section>
         {% endif %}
 
@@ -228,42 +226,48 @@
 {% if galeria_urls %}
     <script>
     (() => {
-      const modal = document.getElementById('galeria-lightbox');
-      if (!modal) return;
-      const slides = Array.from(modal.querySelectorAll('[data-gallery-slide]'));
-      const thumbs = Array.from(modal.querySelectorAll('[data-gallery-thumb]'));
+      const initPublicGallery = () => {
+      const gallery = document.querySelector('[data-public-gallery]');
+      const modal = document.querySelector('[data-gallery-lightbox]');
+      if (!gallery || !modal) return;
+      const urls = JSON.parse(modal.querySelector('[data-gallery-urls]').textContent);
+      const providerName = {{ empresa.nombre|tojson }};
+      const image = modal.querySelector('[data-gallery-image]');
       const counter = modal.querySelector('[data-gallery-counter]');
       let index = 0;
+      let opener = null;
       const setActive = (next) => {
-        index = (next + slides.length) % slides.length;
-        slides.forEach((slide, i) => slide.classList.toggle('is-active', i === index));
-        thumbs.forEach((thumb, i) => thumb.classList.toggle('is-active', i === index));
-        if (counter) counter.textContent = `Foto ${index + 1} de ${slides.length}`;
-        const footerCounter = modal.querySelector('[data-gallery-footer-counter]');
-        if (footerCounter) footerCounter.textContent = `Foto ${index + 1} de ${slides.length}`;
+        index = (next + urls.length) % urls.length;
+        image.src = urls[index];
+        image.alt = `Foto ${index + 1} de ${providerName} completa`;
+        counter.textContent = `${index + 1} / ${urls.length}`;
       };
-      const open = () => {
+      const open = (start, trigger) => {
+        opener = trigger;
+        setActive(start);
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.classList.add('has-gallery-open');
-        modal.querySelector('.gallery-lightbox-panel')?.focus();
+        modal.querySelector('.public-gallery-lightbox__panel').focus();
       };
       const close = () => {
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('has-gallery-open');
+        opener?.focus();
       };
-      document.querySelectorAll('[data-gallery-open]').forEach((button) => button.addEventListener('click', open));
+      document.querySelectorAll('[data-gallery-open]').forEach((button) => button.addEventListener('click', () => open(Number(button.dataset.galleryOpen || 0), button)));
       modal.querySelectorAll('[data-gallery-close]').forEach((button) => button.addEventListener('click', close));
       modal.querySelector('[data-gallery-prev]')?.addEventListener('click', () => setActive(index - 1));
       modal.querySelector('[data-gallery-next]')?.addEventListener('click', () => setActive(index + 1));
-      thumbs.forEach((thumb) => thumb.addEventListener('click', () => setActive(Number(thumb.dataset.galleryThumb || 0))));
       document.addEventListener('keydown', (event) => {
         if (!modal.classList.contains('is-open')) return;
         if (event.key === 'Escape') close();
-        if (event.key === 'ArrowLeft' && slides.length > 1) setActive(index - 1);
-        if (event.key === 'ArrowRight' && slides.length > 1) setActive(index + 1);
+        if (event.key === 'ArrowLeft' && urls.length > 1) setActive(index - 1);
+        if (event.key === 'ArrowRight' && urls.length > 1) setActive(index + 1);
       });
+      };
+      initPublicGallery();
     })();
     </script>
     {% endif %}
