@@ -100,7 +100,7 @@ def test_public_gallery_renders_one_photo_without_mutating_empresa():
 def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():
     html = render_prestador("alojamiento", ["/media/empresas/demo/galeria/foto-1.webp"])
     hero = re.search(
-        r'<section class="tourism-hero">(.*?)<div class="tourism-heading-card">',
+        r'<section class="tourism-hero">(.*?)<div class="tourism-heading-card provider-identity">',
         html,
         re.DOTALL,
     ).group(1)
