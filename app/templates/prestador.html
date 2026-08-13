@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260813-public-gallery-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-commerce-services-1">
 </head>
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
     {% set hero_image = main_photo_url %}
@@ -24,20 +24,24 @@
         {% include "partials/portal_nav.html" %}
 
         <section class="tourism-hero">
-            <div class="public-gallery public-gallery--count-{{ [galeria_urls|length, 4]|min }}" id="fotos" aria-label="Galería de fotos de {{ empresa.nombre }}" data-public-gallery>
-                {% if galeria_urls %}
-                <div class="public-gallery__mosaic">
-                    {% for foto in galeria_urls[:4] %}
-                    <button class="public-gallery__item {% if loop.first %}public-gallery__item--main{% else %}public-gallery__item--secondary{% endif %}" type="button" data-gallery-open="{{ loop.index0 }}" aria-label="Abrir foto {{ loop.index }} de {{ empresa.nombre }}">
-                        <img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}"{% if not loop.first %} loading="lazy"{% endif %}>
-                        {% if loop.index == 4 and galeria_urls|length > 4 %}<span class="public-gallery__more" aria-hidden="true">+{{ galeria_urls|length - 4 }} fotos</span>{% endif %}
-                    </button>
+            <div class="tourism-gallery {% if not has_real_photos %}tourism-gallery--empty{% endif %}" aria-label="Galería de fotos de {{ empresa.nombre }}">
+                <figure class="tourism-gallery-main {% if not has_real_photos %}is-empty{% endif %}">
+                    {% if has_real_photos %}
+                    <img src="{{ hero_image }}" alt="Foto principal de {{ empresa.nombre }}" onerror="this.closest('.tourism-gallery-main').classList.add('is-empty');">
+                    {% else %}
+                    <div class="gallery-hero-placeholder"><strong>Todavía no hay fotos cargadas</strong><span>La ficha está lista para recibir imágenes reales del lugar.</span></div>
+                    {% endif %}
+                    <figcaption>{{ theme_display_label(empresa.theme) }} en Cabalango</figcaption>
+                </figure>
+                <div class="tourism-gallery-side">
+                    {% for foto in gallery_tiles %}
+                    <img src="{{ foto }}" alt="Foto {{ loop.index + 1 }} de {{ empresa.nombre }}">
+                    {% else %}
+                    <div class="gallery-empty-state">Todavía no hay fotos cargadas</div>
+                    <div class="gallery-empty-state">Subí fotos reales del lugar desde el panel.</div>
                     {% endfor %}
                 </div>
-                <button class="gallery-see-all" type="button" data-gallery-open="0">Ver todas las fotos</button>
-                {% else %}
-                <p class="public-gallery__empty">No hay fotos disponibles.</p>
-                {% endif %}
+                {% if galeria_urls %}<button class="gallery-see-all" type="button" data-gallery-open>Ver todas las fotos</button>{% endif %}
             </div>
 
             <div class="tourism-heading-card">
@@ -125,15 +129,25 @@
         {% endif %}
         {% endif %}
 
-        <section class="portal-card photos-summary-card" id="galeria-completa">
+        <section class="portal-card photos-summary-card" id="fotos">
             <p class="portal-card-label">Fotos</p>
             <h2>Fotos del lugar</h2>
-            {% if galeria_urls %}
-            <p>La galería principal usa recortes editoriales para el impacto visual. Abrí la vista completa para ver cada imagen sin recortes.</p>
-            <button class="portal-button portal-button-secondary" type="button" data-gallery-open>Ver todas las fotos</button>
-            {% else %}
-            <p>Todavía no hay fotos cargadas. El administrador puede subir fotos normales desde “Fotos y video”.</p>
-            {% endif %}
+            <div class="public-gallery public-gallery--count-{{ [galeria_urls|length, 4]|min }}" aria-label="Galería de fotos de {{ empresa.nombre }}" data-public-gallery>
+                {% if galeria_urls %}
+                <div class="public-gallery__mosaic">
+                    {% for foto in galeria_urls[:4] %}
+                    <button class="public-gallery__item {% if loop.first %}public-gallery__item--main{% else %}public-gallery__item--secondary{% endif %}" type="button" data-gallery-open="{{ loop.index0 }}" aria-label="Abrir foto {{ loop.index }} de {{ empresa.nombre }}">
+                        <img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}"{% if not loop.first %} loading="lazy"{% endif %}>
+                        {% if loop.index == 4 and galeria_urls|length > 4 %}<span class="public-gallery__more" aria-hidden="true">+{{ galeria_urls|length - 4 }} fotos</span>{% endif %}
+                    </button>
+                    {% endfor %}
+                </div>
+                <p>La galería usa recortes editoriales para el impacto visual. Abrí la vista completa para ver cada imagen sin recortes.</p>
+                <button class="portal-button portal-button-secondary" type="button" data-gallery-open="0">Ver todas las fotos</button>
+                {% else %}
+                <p class="public-gallery__empty">No hay fotos disponibles.</p>
+                {% endif %}
+            </div>
         </section>
 
         {% if galeria_urls %}
