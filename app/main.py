@@ -453,7 +453,9 @@ async def receive_google_form_intake(request: Request, db: Session = Depends(get
     configured_secret = os.getenv("FORM_INTAKE_SECRET")
     authorization = request.headers.get("authorization", "")
     scheme, separator, token = authorization.partition(" ")
-    if not configured_secret or not separator or scheme.lower() != "bearer" or not token or not hmac.compare_digest(token, configured_secret):
+    if not configured_secret or len(configured_secret) < 32:
+        return intake_unauthorized()
+    if not separator or scheme.lower() != "bearer" or not token or not hmac.compare_digest(token, configured_secret):
         return intake_unauthorized()
 
     content_length = request.headers.get("content-length")

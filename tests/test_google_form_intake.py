@@ -10,6 +10,8 @@ from app import main
 from app.database import Base
 from app.models import ActividadAgenda, Empresa, SolicitudPrestador, Usuario
 
+VALID_INTAKE_SECRET = "test-only-secret-with-32-characters"
+
 
 @pytest.fixture()
 def intake_app(monkeypatch):
@@ -19,7 +21,7 @@ def intake_app(monkeypatch):
     db = Session()
     db.add(Usuario(username="intake-admin", password_hash=main.hash_password("secret"), rol="admin", activo=True))
     db.commit()
-    monkeypatch.setenv("FORM_INTAKE_SECRET", "test-only-secret")
+    monkeypatch.setenv("FORM_INTAKE_SECRET", VALID_INTAKE_SECRET)
 
     def override_db():
         yield db
@@ -50,7 +52,7 @@ def payload():
     }
 
 
-def post_intake(client, payload, token="test-only-secret"):
+def post_intake(client, payload, token=VALID_INTAKE_SECRET):
     return client.post("/api/internal/intake/google-form", json=payload, headers={"Authorization": f"Bearer {token}"})
 
 
@@ -61,6 +63,14 @@ def test_intake_requires_bearer_authentication(intake_app, payload, monkeypatch)
     assert client.post("/api/internal/intake/google-form", json=payload, headers={"Authorization": "Basic abc"}).status_code == 401
     monkeypatch.delenv("FORM_INTAKE_SECRET")
     assert post_intake(client, payload).status_code == 401
+
+
+def test_intake_rejects_short_configured_secret(intake_app, payload, monkeypatch):
+    client, _ = intake_app
+    monkeypatch.setenv("FORM_INTAKE_SECRET", "too-short")
+    response = post_intake(client, payload, "too-short")
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Unauthorized"}
 
 
 def test_valid_payload_is_pending_preserved_and_does_not_publish(intake_app, payload):

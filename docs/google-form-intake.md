@@ -11,9 +11,10 @@ independiente: no tiene relación ni automatización hacia `Empresa` o
 
 ## Configuración
 
-Definir `FORM_INTAKE_SECRET` con un valor largo, aleatorio y confidencial en el
-entorno de la aplicación. No existe valor por defecto. Si falta, el endpoint
-responde `401` de forma segura.
+Definir `FORM_INTAKE_SECRET` con un valor aleatorio, confidencial y de al menos
+32 caracteres en el entorno de la aplicación. No existe valor por defecto. Si
+falta, está vacío o tiene menos de 32 caracteres, el endpoint responde `401` de
+forma segura.
 
 El emisor debe hacer `POST /api/internal/intake/google-form`, enviar JSON y usar:
 
