@@ -79,7 +79,7 @@ def test_prestador_template_is_tourism_first_for_alojamiento():
     assert "Consultar por WhatsApp" in html
     assert "Ver todas las fotos" in html
     assert "Opiniones de huéspedes" in html
-    assert "Lo que más consultan los viajeros" in html
+    assert "Información práctica" in html
     assert "Descargar lista de precios" not in html
     assert "Productos / platos publicados" not in html
 
@@ -97,26 +97,22 @@ def test_public_gallery_renders_one_photo_without_mutating_empresa():
     html = render_prestador("alojamiento", [photo])
 
     assert 'class="public-gallery public-gallery--count-1"' in html
-    assert html.count('class="public-gallery__item ') == 1
+    assert html.count('class="public-gallery__item"') == 1
     assert f'src="{photo}"' in html
     assert 'data-gallery-open="0"' in html
     assert "Cabañas Demo" in html
 
 
-def test_public_gallery_single_photo_css_uses_the_full_mosaic_width():
+def test_public_gallery_single_photo_css_uses_a_uniform_bounded_grid():
     css = open("app/static/css/portal.css", encoding="utf-8").read()
 
-    mosaic_rule = re.findall(
-        r"\.public-gallery--count-1 \.public-gallery__mosaic \{([^}]*)\}", css
-    )[-1]
-    item_rule = re.findall(
-        r"\.public-gallery--count-1 \.public-gallery__item \{([^}]*)\}", css
-    )[-1]
+    grid_rule = re.findall(
+        r"\.public-gallery--count-1 \.public-gallery__grid \{([^}]*)\}", css
+    )[0]
+    item_rule = re.findall(r"\.public-gallery__item \{([^}]*)\}", css)[-1]
 
-    assert "grid-template-columns: 1fr" in mosaic_rule
-    assert "grid-template-rows: 1fr" in mosaic_rule
-    assert "grid-column: 1 / -1" in item_rule
-    assert "grid-row: 1" in item_rule
+    assert "minmax(0, 520px)" in grid_rule
+    assert "aspect-ratio: 4 / 3" in item_rule
 
 
 def test_provider_identity_has_no_legacy_aside_when_metadata_is_empty():
@@ -138,7 +134,8 @@ def test_provider_identity_integrates_logo_title_and_metadata():
     intro = re.search(r'<div class="provider-identity__intro">(.*?)</div>\s*</div>', html, re.DOTALL).group(1)
     assert 'class="provider-logo"' in intro
     assert "Cabañas Demo" in intro
-    assert 'class="provider-metadata"' in html
+    assert 'class="provider-key-summary"' in html
+    assert "Resumen del lugar" in html
     assert 'class="provider-identity__aside"' not in html
 
 
@@ -154,17 +151,15 @@ def test_single_photo_grid_is_preserved_at_mobile_breakpoint():
     css = open("app/static/css/portal.css", encoding="utf-8").read()
     mobile_css = css.split("@media (max-width: 700px)", 1)[1]
 
-    assert ".public-gallery--count-1 .public-gallery__mosaic { grid-template-columns: 1fr; grid-template-rows: 1fr; }" in mobile_css
-    assert ".public-gallery--count-1 .public-gallery__item { grid-column: 1 / -1; grid-row: 1; }" in mobile_css
-    assert ".public-gallery--count-2 .public-gallery__mosaic" in mobile_css
-    assert ".public-gallery--count-3 .public-gallery__mosaic" in mobile_css
-    assert ".public-gallery__item:nth-child(n + 4)" in mobile_css
+    assert ".public-gallery--count-1 .public-gallery__grid" in mobile_css
+    assert ".public-gallery--count-2 .public-gallery__grid" in mobile_css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in mobile_css
 
 
 def test_category_is_rendered_once_without_a_duplicate_chip():
     html = render_prestador("alojamiento")
 
-    assert html.count("Alojamientos · Cabaña") == 1
+    assert html.count("Alojamientos · Cabaña") == 3
     assert html.count('class="provider-category"') == 1
     assert "tourism-heading-meta" not in html
 
@@ -172,14 +167,15 @@ def test_category_is_rendered_once_without_a_duplicate_chip():
 def test_service_category_does_not_append_subtype_twice():
     html = render_prestador("servicios", subtipo="Almacén")
 
-    assert html.count("Almacenes y kioscos · Almacén") == 1
+    assert html.count("Almacenes y kioscos · Almacén") == 3
     assert "Almacenes y kioscos · Almacén · Almacén" not in html
 
 
 def test_schedules_are_plain_text_without_pill_nesting():
     html = render_prestador(identity_overrides={"horarios": "Días: Lunes a domingo | Horarios: 9:00 a 13:00 | Todo el año: Sí"})
 
-    assert "Lunes a domingo" in html
+    assert "Lunes a domingo" not in html
+    assert html.count("Todos los días") == 2
     assert "9:00 a 13:00" in html
     assert "Abierto todo el año" in html
     assert 'class="provider-schedule-text"' in html
@@ -228,17 +224,39 @@ def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():
     assert html.count('id="fotos"') == 1
 
 
-def test_public_gallery_limits_preview_and_exposes_every_lightbox_url():
+def test_public_gallery_exposes_every_thumbnail_and_lightbox_url():
     photos = [f"/media/empresas/demo/galeria/foto-{number}.webp" for number in range(1, 7)]
     html = render_prestador("alojamiento", photos)
 
     assert 'class="public-gallery public-gallery--count-4"' in html
-    assert html.count('class="public-gallery__item ') == 4
-    assert "+2 fotos" in html
+    assert html.count('class="public-gallery__item"') == 6
     assert "Ver todas las fotos" in html
-    assert html.count("/media/empresas/demo/galeria/foto-6.webp") == 1
+    assert html.count("/media/empresas/demo/galeria/foto-6.webp") == 2
     for photo in photos:
         assert photo in html
+
+
+def test_provider_practical_grid_has_consistent_icons_and_existing_data():
+    html = render_prestador(identity_overrides={"horarios": "Días: Lunes a domingo | Horarios: 9:00 a 13:00 | Todo el año: Sí"})
+    section = re.search(r'<section class="portal-card quick-facts-card">(.*?)</section>', html, re.DOTALL).group(1)
+
+    assert "Tipo de servicio" in section
+    assert "Todos los días" in section
+    assert "9:00 a 13:00" in section
+    assert "Abierto todo el año" in section
+    assert "Dirección" in section
+    assert "Teléfono / WhatsApp" in section
+    assert section.count('class="provider-icon"') == 4
+
+
+def test_gallery_uses_uniform_grid_and_contain_lightbox():
+    html = render_prestador("alojamiento", ["/one.webp", "/two.webp"])
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+
+    assert 'class="public-gallery__grid"' in html
+    assert "public-gallery__mosaic" not in html
+    assert "object-fit: cover" in css
+    assert "object-fit: contain" in css
 
 
 def test_public_gallery_has_accessible_lightbox_controls():

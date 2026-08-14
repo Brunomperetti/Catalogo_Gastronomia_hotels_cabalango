@@ -8,8 +8,17 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260813-provider-editorial-final">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260814-provider-premium">
 </head>
+{% macro provider_icon(name) -%}
+<svg class="provider-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+{% if name == 'type' %}<path d="M4 7.5 12 3l8 4.5-8 4.5-8-4.5Z"/><path d="m4 12 8 4.5 8-4.5M4 16.5 12 21l8-4.5"/>
+{% elif name == 'clock' %}<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/>
+{% elif name == 'pin' %}<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>
+{% elif name == 'phone' %}<path d="M8.5 4H6a2 2 0 0 0-2 2c0 7.7 6.3 14 14 14a2 2 0 0 0 2-2v-2.5l-4-1-1.2 2.2a12 12 0 0 1-7.5-7.5L9.5 8l-1-4Z"/>
+{% elif name == 'spark' %}<path d="M12 3c.5 4.5 2.5 6.5 7 7-4.5.5-6.5 2.5-7 7-.5-4.5-2.5-6.5-7-7 4.5-.5 6.5-2.5 7-7Z"/><path d="M19 16c.2 1.7 1.3 2.8 3 3-1.7.2-2.8 1.3-3 3-.2-1.7-1.3-2.8-3-3 1.7-.2 2.8-1.3 3-3Z"/>
+{% endif %}</svg>
+{%- endmacro %}
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
     {% set hero_image = main_photo_url %}
     {% set review_copy = review_copy|default({'title': 'Opiniones de huéspedes' if kind == 'alojamiento' else 'Opiniones de visitantes', 'subtitle': 'Experiencias publicadas para ayudar a nuevos visitantes a decidir con confianza.'}) %}
@@ -52,39 +61,44 @@
                 {% endif %}
             {% endif %}
             <div class="tourism-heading-card provider-identity">
-                <div class="provider-identity__intro">
+                <div class="provider-identity__main">
+                  <div class="provider-identity__intro">
                     {% if empresa_logo_url %}<div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>{% endif %}
                     <div class="provider-identity__copy">
                         <p class="provider-category">{{ provider_category }}</p>
                         <h1>{{ empresa.nombre }}</h1>
                         <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
                     </div>
-                </div>
-                <div class="provider-identity__body">
+                  </div>
+                  <div class="provider-identity__body">
                     <div class="prestador-actions">
                     {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>{% endif %}
                     {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a>{% endif %}
                     <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
                     {% if kind == 'gastronomia' and menu_url %}<a class="portal-button portal-button-secondary portal-button-ghost" href="{{ menu_url }}" target="_blank" rel="noopener noreferrer">Ver carta online</a>{% endif %}
                     </div>
+                  </div>
                 </div>
-                {% if empresa.direccion or empresa.horarios or empresa.telefono or empresa.whatsapp %}<dl class="provider-metadata" aria-label="Información esencial">
-                    {% if empresa.direccion %}<div><dt>Ubicación</dt><dd>{{ empresa.direccion }}</dd></div>{% endif %}
-                    {% if empresa.horarios %}<div><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}</dd></div>{% endif %}
-                    {% if empresa.telefono or empresa.whatsapp %}<div><dt>Teléfono</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></div>{% endif %}
-                </dl>{% endif %}
+                <aside class="provider-key-summary" aria-label="Resumen del lugar">
+                    <p class="provider-key-summary__title">Resumen del lugar</p>
+                    <dl>
+                      <div>{{ provider_icon('type') }}<span><dt>Propuesta</dt><dd>{{ provider_category }}</dd></span></div>
+                      {% if empresa.horarios %}<div>{{ provider_icon('clock') }}<span><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{% set clean_part = part.replace('Días: ', '').replace('Horarios: ', '') %}{% if 'lunes a domingo' in clean_part|lower or 'lunes, martes, miércoles, jueves, viernes, sábado, domingo' in clean_part|lower %}Todos los días{% else %}{{ clean_part.replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}{% endif %}</span>{% endfor %}</dd></span></div>{% endif %}
+                      {% if empresa.direccion %}<div>{{ provider_icon('pin') }}<span><dt>Ubicación</dt><dd>{{ empresa.direccion }}</dd></span></div>{% endif %}
+                      {% if empresa.telefono or empresa.whatsapp %}<div>{{ provider_icon('phone') }}<span><dt>Contacto directo</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></span></div>{% endif %}
+                    </dl>
+                </aside>
             </div>
         </section>
 
         <section class="portal-card quick-facts-card">
-            <p class="portal-card-label">Datos rápidos</p>
-            <h2>{% if kind == 'alojamiento' %}Lo que más consultan los viajeros{% elif kind == 'gastronomia' %}Cómo disfrutar la propuesta{% elif kind == 'servicios' %}Información práctica{% elif kind == 'actividades' %}Detalle de la actividad{% else %}Información destacada{% endif %}</h2>
+            <p class="portal-card-label">Datos útiles</p>
+            <h2>Información práctica</h2>
                 <dl class="prestador-facts quick-facts-grid">
-                {% for fact in quick_facts %}
-                <div><dt>{{ fact.label }}</dt><dd{% if 'horario' in fact.label|lower %} class="provider-schedule-text"{% endif %}>{% if 'horario' in fact.label|lower %}{% for part in (fact.value|string).split(' | ') %}<span>{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}{% else %}{{ fact.value }}{% endif %}</dd></div>
-                {% else %}
-                <p>Todavía no hay datos específicos cargados. Esta función está preparada para el próximo sprint.</p>
-                {% endfor %}
+                <div>{{ provider_icon('type') }}<span><dt>Tipo de servicio</dt><dd>{{ provider_category }}</dd></span></div>
+                {% if empresa.horarios %}<div>{{ provider_icon('clock') }}<span><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{% set clean_part = part.replace('Días: ', '').replace('Horarios: ', '') %}{% if 'lunes a domingo' in clean_part|lower or 'lunes, martes, miércoles, jueves, viernes, sábado, domingo' in clean_part|lower %}Todos los días{% else %}{{ clean_part.replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}{% endif %}</span>{% endfor %}</dd></span></div>{% endif %}
+                {% if empresa.direccion %}<div>{{ provider_icon('pin') }}<span><dt>Dirección</dt><dd>{{ empresa.direccion }}</dd></span></div>{% endif %}
+                {% if empresa.telefono or empresa.whatsapp %}<div>{{ provider_icon('phone') }}<span><dt>Teléfono / WhatsApp</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></span></div>{% endif %}
             </dl>
         </section>
 
@@ -95,9 +109,10 @@
                 <p>{{ empresa.descripcion or empresa.descripcion_corta or 'Este prestador todavía no cargó una descripción completa.' }}</p>
                 {% if empresa.promocion %}
                 <div class="promo-highlight" aria-label="Promoción vigente">
-                    <span>Promo vigente</span>
+                    {{ provider_icon('spark') }}<div><span>PROMO VIGENTE</span>
                     <strong>{{ empresa.promocion }}</strong>
                     <small>Beneficio especial para visitantes de Cabalango</small>
+                    </div>
                 </div>
                 {% endif %}
             </article>
@@ -143,15 +158,13 @@
             <h2>Fotos del lugar</h2>
             <div class="public-gallery public-gallery--count-{{ [galeria_urls|length, 4]|min }}" aria-label="Galería de fotos de {{ empresa.nombre }}" data-public-gallery>
                 {% if galeria_urls %}
-                <div class="public-gallery__mosaic">
-                    {% for foto in galeria_urls[:4] %}
-                    <button class="public-gallery__item {% if loop.first %}public-gallery__item--main{% else %}public-gallery__item--secondary{% endif %}" type="button" data-gallery-open="{{ loop.index0 }}" aria-label="Abrir foto {{ loop.index }} de {{ empresa.nombre }}">
+                <div class="public-gallery__grid">
+                    {% for foto in galeria_urls %}
+                    <button class="public-gallery__item" type="button" data-gallery-open="{{ loop.index0 }}" aria-label="Abrir foto {{ loop.index }} de {{ empresa.nombre }}">
                         <img src="{{ foto }}" alt="Foto {{ loop.index }} de {{ empresa.nombre }}"{% if not loop.first %} loading="lazy"{% endif %}>
-                        {% if loop.index == 4 and galeria_urls|length > 4 %}<span class="public-gallery__more" aria-hidden="true">+{{ galeria_urls|length - 4 }} fotos</span>{% endif %}
                     </button>
                     {% endfor %}
                 </div>
-                <p>La galería usa recortes editoriales para el impacto visual. Abrí la vista completa para ver cada imagen sin recortes.</p>
                 <button class="portal-button portal-button-secondary" type="button" data-gallery-open="0">Ver todas las fotos</button>
                 {% else %}
                 <p class="public-gallery__empty">Todavía no hay fotos disponibles.</p>
@@ -164,11 +177,8 @@
             <button class="gallery-lightbox-backdrop" type="button" data-gallery-close aria-label="Cerrar galería"></button>
             <div class="public-gallery-lightbox__panel" tabindex="-1">
                 <header class="gallery-lightbox-header">
-                    <div>
-                        <p class="portal-card-label">Galería completa</p>
-                        <h2 id="galeria-lightbox-title">Fotos de {{ empresa.nombre }}</h2>
-                        <span><strong data-gallery-counter>1 / {{ galeria_urls|length }}</strong> · imágenes completas sin recorte</span>
-                    </div>
+                    <h2 id="galeria-lightbox-title">Fotos de {{ empresa.nombre }}</h2>
+                    <strong data-gallery-counter>1 / {{ galeria_urls|length }}</strong>
                     <button class="gallery-lightbox-close" type="button" data-gallery-close aria-label="Cerrar galería">×</button>
                 </header>
                 <div class="public-gallery-lightbox__stage">
