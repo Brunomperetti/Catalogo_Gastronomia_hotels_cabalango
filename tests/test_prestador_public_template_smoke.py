@@ -1,3 +1,4 @@
+from pathlib import Path
 from types import SimpleNamespace
 import re
 
@@ -71,6 +72,13 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         service_card_kicker=lambda empresa: "Almacenes y kioscos · Almacén",
         actividad_subgrupos={},
     )
+
+
+def test_provider_stylesheet_uses_unique_hierarchy_cache_key():
+    template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
+
+    assert "?v=20260814-provider-hierarchy-1" in template
+    assert "?v=20260810-commerce-services-1" not in template
 
 
 def test_prestador_template_is_tourism_first_for_alojamiento():
