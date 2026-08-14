@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from app import main
 from app.database import Base
-from app.models import Empresa, Usuario
+from app.models import Empresa, SolicitudPrestador, Usuario
 
 
 @pytest.fixture()
@@ -70,6 +70,88 @@ def assert_server_rendered_panel(html, panel_id, expected_text):
 
 def redirect_query(response):
     return parse_qs(urlparse(response.headers["location"]).query)
+
+
+def edit_company(client, company, **values):
+    data = {
+        "empresa_slug_actual": company.slug,
+        "nombre": company.nombre,
+        "theme": company.theme or "default",
+    }
+    data.update(values)
+    return client.post("/empresa/editar_panel", data=data, follow_redirects=False)
+
+
+@pytest.mark.parametrize(("initial", "form_data", "expected"), [
+    (True, {}, False),
+    (False, {"activo": "1"}, True),
+])
+def test_edit_provider_applies_active_checkbox_state(admin_app, initial, form_data, expected):
+    client, db, _ = admin_app
+    company = add_company(db, activo=initial)
+
+    response = edit_company(client, company, **form_data)
+
+    db.refresh(company)
+    assert response.status_code == 303
+    assert company.activo is expected
+
+
+@pytest.mark.parametrize(("initial", "form_data", "expected"), [
+    (True, {}, False),
+    (False, {"destacado": "1"}, True),
+])
+def test_edit_provider_applies_featured_checkbox_state(admin_app, initial, form_data, expected):
+    client, db, _ = admin_app
+    company = add_company(db, destacado=initial)
+
+    response = edit_company(client, company, **form_data)
+
+    db.refresh(company)
+    assert response.status_code == 303
+    assert company.destacado is expected
+
+
+def test_deactivating_provider_preserves_company_media_and_intake(admin_app):
+    client, db, storage = admin_app
+    company = add_company(
+        db,
+        nombre="Nombre anterior",
+        activo=True,
+        logo_url="/media/empresas/demo/logo.png",
+        banner_url="/media/empresas/demo/banner.jpg",
+        galeria_urls=json.dumps(["/media/empresas/demo/galeria/photo.jpg"]),
+    )
+    media_file = storage / "empresas" / company.slug / "galeria" / "photo.jpg"
+    media_file.parent.mkdir(parents=True)
+    media_file.write_bytes(b"provider media")
+    request = SolicitudPrestador(
+        external_id="request-unchanged",
+        status="pendiente",
+        business_name="Solicitud sin cambios",
+        raw_payload="{}",
+    )
+    db.add(request)
+    db.commit()
+    company_id = company.id
+    request_id = request.id
+
+    response = edit_company(client, company, nombre="Nombre actualizado")
+
+    db.expire_all()
+    saved_company = db.get(Empresa, company_id)
+    saved_request = db.get(SolicitudPrestador, request_id)
+    assert response.status_code == 303
+    assert saved_company is not None
+    assert saved_company.nombre == "Nombre actualizado"
+    assert saved_company.activo is False
+    assert saved_company.logo_url == "/media/empresas/demo/logo.png"
+    assert saved_company.banner_url == "/media/empresas/demo/banner.jpg"
+    assert json.loads(saved_company.galeria_urls) == ["/media/empresas/demo/galeria/photo.jpg"]
+    assert media_file.read_bytes() == b"provider media"
+    assert saved_request is not None
+    assert saved_request.status == "pendiente"
+    assert saved_request.business_name == "Solicitud sin cambios"
 
 
 @pytest.mark.parametrize(("admin_tab", "expected_tab"), [
