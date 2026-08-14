@@ -82,5 +82,5 @@ def test_all_public_css_consumers_use_commerce_cache_key():
     ]
     for template in templates:
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
-        expected_version = "?v=20260812-home-art-2" if template == "descubri_cabalango.html" else "?v=20260814-provider-opening-1" if template == "prestador.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260812-home-art-2" if template == "descubri_cabalango.html" else "?v=20260814-provider-promo-lightbox-1" if template == "prestador.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source
