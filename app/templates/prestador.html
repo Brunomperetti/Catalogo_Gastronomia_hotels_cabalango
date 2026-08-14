@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260810-commerce-services-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260813-provider-editorial-1">
 </head>
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
     {% set hero_image = main_photo_url %}
@@ -44,26 +44,31 @@
                 {% if galeria_urls %}<button class="gallery-see-all" type="button" data-gallery-open>Ver todas las fotos</button>{% endif %}
             </div>
 
-            <div class="tourism-heading-card">
-                <div class="tourism-heading-meta">
-                    <span>{% if kind == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ theme_display_label(empresa.theme) }}{% endif %}</span>
-                    {% if empresa.subtipo %}<span>{{ empresa.subtipo }}</span>{% endif %}
-                    {% if empresa.subgrupo and actividad_subgrupos %}<span>{{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}</span>{% endif %}
-                </div>
-                {% if empresa_logo_url %}<img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="" aria-hidden="true" onerror="this.remove()">{% endif %}
-                <h1>{{ empresa.nombre }}</h1>
-                <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
-                <div class="prestador-actions">
+            {% set has_identity_aside = empresa_logo_url or empresa.direccion or empresa.horarios or empresa.whatsapp %}
+            <div class="tourism-heading-card provider-identity{% if not has_identity_aside %} provider-identity--single{% endif %}">
+                <div class="provider-identity__main">
+                    <div class="tourism-heading-meta">
+                        <span>{% if kind == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ theme_display_label(empresa.theme) }}{% endif %}</span>
+                        {% if empresa.subtipo %}<span>{{ empresa.subtipo }}</span>{% endif %}
+                        {% if empresa.subgrupo and actividad_subgrupos %}<span>{{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}</span>{% endif %}
+                    </div>
+                    <h1>{{ empresa.nombre }}</h1>
+                    <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
+                    <div class="prestador-actions">
                     {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>{% endif %}
                     {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a>{% endif %}
                     <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
                     {% if kind == 'gastronomia' and menu_url %}<a class="portal-button portal-button-secondary portal-button-ghost" href="{{ menu_url }}" target="_blank" rel="noopener noreferrer">Ver carta online</a>{% endif %}
+                    </div>
                 </div>
-                <div class="prestador-contact-lines">
-                    {% if empresa.whatsapp %}<span>WhatsApp: {{ empresa.whatsapp }}</span>{% endif %}
-                    {% if empresa.direccion %}<span>{{ empresa.direccion }}</span>{% endif %}
-                    {% if empresa.horarios %}<span>{{ empresa.horarios }}</span>{% endif %}
-                </div>
+                {% if has_identity_aside %}<aside class="provider-identity__aside" aria-label="Información esencial">
+                    {% if empresa_logo_url %}<div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>{% endif %}
+                    <div class="prestador-contact-lines">
+                        {% if empresa.direccion %}<div><span class="provider-meta-icon" aria-hidden="true">⌖</span><span><strong>Ubicación</strong>{{ empresa.direccion }}</span></div>{% endif %}
+                        {% if empresa.horarios %}<div><span class="provider-meta-icon" aria-hidden="true">◷</span><span><strong>Horarios</strong>{% for part in empresa.horarios.split(' | ') %}<span class="schedule-line">{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}</span></div>{% endif %}
+                        {% if empresa.whatsapp %}<div><span class="provider-meta-icon" aria-hidden="true">◌</span><span><strong>WhatsApp</strong>{{ empresa.whatsapp }}</span></div>{% endif %}
+                    </div>
+                </aside>{% endif %}
             </div>
         </section>
 
@@ -72,14 +77,14 @@
             <h2>{% if kind == 'alojamiento' %}Lo que más consultan los viajeros{% elif kind == 'gastronomia' %}Cómo disfrutar la propuesta{% elif kind == 'servicios' %}Información práctica{% elif kind == 'actividades' %}Detalle de la actividad{% else %}Información destacada{% endif %}</h2>
             <div class="prestador-facts quick-facts-grid">
                 {% for fact in quick_facts %}
-                <div class="{% if fact.enabled %}is-enabled{% elif fact.prepared %}is-prepared{% endif %}"><strong>{{ fact.label }}</strong><span>{{ fact.value }}</span></div>
+                <div class="{% if fact.enabled %}is-enabled{% elif fact.prepared %}is-prepared{% endif %}"><strong>{{ fact.label }}</strong><span>{% if 'horario' in fact.label|lower %}{% for part in (fact.value|string).split(' | ') %}<span class="schedule-line">{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}{% else %}{{ fact.value }}{% endif %}</span></div>
                 {% else %}
                 <p>Todavía no hay datos específicos cargados. Esta función está preparada para el próximo sprint.</p>
                 {% endfor %}
             </div>
         </section>
 
-        <section class="prestador-detail-grid">
+        <section class="prestador-detail-grid provider-content-grid" id="descripcion">
             <article class="portal-card">
                 <p class="portal-card-label">Descripción</p>
                 <h2>Sobre {{ empresa.nombre }}</h2>
@@ -207,17 +212,17 @@
             {% endif %}
         </section>
 
-        <section class="prestador-detail-grid">
+        <section class="prestador-detail-grid provider-location-grid" id="ubicacion">
             <article class="portal-card">
                 <p class="portal-card-label">Ubicación</p>
                 <h2>Cómo llegar</h2>
                 <p>{{ empresa.direccion or 'Dirección pendiente de carga.' }}</p>
                 {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Abrir mapa</a>{% endif %}
             </article>
-            <article class="portal-card">
+            <article class="portal-card provider-video-card{% if not empresa.video_url %} is-empty{% endif %}">
                 <p class="portal-card-label">Video</p>
                 <h2>Recorrido o presentación</h2>
-                {% if empresa.video_url %}<a class="prestador-video" href="{{ empresa.video_url }}" target="_blank" rel="noopener">Ver video</a>{% else %}<p>Pegá un link de video desde el panel si tenés YouTube, Instagram, Drive u otra plataforma.</p>{% endif %}
+                {% if empresa.video_url %}<a class="prestador-video" href="{{ empresa.video_url }}" target="_blank" rel="noopener">Ver video</a>{% else %}<p>Próximamente, recorrido del lugar.</p>{% endif %}
             </article>
         </section>
 
