@@ -77,7 +77,8 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
 def test_provider_stylesheet_uses_promo_lightbox_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260814-provider-promo-lightbox-1" in template
+    assert "?v=20260814-provider-lightbox-sizing-1" in template
+    assert "?v=20260814-provider-promo-lightbox-1" not in template
     assert "?v=20260814-provider-opening-1" not in template
     assert "?v=20260810-commerce-services-1" not in template
 
@@ -329,10 +330,23 @@ def test_gallery_uses_uniform_grid_and_contain_lightbox():
 
     assert 'class="public-gallery__grid"' in html
     assert "public-gallery__mosaic" not in html
-    assert "object-fit: cover" in css
-    assert ".portal-body .prestador-page .public-gallery-lightbox__image" in css
-    assert "object-fit: contain; object-position: center" in css
-    assert ".portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 auto; min-height: 0; overflow: hidden; }" in css
+    image_rule = re.search(
+        r"\.portal-body \.prestador-page \.public-gallery-lightbox__image \{([^}]*)\}", css
+    ).group(1)
+    stage_rule = re.search(
+        r"\.portal-body \.prestador-page \.public-gallery-lightbox__stage \{([^}]*)\}", css
+    ).group(1)
+
+    assert "object-fit: contain" in image_rule
+    assert "object-position: center" in image_rule
+    assert "max-height: 100%" in image_rule and "max-width: 100%" in image_rule
+    assert "width: auto" in image_rule and "height: auto" in image_rule
+    assert "object-fit: cover" not in image_rule
+    assert "flex: 1 1 0" in stage_rule
+    assert "grid-template-rows: minmax(0, 1fr)" in stage_rule
+    assert "min-height: 0" in stage_rule
+    assert "height: 100%" not in stage_rule
+    assert "overflow: hidden" in stage_rule and "place-items: center" in stage_rule
 
 
 def test_provider_promotion_uses_the_high_contrast_editorial_treatment():
@@ -340,8 +354,15 @@ def test_provider_promotion_uses_the_high_contrast_editorial_treatment():
     css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
 
     assert 'class="promo-highlight" aria-label="Promoción vigente"' in html
-    assert "linear-gradient(135deg, #513d2d 0%, #3f3328 58%, #354033 100%)" in css
-    assert ".promo-highlight strong { color: #fffaf0;" in css
+    promo_rule = re.search(
+        r"\.portal-body \.prestador-page \.promo-highlight \{([^}]*)\}", css
+    ).group(1)
+    title_rule = re.search(
+        r"\.portal-body \.prestador-page \.promo-highlight strong \{([^}]*)\}", css
+    ).group(1)
+
+    assert "linear-gradient(135deg, #3d2e23 0%, #30271f 58%, #293328 100%)" in promo_rule
+    assert "color: #fffaf0" in title_rule
 
 
 def test_public_gallery_has_accessible_lightbox_controls():
