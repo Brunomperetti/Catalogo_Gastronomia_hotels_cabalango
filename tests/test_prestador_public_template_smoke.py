@@ -329,7 +329,6 @@ def test_gallery_uses_uniform_grid_and_contain_lightbox():
 
     assert 'class="public-gallery__grid"' in html
     assert "public-gallery__mosaic" not in html
-    assert "object-fit: cover" in css
     image_rule = re.search(
         r"\.portal-body \.prestador-page \.public-gallery-lightbox__image \{([^}]*)\}", css
     ).group(1)
@@ -340,9 +339,12 @@ def test_gallery_uses_uniform_grid_and_contain_lightbox():
     assert "object-fit: contain" in image_rule
     assert "object-position: center" in image_rule
     assert "max-height: 100%" in image_rule and "max-width: 100%" in image_rule
+    assert "width: auto" in image_rule and "height: auto" in image_rule
     assert "object-fit: cover" not in image_rule
+    assert "flex: 1 1 0" in stage_rule
     assert "grid-template-rows: minmax(0, 1fr)" in stage_rule
-    assert "height: 100%" in stage_rule and "min-height: 0" in stage_rule
+    assert "min-height: 0" in stage_rule
+    assert "height: 100%" not in stage_rule
     assert "overflow: hidden" in stage_rule and "place-items: center" in stage_rule
 
 
