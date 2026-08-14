@@ -5942,7 +5942,7 @@ body,
 .portal-body .prestador-page .provider-content-grid { grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); }
 .portal-body .prestador-page .prestador-detail-grid > article { min-width: 0; overflow-wrap: anywhere; }
 .portal-body .prestador-page .prestador-detail-grid > article h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 16px; }
-.portal-body .prestador-page .promo-highlight { align-items: flex-start; background: linear-gradient(135deg, #513d2d 0%, #3f3328 58%, #354033 100%) !important; border: 1px solid rgba(229, 207, 169, .24) !important; border-left: 4px solid #c6a56f !important; border-radius: 4px 16px 16px 4px; box-shadow: 0 18px 38px rgba(54, 40, 28, .2), inset 0 1px rgba(255, 255, 255, .08); color: #fffaf0 !important; display: flex; gap: 16px; margin-top: 24px; padding: 22px 24px; }
+.portal-body .prestador-page .promo-highlight { align-items: flex-start; background: linear-gradient(135deg, #3d2e23 0%, #30271f 58%, #293328 100%) !important; border: 1px solid rgba(229, 207, 169, .24) !important; border-left: 4px solid #c6a56f !important; border-radius: 4px 16px 16px 4px; box-shadow: 0 18px 38px rgba(54, 40, 28, .26), inset 0 1px rgba(255, 255, 255, .08); color: #fffaf0 !important; display: flex; gap: 16px; margin-top: 24px; padding: 22px 24px; }
 .portal-body .prestador-page .promo-highlight > span,
 .portal-body .prestador-page .promo-highlight > strong,
 .portal-body .prestador-page .promo-highlight > small { color: var(--portal-heading); }
@@ -5972,7 +5972,7 @@ body,
 .portal-body .prestador-page .gallery-lightbox-header { align-items: center; color: #fff; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) auto auto; padding: 14px 18px; }
 .portal-body .prestador-page .gallery-lightbox-header h2 { color: #fff; font-family: var(--portal-font-sans); font-size: .9rem; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .portal-body .prestador-page .gallery-lightbox-header strong { color: rgba(255,255,255,.72); font-size: .78rem; }
-.portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 auto; grid-template-rows: minmax(0, 1fr); height: 100%; min-height: 0; overflow: hidden; place-items: center; }
 .portal-body .prestador-page .public-gallery-lightbox__image { height: 100%; max-height: 100%; max-width: 100%; object-fit: contain; object-position: center; width: 100%; }
 
 /* Reviews: compact form and a quiet count rather than a floating badge. */
