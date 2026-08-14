@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260814-provider-hierarchy-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260814-provider-opening-1">
 </head>
 {% macro provider_icon(name) -%}
 <svg class="provider-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -42,23 +42,24 @@
                 {% endif %}
             {% endif %}
             <section class="tourism-heading-card provider-identity">
-                <div class="provider-identity__main">
-                  <div class="provider-identity__intro">
-                    {% if empresa_logo_url %}<div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>{% endif %}
-                    <div class="provider-identity__copy">
+                <div class="provider-identity__main{% if not empresa_logo_url %} provider-identity__main--no-logo{% endif %}">
+                    {% if empresa_logo_url %}
+                    <div class="provider-identity__brand">
+                        <div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>
+                        <span class="provider-identity__edition" aria-hidden="true">Cabalango</span>
+                    </div>
+                    {% endif %}
+                    <div class="provider-identity__content">
                         <p class="provider-category">{{ provider_category }}</p>
                         <h1>{{ empresa.nombre }}</h1>
                         <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
+                        <div class="prestador-actions" aria-label="Acciones principales">
+                        {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>{% endif %}
+                        {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a>{% endif %}
+                        <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
+                        {% if kind == 'gastronomia' and menu_url %}<a class="portal-button portal-button-secondary portal-button-ghost" href="{{ menu_url }}" target="_blank" rel="noopener noreferrer">Ver carta online</a>{% endif %}
+                        </div>
                     </div>
-                  </div>
-                  <div class="provider-identity__body">
-                    <div class="prestador-actions">
-                    {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>{% endif %}
-                    {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a>{% endif %}
-                    <a class="portal-button portal-button-secondary" href="#fotos">Ver fotos</a>
-                    {% if kind == 'gastronomia' and menu_url %}<a class="portal-button portal-button-secondary portal-button-ghost" href="{{ menu_url }}" target="_blank" rel="noopener noreferrer">Ver carta online</a>{% endif %}
-                    </div>
-                  </div>
                 </div>
                 <aside class="provider-key-summary" aria-label="Resumen del lugar">
                     <p class="provider-key-summary__title">Resumen del lugar</p>
