@@ -5942,15 +5942,15 @@ body,
 .portal-body .prestador-page .provider-content-grid { grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); }
 .portal-body .prestador-page .prestador-detail-grid > article { min-width: 0; overflow-wrap: anywhere; }
 .portal-body .prestador-page .prestador-detail-grid > article h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 16px; }
-.portal-body .prestador-page .promo-highlight { align-items: flex-start; background: linear-gradient(120deg, #f5efe2, #f8f4eb); border: 0 !important; border-left: 4px solid #a78352 !important; border-radius: 4px 14px 14px 4px; color: var(--portal-heading); display: flex; gap: 14px; margin-top: 24px; padding: 20px 22px; }
+.portal-body .prestador-page .promo-highlight { align-items: flex-start; background: linear-gradient(135deg, #513d2d 0%, #3f3328 58%, #354033 100%) !important; border: 1px solid rgba(229, 207, 169, .24) !important; border-left: 4px solid #c6a56f !important; border-radius: 4px 16px 16px 4px; box-shadow: 0 18px 38px rgba(54, 40, 28, .2), inset 0 1px rgba(255, 255, 255, .08); color: #fffaf0 !important; display: flex; gap: 16px; margin-top: 24px; padding: 22px 24px; }
 .portal-body .prestador-page .promo-highlight > span,
 .portal-body .prestador-page .promo-highlight > strong,
 .portal-body .prestador-page .promo-highlight > small { color: var(--portal-heading); }
-.portal-body .prestador-page .promo-highlight .provider-icon { color: #9a7345; height: 23px; margin-top: 2px; width: 23px; }
-.portal-body .prestador-page .promo-highlight > div { display: grid; gap: 5px; }
-.portal-body .prestador-page .promo-highlight span { font-size: .68rem; font-weight: 800; letter-spacing: .13em; }
-.portal-body .prestador-page .promo-highlight strong { font-family: var(--portal-font-display); font-size: 1.25rem; line-height: 1.25; }
-.portal-body .prestador-page .promo-highlight small { color: var(--portal-text-soft); font-size: .8rem; }
+.portal-body .prestador-page .promo-highlight .provider-icon { color: #dec18e; height: 25px; margin-top: 2px; width: 25px; }
+.portal-body .prestador-page .promo-highlight > div { display: grid; gap: 7px; }
+.portal-body .prestador-page .promo-highlight span { color: #ead2a8; font-size: .7rem; font-weight: 800; letter-spacing: .16em; }
+.portal-body .prestador-page .promo-highlight strong { color: #fffaf0; font-family: var(--portal-font-display); font-size: clamp(1.35rem, 2.5vw, 1.7rem); font-weight: 600; line-height: 1.18; text-wrap: balance; }
+.portal-body .prestador-page .promo-highlight small { color: rgba(255, 250, 240, .72); font-size: .8rem; }
 
 /* Gallery. Empty state stays at its natural content height. */
 .portal-body .prestador-page .photos-summary-card { margin-top: var(--provider-gap); }
@@ -5972,8 +5972,8 @@ body,
 .portal-body .prestador-page .gallery-lightbox-header { align-items: center; color: #fff; display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr) auto auto; padding: 14px 18px; }
 .portal-body .prestador-page .gallery-lightbox-header h2 { color: #fff; font-family: var(--portal-font-sans); font-size: .9rem; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .portal-body .prestador-page .gallery-lightbox-header strong { color: rgba(255,255,255,.72); font-size: .78rem; }
-.portal-body .prestador-page .public-gallery-lightbox__stage { min-height: 0; }
-.portal-body .prestador-page .public-gallery-lightbox__image { height: 100%; max-height: none; max-width: 100%; object-fit: contain; width: 100%; }
+.portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+.portal-body .prestador-page .public-gallery-lightbox__image { height: 100%; max-height: 100%; max-width: 100%; object-fit: contain; object-position: center; width: 100%; }
 
 /* Reviews: compact form and a quiet count rather than a floating badge. */
 .portal-body .prestador-page .reviews-card { margin-top: var(--provider-gap); }

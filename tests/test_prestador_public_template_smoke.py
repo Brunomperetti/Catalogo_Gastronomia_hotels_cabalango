@@ -74,10 +74,11 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
     )
 
 
-def test_provider_stylesheet_uses_unique_hierarchy_cache_key():
+def test_provider_stylesheet_uses_promo_lightbox_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260814-provider-opening-1" in template
+    assert "?v=20260814-provider-promo-lightbox-1" in template
+    assert "?v=20260814-provider-opening-1" not in template
     assert "?v=20260810-commerce-services-1" not in template
 
 
@@ -329,7 +330,18 @@ def test_gallery_uses_uniform_grid_and_contain_lightbox():
     assert 'class="public-gallery__grid"' in html
     assert "public-gallery__mosaic" not in html
     assert "object-fit: cover" in css
-    assert "object-fit: contain" in css
+    assert ".portal-body .prestador-page .public-gallery-lightbox__image" in css
+    assert "object-fit: contain; object-position: center" in css
+    assert ".portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 auto; min-height: 0; overflow: hidden; }" in css
+
+
+def test_provider_promotion_uses_the_high_contrast_editorial_treatment():
+    html = render_prestador(identity_overrides={"promocion": "10% de descuento"})
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+
+    assert 'class="promo-highlight" aria-label="Promoción vigente"' in html
+    assert "linear-gradient(135deg, #513d2d 0%, #3f3328 58%, #354033 100%)" in css
+    assert ".promo-highlight strong { color: #fffaf0;" in css
 
 
 def test_public_gallery_has_accessible_lightbox_controls():
