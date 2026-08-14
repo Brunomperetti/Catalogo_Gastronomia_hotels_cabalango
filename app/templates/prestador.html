@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260814-provider-premium">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260814-provider-hierarchy-1">
 </head>
 {% macro provider_icon(name) -%}
 <svg class="provider-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -20,7 +20,6 @@
 {% endif %}</svg>
 {%- endmacro %}
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
-    {% set hero_image = main_photo_url %}
     {% set review_copy = review_copy|default({'title': 'Opiniones de huéspedes' if kind == 'alojamiento' else 'Opiniones de visitantes', 'subtitle': 'Experiencias publicadas para ayudar a nuevos visitantes a decidir con confianza.'}) %}
     {% set menu_fotos_urls = menu_fotos_urls|default([]) %}
     {% set menu_url = menu_url|default(empresa.menu_url or '') %}
@@ -32,25 +31,7 @@
         {% set active_section = 'alojamientos' if kind == 'alojamiento' else kind if kind in ['gastronomia', 'servicios', 'actividades'] else '' %}
         {% include "partials/portal_nav.html" %}
 
-        <section class="tourism-hero">
-            <div class="tourism-gallery {% if not has_real_photos %}tourism-gallery--empty{% elif galeria_urls|length <= 1 %}tourism-gallery--single{% endif %}" aria-label="Galería de fotos de {{ empresa.nombre }}">
-                <figure class="tourism-gallery-main {% if not has_real_photos %}is-empty{% endif %}">
-                    {% if has_real_photos %}
-                    <img src="{{ hero_image }}" alt="Foto principal de {{ empresa.nombre }}" onerror="this.closest('.tourism-gallery-main').classList.add('is-empty');">
-                    {% else %}
-                    <div class="gallery-hero-placeholder"><strong>Todavía no hay fotos cargadas</strong><span>La ficha está lista para recibir imágenes reales del lugar.</span></div>
-                    {% endif %}
-                    <figcaption>{{ theme_display_label(empresa.theme) }} en Cabalango</figcaption>
-                </figure>
-                {% if has_real_photos and galeria_urls|length > 1 %}<div class="tourism-gallery-side">
-                    {% for foto in gallery_tiles[:2] %}
-                    <img src="{{ foto }}" alt="Foto {{ loop.index + 1 }} de {{ empresa.nombre }}">
-                    {% endfor %}
-                </div>{% endif %}
-                {% if galeria_urls %}<button class="gallery-see-all" type="button" data-gallery-open>Ver todas las fotos</button>{% endif %}
-            </div>
-
-            {% if kind == 'servicios' %}
+        {% if kind == 'servicios' %}
                 {% set provider_category = service_card_kicker(empresa) %}
             {% else %}
                 {% set provider_category = theme_display_label(empresa.theme) %}
@@ -60,7 +41,7 @@
                     {% if provider_subgroup != empresa.subtipo and provider_subgroup != provider_category %}{% set provider_category = provider_category ~ ' · ' ~ provider_subgroup %}{% endif %}
                 {% endif %}
             {% endif %}
-            <div class="tourism-heading-card provider-identity">
+            <section class="tourism-heading-card provider-identity">
                 <div class="provider-identity__main">
                   <div class="provider-identity__intro">
                     {% if empresa_logo_url %}<div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>{% endif %}
@@ -88,19 +69,7 @@
                       {% if empresa.telefono or empresa.whatsapp %}<div>{{ provider_icon('phone') }}<span><dt>Contacto directo</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></span></div>{% endif %}
                     </dl>
                 </aside>
-            </div>
-        </section>
-
-        <section class="portal-card quick-facts-card">
-            <p class="portal-card-label">Datos útiles</p>
-            <h2>Información práctica</h2>
-                <dl class="prestador-facts quick-facts-grid">
-                <div>{{ provider_icon('type') }}<span><dt>Tipo de servicio</dt><dd>{{ empresa.subtipo if kind == 'servicios' and empresa.subtipo else provider_category }}</dd></span></div>
-                {% if empresa.horarios %}<div>{{ provider_icon('clock') }}<span><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{% set clean_part = part.replace('Días: ', '').replace('Horarios: ', '') %}{% if 'lunes a domingo' in clean_part|lower or 'lunes, martes, miércoles, jueves, viernes, sábado, domingo' in clean_part|lower %}Todos los días{% else %}{{ clean_part.replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}{% endif %}</span>{% endfor %}</dd></span></div>{% endif %}
-                {% if empresa.direccion %}<div>{{ provider_icon('pin') }}<span><dt>Dirección</dt><dd>{{ empresa.direccion }}</dd></span></div>{% endif %}
-                {% if empresa.telefono or empresa.whatsapp %}<div>{{ provider_icon('phone') }}<span><dt>Teléfono / WhatsApp</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></span></div>{% endif %}
-            </dl>
-        </section>
+            </section>
 
         <section class="prestador-detail-grid provider-content-grid" id="descripcion">
             <article class="portal-card">
