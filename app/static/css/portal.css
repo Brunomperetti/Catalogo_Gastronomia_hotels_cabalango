@@ -5873,31 +5873,8 @@ body,
 .portal-body .prestador-page a:not(.portal-button):not(.gallery-see-all):not(.gallery-lightbox-nav):not(.gallery-lightbox-close) { color: var(--portal-heading); }
 .portal-body .prestador-page a:not(.portal-button):hover { color: var(--portal-primary-hover); }
 
-/* Hero: one restrained panorama or a 75/25 composition with two details. */
-.portal-body .prestador-page .tourism-hero { display: grid; gap: 18px; margin: 0; min-width: 0; }
-.portal-body .prestador-page .tourism-gallery {
-  border-radius: var(--provider-radius);
-  display: grid;
-  gap: 6px;
-  grid-template-columns: minmax(0, 3fr) minmax(190px, 1fr);
-  height: clamp(360px, 34vw, 410px);
-  min-height: 0;
-  overflow: hidden;
-  position: relative;
-}
-.portal-body .prestador-page .tourism-gallery--single,
-.portal-body .prestador-page .tourism-gallery--empty { grid-template-columns: 1fr; }
-.portal-body .prestador-page .tourism-gallery-main,
-.portal-body .prestador-page .tourism-gallery-side,
-.portal-body .prestador-page .tourism-gallery-side img { border-radius: 0; height: 100%; min-height: 0; min-width: 0; }
-.portal-body .prestador-page .tourism-gallery-main img,
-.portal-body .prestador-page .tourism-gallery-side img { display: block; height: 100%; object-fit: cover; width: 100%; }
-.portal-body .prestador-page .tourism-gallery-side { display: grid; gap: 6px; grid-template-rows: repeat(2, minmax(0, 1fr)); overflow: hidden; }
-.portal-body .prestador-page .tourism-gallery-main figcaption { bottom: 14px; font-size: .75rem; left: 14px; padding: 7px 10px; }
-.portal-body .prestador-page .gallery-see-all { bottom: 14px; right: 14px; top: auto; }
-
 /* Identity: a balanced editorial split with a useful, integrated summary. */
-.portal-body .prestador-page .tourism-heading-card.provider-identity { align-items: stretch; display: grid; gap: clamp(28px, 4vw, 52px); grid-template-columns: minmax(0, 1.45fr) minmax(290px, .75fr); margin: 0; position: static; }
+.portal-body .prestador-page .tourism-heading-card.provider-identity { align-items: stretch; display: grid; gap: clamp(28px, 3vw, 40px); grid-template-columns: minmax(0, 1.6fr) minmax(290px, 1fr); margin: 0; position: static; }
 .portal-body .prestador-page .provider-identity__main { align-self: center; min-width: 0; }
 .portal-body .prestador-page .provider-identity__intro { align-items: center; display: flex; gap: 24px; min-width: 0; }
 .portal-body .prestador-page .provider-identity__copy { min-width: 0; }
@@ -5929,17 +5906,6 @@ body,
 .portal-body .prestador-page .provider-key-summary dt { margin-bottom: 3px; }
 .portal-body .prestador-page .provider-key-summary dd { font-size: .88rem; line-height: 1.42; }
 .portal-body .prestador-page .provider-key-summary span { min-width: 0; }
-
-/* Practical information is a plain data grid, not cards inside a card. */
-.portal-body .prestador-page .quick-facts-card { margin-top: var(--provider-gap); }
-.portal-body .prestador-page .quick-facts-card h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 18px; }
-.portal-body main.prestador-page .quick-facts-grid { border-bottom: 1px solid var(--portal-border); border-top: 1px solid var(--portal-border); display: grid; gap: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; }
-.portal-body main.prestador-page .quick-facts-grid > div { align-items: flex-start; background: transparent !important; border: 0 !important; border-radius: 0 !important; display: flex; gap: 12px; min-width: 0; padding: 18px 20px !important; }
-.portal-body main.prestador-page .quick-facts-grid > div:first-child { padding-left: 0 !important; }
-.portal-body main.prestador-page .quick-facts-grid > div + div { border-left: 1px solid var(--portal-border) !important; }
-.portal-body main.prestador-page .quick-facts-grid > div > span { min-width: 0; }
-.portal-body main.prestador-page .quick-facts-grid dt { margin-bottom: 5px; }
-.portal-body main.prestador-page .quick-facts-grid dd { font-size: .91rem; line-height: 1.42; }
 
 /* Description, contact and the only intentionally nested highlight. */
 .portal-body .prestador-page .prestador-detail-grid { align-items: stretch; gap: 18px; margin-top: var(--provider-gap); }
@@ -5998,16 +5964,11 @@ body,
 
 @media (max-width: 900px) {
   .portal-body .prestador-page .tourism-heading-card.provider-identity { grid-template-columns: minmax(0, 1fr) minmax(250px, .72fr); }
-  .portal-body main.prestador-page .quick-facts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .portal-body main.prestador-page .quick-facts-grid > div:nth-child(odd) { border-left: 0 !important; padding-left: 0 !important; }
-  .portal-body main.prestador-page .quick-facts-grid > div:nth-child(n + 3) { border-top: 1px solid var(--portal-border) !important; }
 }
 
 @media (max-width: 700px) {
   .portal-body .prestador-page { --provider-gap: 28px; --provider-padding: 22px; --provider-radius: 18px; padding-top: 10px; width: min(100% - 24px, 1240px); }
-  .portal-body .prestador-page .portal-topnav { position: static; }
-  .portal-body .prestador-page .tourism-gallery { gap: 4px; grid-template-columns: minmax(0, 3fr) minmax(82px, 1fr); height: clamp(280px, 82vw, 350px); }
-  .portal-body .prestador-page .tourism-gallery-side { gap: 4px; }
+  .portal-body .prestador-page .portal-topnav { margin-bottom: 18px; position: static; }
   .portal-body .prestador-page .tourism-heading-card.provider-identity { gap: 24px; grid-template-columns: 1fr; }
   .portal-body .prestador-page .provider-identity__intro { align-items: flex-start; gap: 14px; }
   .portal-body .prestador-page .provider-logo { border-radius: 13px; flex-basis: 76px; height: 76px; padding: 7px; width: 76px; }
@@ -6016,7 +5977,6 @@ body,
   .portal-body .prestador-page .prestador-actions { display: grid; grid-template-columns: 1fr; }
   .portal-body .prestador-page .prestador-actions .portal-button { justify-content: center; min-width: 0; text-align: center; width: 100%; }
   .portal-body .prestador-page .provider-key-summary { border-left: 0; border-top: 1px solid var(--portal-border); padding-left: 0; padding-top: 20px; }
-  .portal-body main.prestador-page .quick-facts-grid,
   .portal-body .prestador-page .provider-content-grid,
   .portal-body .prestador-page .provider-location-grid { grid-template-columns: 1fr; }
   .portal-body .prestador-page .public-gallery__grid,
@@ -6029,10 +5989,6 @@ body,
 }
 
 @media (max-width: 480px) {
-  .portal-body main.prestador-page .quick-facts-grid { grid-template-columns: 1fr; }
-  .portal-body main.prestador-page .quick-facts-grid > div,
-  .portal-body main.prestador-page .quick-facts-grid > div:nth-child(odd) { border-left: 0 !important; padding: 15px 0 !important; }
-  .portal-body main.prestador-page .quick-facts-grid > div + div { border-top: 1px solid var(--portal-border) !important; }
   .portal-body .prestador-page .public-gallery__grid,
   .portal-body .prestador-page .public-gallery--count-1 .public-gallery__grid,
   .portal-body .prestador-page .public-gallery--count-2 .public-gallery__grid { grid-template-columns: 1fr; }

@@ -45,9 +45,9 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         lugar_encuentro="",
     )
     identity_overrides = identity_overrides or {}
-    for field in ("direccion", "horarios", "whatsapp"):
-        if field in identity_overrides:
-            setattr(empresa, field, identity_overrides[field])
+    for field, value in identity_overrides.items():
+        if hasattr(empresa, field):
+            setattr(empresa, field, value)
     galeria_urls = galeria_urls or []
     return template.render(
         request=SimpleNamespace(url_for=UrlForStub()),
@@ -79,7 +79,7 @@ def test_prestador_template_is_tourism_first_for_alojamiento():
     assert "Consultar por WhatsApp" in html
     assert "Ver todas las fotos" in html
     assert "Opiniones de huéspedes" in html
-    assert "Información práctica" in html
+    assert "Información práctica" not in html
     assert "Descargar lista de precios" not in html
     assert "Productos / platos publicados" not in html
 
@@ -87,7 +87,8 @@ def test_prestador_template_is_tourism_first_for_alojamiento():
 def test_prestador_template_empty_gallery_does_not_break():
     html = render_prestador("alojamiento", [])
 
-    assert "Todavía no hay fotos cargadas" in html
+    assert "Todavía no hay fotos cargadas" not in html
+    assert "Todavía no hay fotos disponibles." in html
     assert "Compatibilidad catálogo viejo" not in html
     assert "Abrir catálogo heredado" not in html
 
@@ -171,7 +172,7 @@ def test_two_photo_grid_keeps_two_columns_between_481_and_700px():
 def test_category_is_rendered_once_without_a_duplicate_chip():
     html = render_prestador("alojamiento")
 
-    assert html.count("Alojamientos · Cabaña") == 3
+    assert html.count("Alojamientos · Cabaña") == 2
     assert html.count('class="provider-category"') == 1
     assert "tourism-heading-meta" not in html
 
@@ -183,31 +184,35 @@ def test_service_category_does_not_append_subtype_twice():
     assert "Almacenes y kioscos · Almacén · Almacén" not in html
 
 
-def test_service_practical_fact_uses_specific_subtype_only():
-    html = render_prestador("servicios", subtipo="Almacén")
-    identity = re.search(
-        r'<div class="tourism-heading-card provider-identity">(.*?)</div>\s*</section>',
-        html,
-        re.DOTALL,
-    ).group(1)
-    practical = re.search(
-        r'<section class="portal-card quick-facts-card">(.*?)</section>',
-        html,
-        re.DOTALL,
-    ).group(1)
+def test_identity_is_first_content_section_and_keeps_complete_summary():
+    html = render_prestador(
+        "servicios",
+        ["/media/empresas/demo/galeria/foto-1.webp"],
+        identity_overrides={"horarios": "Días: Lunes a domingo | Horarios: 9:00 a 13:00"},
+        subtipo="Almacén",
+    )
+    main_content = html.split("</nav>", 1)[-1]
+    first_section = re.search(r'<section class="([^"]+)">', main_content).group(1)
+    identity = re.search(r'<section class="tourism-heading-card provider-identity">(.*?)</section>', html, re.DOTALL).group(1)
 
-    assert identity.count("Almacenes y kioscos · Almacén") == 2
+    assert first_section == "tourism-heading-card provider-identity"
+    assert "tourism-gallery" not in html
+    assert "tourism-gallery-main" not in html
+    assert "tourism-gallery-side" not in html
     assert "Resumen del lugar" in identity
-    assert "Tipo de servicio" in practical
-    assert "Almacén" in practical
-    assert "Almacenes y kioscos · Almacén" not in practical
+    assert "Propuesta" in identity
+    assert "Horarios" in identity
+    assert "Ubicación" in identity
+    assert "Contacto directo" in identity
+    assert "Ruta demo 123" in identity
+    assert "5493510000000" in identity
 
 
 def test_schedules_are_plain_text_without_pill_nesting():
     html = render_prestador(identity_overrides={"horarios": "Días: Lunes a domingo | Horarios: 9:00 a 13:00 | Todo el año: Sí"})
 
     assert "Lunes a domingo" not in html
-    assert html.count("Todos los días") == 2
+    assert html.count("Todos los días") == 1
     assert "9:00 a 13:00" in html
     assert "Abierto todo el año" in html
     assert 'class="provider-schedule-text"' in html
@@ -232,27 +237,32 @@ def test_legacy_nested_identity_and_fact_classes_are_absent():
     assert "schedule-line" not in html
 
 
-def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():
+def test_upper_hero_and_practical_information_are_completely_removed():
     html = render_prestador("alojamiento", ["/media/empresas/demo/galeria/foto-1.webp"])
-    hero = re.search(
-        r'<section class="tourism-hero">(.*?)<div class="tourism-heading-card provider-identity">',
-        html,
-        re.DOTALL,
-    ).group(1)
+    identity_position = html.index('class="tourism-heading-card provider-identity"')
+
+    assert "tourism-hero" not in html
+    assert "tourism-gallery" not in html[:identity_position]
+    assert "Ver todas las fotos" not in html[:identity_position]
+    assert "Datos útiles" not in html
+    assert "Información práctica" not in html
+    assert "quick-facts-card" not in html
+    assert "quick-facts-grid" not in html
+
+
+def test_lower_gallery_remains_the_only_gallery_with_one_lightbox():
+    html = render_prestador("alojamiento", ["/one.webp", "/two.webp"])
     photos_section = re.search(
         r'<section class="portal-card photos-summary-card" id="fotos">(.*?)</section>',
         html,
         re.DOTALL,
     ).group(1)
 
-    assert 'class="tourism-gallery ' in hero
-    assert 'class="tourism-gallery-main ' in hero
-    assert "tourism-gallery--single" in hero
-    assert 'class="tourism-gallery-side"' not in hero
-    assert "public-gallery" not in hero
-    assert "Fotos del lugar" in photos_section
-    assert 'class="public-gallery public-gallery--count-1"' in photos_section
-    assert html.count('class="public-gallery ') == 1
+    assert 'class="public-gallery__grid"' in photos_section
+    assert "data-public-gallery" in photos_section
+    assert "data-gallery-open" in photos_section
+    assert "Ver todas las fotos" in photos_section
+    assert html.count('class="public-gallery-lightbox"') == 1
     assert html.count('id="fotos"') == 1
 
 
@@ -268,17 +278,17 @@ def test_public_gallery_exposes_every_thumbnail_and_lightbox_url():
         assert photo in html
 
 
-def test_provider_practical_grid_has_consistent_icons_and_existing_data():
-    html = render_prestador(identity_overrides={"horarios": "Días: Lunes a domingo | Horarios: 9:00 a 13:00 | Todo el año: Sí"})
-    section = re.search(r'<section class="portal-card quick-facts-card">(.*?)</section>', html, re.DOTALL).group(1)
+def test_remaining_provider_sections_are_preserved():
+    html = render_prestador("alojamiento", ["/one.webp"], identity_overrides={"empresa_logo_url": "/logo.webp", "promocion": "10% de descuento"})
 
-    assert "Tipo de servicio" in section
-    assert "Todos los días" in section
-    assert "9:00 a 13:00" in section
-    assert "Abierto todo el año" in section
-    assert "Dirección" in section
-    assert "Teléfono / WhatsApp" in section
-    assert section.count('class="provider-icon"') == 4
+    assert 'id="descripcion"' in html
+    assert "Contacto" in html
+    assert "PROMO VIGENTE" in html
+    assert "10% de descuento" in html
+    assert 'id="fotos"' in html
+    assert 'id="opiniones"' in html
+    assert 'id="ubicacion"' in html
+    assert "Video" in html
 
 
 def test_gallery_uses_uniform_grid_and_contain_lightbox():
