@@ -130,6 +130,13 @@ def test_provider_identity_has_no_legacy_aside_when_metadata_is_empty():
     })
 
     assert 'class="tourism-heading-card provider-identity"' in html
+    assert 'class="provider-identity__main provider-identity__main--no-logo"' in html
+    assert 'class="provider-identity__brand"' not in html
+    assert 'class="provider-logo"' not in html
+    assert "Cabalango</span>" not in html
+    assert "Cabañas Demo" in html
+    assert "Alojamientos · Cabaña" in html
+    assert 'aria-label="Acciones principales"' in html
     assert 'class="provider-identity__aside"' not in html
     assert 'class="provider-metadata"' not in html
 
@@ -143,12 +150,23 @@ def test_provider_identity_integrates_logo_title_and_metadata():
     opening = re.search(r'<div class="provider-identity__main">(.*?)</div>\s*<aside', html, re.DOTALL).group(1)
     assert 'class="provider-identity__brand"' in opening
     assert 'class="provider-logo"' in opening
+    assert "provider-identity__main--no-logo" not in html
     assert 'class="provider-identity__content"' in opening
     assert "Cabañas Demo" in opening
     assert 'aria-label="Acciones principales"' in opening
     assert 'class="provider-key-summary"' in html
     assert "Resumen del lugar" in html
     assert 'class="provider-identity__aside"' not in html
+
+
+def test_provider_identity_no_logo_css_never_reserves_a_brand_column():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    no_logo_rules = re.findall(
+        r"\.provider-identity__main--no-logo \{([^}]*)\}", css
+    )
+
+    assert len(no_logo_rules) == 4
+    assert all("grid-template-columns: 1fr" in rule for rule in no_logo_rules)
 
 
 def test_provider_navigation_is_not_sticky():

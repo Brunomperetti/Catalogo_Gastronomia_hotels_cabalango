@@ -5901,6 +5901,7 @@ body,
   min-width: 0;
   padding: clamp(40px, 5vw, 68px) clamp(32px, 4.6vw, 64px);
 }
+.portal-body .prestador-page .provider-identity__main--no-logo { grid-template-columns: 1fr; }
 .portal-body .prestador-page .provider-identity__brand { display: flex; flex-direction: column; min-width: 0; }
 .portal-body .prestador-page .provider-identity__content { align-self: center; min-width: 0; }
 .portal-body .prestador-page .provider-logo {
@@ -5994,6 +5995,7 @@ body,
 @media (max-width: 900px) {
   .portal-body .prestador-page .tourism-heading-card.provider-identity { grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); }
   .portal-body .prestador-page .provider-identity__main { gap: 24px; grid-template-columns: 104px minmax(0, 1fr); padding: 42px 32px; }
+  .portal-body .prestador-page .provider-identity__main--no-logo { grid-template-columns: 1fr; }
   .portal-body .prestador-page .provider-logo { height: 104px; }
   .portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(3rem, 7vw, 4.5rem); }
   .portal-body .prestador-page .provider-key-summary { padding-inline: 26px; }
@@ -6004,6 +6006,7 @@ body,
   .portal-body .prestador-page .portal-topnav { margin-bottom: 18px; position: static; }
   .portal-body .prestador-page .tourism-heading-card.provider-identity { grid-template-columns: 1fr; }
   .portal-body .prestador-page .provider-identity__main { gap: 22px; grid-template-columns: 82px minmax(0, 1fr); padding: 32px 22px 36px; }
+  .portal-body .prestador-page .provider-identity__main--no-logo { grid-template-columns: 1fr; }
   .portal-body .prestador-page .provider-logo { border-radius: 15px; height: 82px; padding: 8px; }
   .portal-body .prestador-page .provider-identity__edition { display: none; }
   .portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(2.75rem, 12vw, 4rem); line-height: .88; }
@@ -6025,6 +6028,7 @@ body,
 
 @media (max-width: 480px) {
   .portal-body .prestador-page .provider-identity__main { display: block; padding: 28px 20px 32px; }
+  .portal-body .prestador-page .provider-identity__main--no-logo { grid-template-columns: 1fr; }
   .portal-body .prestador-page .provider-identity__brand { float: left; margin: 0 16px 10px 0; width: 72px; }
   .portal-body .prestador-page .provider-logo { height: 72px; }
   .portal-body .prestador-page .provider-category { min-height: 72px; margin-bottom: 12px; }
