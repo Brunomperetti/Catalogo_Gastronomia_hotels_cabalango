@@ -5873,35 +5873,64 @@ body,
 .portal-body .prestador-page a:not(.portal-button):not(.gallery-see-all):not(.gallery-lightbox-nav):not(.gallery-lightbox-close) { color: var(--portal-heading); }
 .portal-body .prestador-page a:not(.portal-button):hover { color: var(--portal-primary-hover); }
 
-/* Identity: a balanced editorial split with a useful, integrated summary. */
-.portal-body .prestador-page .tourism-heading-card.provider-identity { align-items: stretch; display: grid; gap: clamp(28px, 3vw, 40px); grid-template-columns: minmax(0, 1.6fr) minmax(290px, 1fr); margin: 0; position: static; }
-.portal-body .prestador-page .provider-identity__main { align-self: center; min-width: 0; }
-.portal-body .prestador-page .provider-identity__intro { align-items: center; display: flex; gap: 24px; min-width: 0; }
-.portal-body .prestador-page .provider-identity__copy { min-width: 0; }
+/* Identity: an editorial cover with one continuous rhythm across both areas. */
+.portal-body .prestador-page .tourism-heading-card.provider-identity {
+  background: linear-gradient(118deg, #fffdf8 0%, #fffaf0 64%, #f3eddf 100%);
+  border-color: rgba(83, 91, 67, .2);
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1.72fr) minmax(300px, .82fr);
+  margin: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+.portal-body .prestador-page .tourism-heading-card.provider-identity::before {
+  background: var(--portal-olive);
+  content: "";
+  height: 4px;
+  inset: 0 0 auto;
+  position: absolute;
+  z-index: 1;
+}
+.portal-body .prestador-page .provider-identity__main {
+  align-items: stretch;
+  display: grid;
+  gap: clamp(28px, 3.4vw, 48px);
+  grid-template-columns: clamp(112px, 13vw, 164px) minmax(0, 1fr);
+  min-width: 0;
+  padding: clamp(40px, 5vw, 68px) clamp(32px, 4.6vw, 64px);
+}
+.portal-body .prestador-page .provider-identity__brand { display: flex; flex-direction: column; min-width: 0; }
+.portal-body .prestador-page .provider-identity__content { align-self: center; min-width: 0; }
 .portal-body .prestador-page .provider-logo {
   align-items: center;
-  background: var(--portal-surface-soft);
-  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(64, 85, 63, .16);
+  border-radius: 22px;
+  box-shadow: 0 18px 38px rgba(56, 48, 36, .1);
   display: flex;
-  flex: 0 0 104px;
-  height: 104px;
+  height: clamp(112px, 13vw, 164px);
   justify-content: center;
-  padding: 9px;
-  width: 104px;
+  padding: clamp(12px, 1.5vw, 18px);
+  width: 100%;
 }
 .portal-body .prestador-page .provider-logo .prestador-profile-logo { height: 100%; margin: 0; max-height: none; max-width: none; object-fit: contain; width: 100%; }
-.portal-body .prestador-page .provider-category { font-size: .78rem; font-weight: 700; letter-spacing: .07em; margin: 0 0 7px; text-transform: uppercase; }
-.portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(2.5rem, 4.6vw, 4.25rem); line-height: .98; margin: 0; max-width: 18ch; }
-.portal-body .prestador-page .tourism-heading-card .portal-subtitle { font-size: clamp(1rem, 1.3vw, 1.1rem); line-height: 1.6; margin: 12px 0 0; max-width: 65ch; }
-.portal-body .prestador-page .prestador-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.portal-body .prestador-page .provider-identity__edition { color: var(--portal-text-soft); font-size: .64rem; font-weight: 800; letter-spacing: .2em; margin-top: auto; padding-top: 24px; text-transform: uppercase; }
+.portal-body .prestador-page .provider-category { align-items: center; display: flex; font-size: .72rem; font-weight: 800; gap: 10px; letter-spacing: .13em; margin: 0 0 18px; text-transform: uppercase; }
+.portal-body .prestador-page .provider-category::before { background: var(--portal-olive); content: ""; height: 1px; width: 32px; }
+.portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(3.3rem, 6.1vw, 6.25rem); letter-spacing: -.052em; line-height: .84; margin: 0; max-width: 11ch; text-wrap: balance; }
+.portal-body .prestador-page .tourism-heading-card .portal-subtitle { border-left: 2px solid rgba(119, 124, 88, .38); font-size: clamp(1.05rem, 1.45vw, 1.22rem); line-height: 1.55; margin: 28px 0 0; max-width: 48ch; padding-left: 18px; }
+.portal-body .prestador-page .prestador-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px; }
+.portal-body .prestador-page .prestador-actions .portal-button { min-height: 46px; }
 .portal-body .prestador-page dt { font-size: .72rem; font-weight: 700; letter-spacing: .1em; margin-bottom: 7px; text-transform: uppercase; }
 .portal-body .prestador-page dd { font-size: .94rem; line-height: 1.55; margin: 0; overflow-wrap: anywhere; }
 .portal-body .prestador-page .provider-schedule-text span { display: block; }
 .portal-body .prestador-page .provider-icon { color: #777c58; flex: 0 0 21px; height: 21px; width: 21px; }
-.portal-body .prestador-page .provider-key-summary { border-left: 1px solid var(--portal-border); min-width: 0; padding-left: clamp(24px, 3vw, 36px); }
-.portal-body .prestador-page .provider-key-summary__title { font-family: var(--portal-font-display); font-size: 1.32rem; font-weight: 600; margin: 0 0 8px; }
+.portal-body .prestador-page .provider-key-summary { align-self: stretch; background: rgba(225, 216, 197, .38); border-left: 1px solid rgba(83, 91, 67, .16); display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: clamp(40px, 4.2vw, 58px) clamp(28px, 3.2vw, 42px); }
+.portal-body .prestador-page .provider-key-summary__title { font-family: var(--portal-font-display); font-size: 1.5rem; font-weight: 600; margin: 0 0 16px; }
 .portal-body .prestador-page .provider-key-summary dl { margin: 0; }
-.portal-body .prestador-page .provider-key-summary dl > div { align-items: flex-start; display: flex; gap: 13px; min-width: 0; padding: 14px 0; }
+.portal-body .prestador-page .provider-key-summary dl > div { align-items: flex-start; display: flex; gap: 14px; min-width: 0; padding: 15px 0; }
 .portal-body .prestador-page .provider-key-summary dl > div + div { border-top: 1px solid var(--portal-border); }
 .portal-body .prestador-page .provider-key-summary dt { margin-bottom: 3px; }
 .portal-body .prestador-page .provider-key-summary dd { font-size: .88rem; line-height: 1.42; }
@@ -5963,20 +5992,26 @@ body,
 .portal-body .prestador-page .provider-video-card.is-empty p { margin-bottom: 0; }
 
 @media (max-width: 900px) {
-  .portal-body .prestador-page .tourism-heading-card.provider-identity { grid-template-columns: minmax(0, 1fr) minmax(250px, .72fr); }
+  .portal-body .prestador-page .tourism-heading-card.provider-identity { grid-template-columns: minmax(0, 1.3fr) minmax(260px, .7fr); }
+  .portal-body .prestador-page .provider-identity__main { gap: 24px; grid-template-columns: 104px minmax(0, 1fr); padding: 42px 32px; }
+  .portal-body .prestador-page .provider-logo { height: 104px; }
+  .portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(3rem, 7vw, 4.5rem); }
+  .portal-body .prestador-page .provider-key-summary { padding-inline: 26px; }
 }
 
 @media (max-width: 700px) {
   .portal-body .prestador-page { --provider-gap: 28px; --provider-padding: 22px; --provider-radius: 18px; padding-top: 10px; width: min(100% - 24px, 1240px); }
   .portal-body .prestador-page .portal-topnav { margin-bottom: 18px; position: static; }
-  .portal-body .prestador-page .tourism-heading-card.provider-identity { gap: 24px; grid-template-columns: 1fr; }
-  .portal-body .prestador-page .provider-identity__intro { align-items: flex-start; gap: 14px; }
-  .portal-body .prestador-page .provider-logo { border-radius: 13px; flex-basis: 76px; height: 76px; padding: 7px; width: 76px; }
-  .portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(2.1rem, 10vw, 3.1rem); }
+  .portal-body .prestador-page .tourism-heading-card.provider-identity { grid-template-columns: 1fr; }
+  .portal-body .prestador-page .provider-identity__main { gap: 22px; grid-template-columns: 82px minmax(0, 1fr); padding: 32px 22px 36px; }
+  .portal-body .prestador-page .provider-logo { border-radius: 15px; height: 82px; padding: 8px; }
+  .portal-body .prestador-page .provider-identity__edition { display: none; }
+  .portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(2.75rem, 12vw, 4rem); line-height: .88; }
   .portal-body .prestador-page .provider-category { font-size: .68rem; }
+  .portal-body .prestador-page .tourism-heading-card .portal-subtitle { margin-top: 22px; }
   .portal-body .prestador-page .prestador-actions { display: grid; grid-template-columns: 1fr; }
   .portal-body .prestador-page .prestador-actions .portal-button { justify-content: center; min-width: 0; text-align: center; width: 100%; }
-  .portal-body .prestador-page .provider-key-summary { border-left: 0; border-top: 1px solid var(--portal-border); padding-left: 0; padding-top: 20px; }
+  .portal-body .prestador-page .provider-key-summary { border-left: 0; border-top: 1px solid rgba(83, 91, 67, .16); padding: 30px 22px; }
   .portal-body .prestador-page .provider-content-grid,
   .portal-body .prestador-page .provider-location-grid { grid-template-columns: 1fr; }
   .portal-body .prestador-page .public-gallery__grid,
@@ -5989,6 +6024,14 @@ body,
 }
 
 @media (max-width: 480px) {
+  .portal-body .prestador-page .provider-identity__main { display: block; padding: 28px 20px 32px; }
+  .portal-body .prestador-page .provider-identity__brand { float: left; margin: 0 16px 10px 0; width: 72px; }
+  .portal-body .prestador-page .provider-logo { height: 72px; }
+  .portal-body .prestador-page .provider-category { min-height: 72px; margin-bottom: 12px; }
+  .portal-body .prestador-page .provider-category::before { display: none; }
+  .portal-body .prestador-page .tourism-heading-card h1 { clear: both; }
+  .portal-body .prestador-page .tourism-heading-card .portal-subtitle { font-size: 1rem; margin-top: 20px; }
+  .portal-body .prestador-page .prestador-actions { margin-top: 26px; }
   .portal-body .prestador-page .public-gallery__grid,
   .portal-body .prestador-page .public-gallery--count-1 .public-gallery__grid,
   .portal-body .prestador-page .public-gallery--count-2 .public-gallery__grid { grid-template-columns: 1fr; }

@@ -77,7 +77,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
 def test_provider_stylesheet_uses_unique_hierarchy_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260814-provider-hierarchy-1" in template
+    assert "?v=20260814-provider-opening-1" in template
     assert "?v=20260810-commerce-services-1" not in template
 
 
@@ -140,9 +140,12 @@ def test_provider_identity_integrates_logo_title_and_metadata():
     })
 
     assert 'class="tourism-heading-card provider-identity"' in html
-    intro = re.search(r'<div class="provider-identity__intro">(.*?)</div>\s*</div>', html, re.DOTALL).group(1)
-    assert 'class="provider-logo"' in intro
-    assert "Cabañas Demo" in intro
+    opening = re.search(r'<div class="provider-identity__main">(.*?)</div>\s*<aside', html, re.DOTALL).group(1)
+    assert 'class="provider-identity__brand"' in opening
+    assert 'class="provider-logo"' in opening
+    assert 'class="provider-identity__content"' in opening
+    assert "Cabañas Demo" in opening
+    assert 'aria-label="Acciones principales"' in opening
     assert 'class="provider-key-summary"' in html
     assert "Resumen del lugar" in html
     assert 'class="provider-identity__aside"' not in html
@@ -243,6 +246,8 @@ def test_legacy_nested_identity_and_fact_classes_are_absent():
     assert "prestador-contact-lines" not in html
     assert "provider-meta-icon" not in html
     assert "schedule-line" not in html
+    assert "provider-identity__intro" not in html
+    assert "provider-identity__body" not in html
 
 
 def test_upper_hero_and_practical_information_are_completely_removed():
