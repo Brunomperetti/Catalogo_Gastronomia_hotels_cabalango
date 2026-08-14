@@ -11,7 +11,7 @@ class UrlForStub:
         return "/"
 
 
-def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=None):
+def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=None, subtipo="Cabaña"):
     template = Environment(loader=FileSystemLoader("app/templates")).get_template("prestador.html")
     empresa = SimpleNamespace(
         nombre="Cabañas Demo",
@@ -25,7 +25,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         direccion="Ruta demo 123",
         maps_url="https://maps.example/demo",
         subgrupo="",
-        subtipo="Cabaña",
+        subtipo=subtipo,
         descripcion_corta="Vista al río",
         descripcion="Alojamiento turístico en Cabalango.",
         horarios="Check-in 14 hs",
@@ -68,6 +68,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         main_photo_url=galeria_urls[0] if galeria_urls else "/static/images/banner.jpg",
         has_real_photos=bool(galeria_urls),
         theme_display_label=lambda value: "Alojamientos" if value == "alojamiento" else "Gastronomía",
+        service_card_kicker=lambda empresa: "Almacenes y kioscos · Almacén",
         actividad_subgrupos={},
     )
 
@@ -166,6 +167,13 @@ def test_category_is_rendered_once_without_a_duplicate_chip():
     assert html.count("Alojamientos · Cabaña") == 1
     assert html.count('class="provider-category"') == 1
     assert "tourism-heading-meta" not in html
+
+
+def test_service_category_does_not_append_subtype_twice():
+    html = render_prestador("servicios", subtipo="Almacén")
+
+    assert html.count("Almacenes y kioscos · Almacén") == 1
+    assert "Almacenes y kioscos · Almacén · Almacén" not in html
 
 
 def test_schedules_are_plain_text_without_pill_nesting():
