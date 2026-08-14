@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260813-provider-editorial-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260813-provider-editorial-final">
 </head>
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
     {% set hero_image = main_photo_url %}
@@ -24,7 +24,7 @@
         {% include "partials/portal_nav.html" %}
 
         <section class="tourism-hero">
-            <div class="tourism-gallery {% if not has_real_photos %}tourism-gallery--empty{% endif %}" aria-label="Galería de fotos de {{ empresa.nombre }}">
+            <div class="tourism-gallery {% if not has_real_photos %}tourism-gallery--empty{% elif galeria_urls|length <= 1 %}tourism-gallery--single{% endif %}" aria-label="Galería de fotos de {{ empresa.nombre }}">
                 <figure class="tourism-gallery-main {% if not has_real_photos %}is-empty{% endif %}">
                     {% if has_real_photos %}
                     <img src="{{ hero_image }}" alt="Foto principal de {{ empresa.nombre }}" onerror="this.closest('.tourism-gallery-main').classList.add('is-empty');">
@@ -33,27 +33,24 @@
                     {% endif %}
                     <figcaption>{{ theme_display_label(empresa.theme) }} en Cabalango</figcaption>
                 </figure>
-                <div class="tourism-gallery-side">
-                    {% for foto in gallery_tiles %}
+                {% if has_real_photos and galeria_urls|length > 1 %}<div class="tourism-gallery-side">
+                    {% for foto in gallery_tiles[:2] %}
                     <img src="{{ foto }}" alt="Foto {{ loop.index + 1 }} de {{ empresa.nombre }}">
-                    {% else %}
-                    <div class="gallery-empty-state">Todavía no hay fotos cargadas</div>
-                    <div class="gallery-empty-state">Subí fotos reales del lugar desde el panel.</div>
                     {% endfor %}
-                </div>
+                </div>{% endif %}
                 {% if galeria_urls %}<button class="gallery-see-all" type="button" data-gallery-open>Ver todas las fotos</button>{% endif %}
             </div>
 
-            {% set has_identity_aside = empresa_logo_url or empresa.direccion or empresa.horarios or empresa.whatsapp %}
-            <div class="tourism-heading-card provider-identity{% if not has_identity_aside %} provider-identity--single{% endif %}">
-                <div class="provider-identity__main">
-                    <div class="tourism-heading-meta">
-                        <span>{% if kind == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ theme_display_label(empresa.theme) }}{% endif %}</span>
-                        {% if empresa.subtipo %}<span>{{ empresa.subtipo }}</span>{% endif %}
-                        {% if empresa.subgrupo and actividad_subgrupos %}<span>{{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}</span>{% endif %}
+            <div class="tourism-heading-card provider-identity">
+                <div class="provider-identity__intro">
+                    {% if empresa_logo_url %}<div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>{% endif %}
+                    <div class="provider-identity__copy">
+                        <p class="provider-category">{% if kind == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ theme_display_label(empresa.theme) }}{% endif %}{% if empresa.subtipo %} · {{ empresa.subtipo }}{% endif %}{% if empresa.subgrupo and actividad_subgrupos %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}</p>
+                        <h1>{{ empresa.nombre }}</h1>
+                        <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
                     </div>
-                    <h1>{{ empresa.nombre }}</h1>
-                    <p class="portal-subtitle">{{ empresa.descripcion_corta or empresa.descripcion or 'Ficha turística preparada para mostrar fotos, ubicación, servicios y contacto directo.' }}</p>
+                </div>
+                <div class="provider-identity__body">
                     <div class="prestador-actions">
                     {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Consultar por WhatsApp</a>{% endif %}
                     {% if maps_url %}<a class="portal-button portal-button-secondary" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">Cómo llegar</a>{% endif %}
@@ -61,27 +58,24 @@
                     {% if kind == 'gastronomia' and menu_url %}<a class="portal-button portal-button-secondary portal-button-ghost" href="{{ menu_url }}" target="_blank" rel="noopener noreferrer">Ver carta online</a>{% endif %}
                     </div>
                 </div>
-                {% if has_identity_aside %}<aside class="provider-identity__aside" aria-label="Información esencial">
-                    {% if empresa_logo_url %}<div class="provider-logo"><img class="prestador-profile-logo" src="{{ empresa_logo_url }}" alt="Logo de {{ empresa.nombre }}" onerror="this.closest('.provider-logo').remove()"></div>{% endif %}
-                    <div class="prestador-contact-lines">
-                        {% if empresa.direccion %}<div><span class="provider-meta-icon" aria-hidden="true">⌖</span><span><strong>Ubicación</strong>{{ empresa.direccion }}</span></div>{% endif %}
-                        {% if empresa.horarios %}<div><span class="provider-meta-icon" aria-hidden="true">◷</span><span><strong>Horarios</strong>{% for part in empresa.horarios.split(' | ') %}<span class="schedule-line">{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}</span></div>{% endif %}
-                        {% if empresa.whatsapp %}<div><span class="provider-meta-icon" aria-hidden="true">◌</span><span><strong>WhatsApp</strong>{{ empresa.whatsapp }}</span></div>{% endif %}
-                    </div>
-                </aside>{% endif %}
+                {% if empresa.direccion or empresa.horarios or empresa.telefono or empresa.whatsapp %}<dl class="provider-metadata" aria-label="Información esencial">
+                    {% if empresa.direccion %}<div><dt>Ubicación</dt><dd>{{ empresa.direccion }}</dd></div>{% endif %}
+                    {% if empresa.horarios %}<div><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}</dd></div>{% endif %}
+                    {% if empresa.telefono or empresa.whatsapp %}<div><dt>Teléfono</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></div>{% endif %}
+                </dl>{% endif %}
             </div>
         </section>
 
         <section class="portal-card quick-facts-card">
             <p class="portal-card-label">Datos rápidos</p>
             <h2>{% if kind == 'alojamiento' %}Lo que más consultan los viajeros{% elif kind == 'gastronomia' %}Cómo disfrutar la propuesta{% elif kind == 'servicios' %}Información práctica{% elif kind == 'actividades' %}Detalle de la actividad{% else %}Información destacada{% endif %}</h2>
-            <div class="prestador-facts quick-facts-grid">
+                <dl class="prestador-facts quick-facts-grid">
                 {% for fact in quick_facts %}
-                <div class="{% if fact.enabled %}is-enabled{% elif fact.prepared %}is-prepared{% endif %}"><strong>{{ fact.label }}</strong><span>{% if 'horario' in fact.label|lower %}{% for part in (fact.value|string).split(' | ') %}<span class="schedule-line">{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}{% else %}{{ fact.value }}{% endif %}</span></div>
+                <div><dt>{{ fact.label }}</dt><dd{% if 'horario' in fact.label|lower %} class="provider-schedule-text"{% endif %}>{% if 'horario' in fact.label|lower %}{% for part in (fact.value|string).split(' | ') %}<span>{{ part.replace('Días: ', '').replace('Horarios: ', '').replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}</span>{% endfor %}{% else %}{{ fact.value }}{% endif %}</dd></div>
                 {% else %}
                 <p>Todavía no hay datos específicos cargados. Esta función está preparada para el próximo sprint.</p>
                 {% endfor %}
-            </div>
+            </dl>
         </section>
 
         <section class="prestador-detail-grid provider-content-grid" id="descripcion">
@@ -134,7 +128,7 @@
         {% endif %}
         {% endif %}
 
-        <section class="portal-card photos-summary-card" id="fotos">
+        <section class="portal-card photos-summary-card{% if not galeria_urls %} photos-summary-card--empty{% endif %}" id="fotos">
             <p class="portal-card-label">Fotos</p>
             <h2>Fotos del lugar</h2>
             <div class="public-gallery public-gallery--count-{{ [galeria_urls|length, 4]|min }}" aria-label="Galería de fotos de {{ empresa.nombre }}" data-public-gallery>
@@ -150,7 +144,7 @@
                 <p>La galería usa recortes editoriales para el impacto visual. Abrí la vista completa para ver cada imagen sin recortes.</p>
                 <button class="portal-button portal-button-secondary" type="button" data-gallery-open="0">Ver todas las fotos</button>
                 {% else %}
-                <p class="public-gallery__empty">No hay fotos disponibles.</p>
+                <p class="public-gallery__empty">Todavía no hay fotos disponibles.</p>
                 {% endif %}
             </div>
         </section>

@@ -66,6 +66,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         galeria_urls=galeria_urls,
         gallery_tiles=galeria_urls[1:5] or ["/static/images/banner.jpg"],
         main_photo_url=galeria_urls[0] if galeria_urls else "/static/images/banner.jpg",
+        has_real_photos=bool(galeria_urls),
         theme_display_label=lambda value: "Alojamientos" if value == "alojamiento" else "Gastronomía",
         actividad_subgrupos={},
     )
@@ -117,40 +118,82 @@ def test_public_gallery_single_photo_css_uses_the_full_mosaic_width():
     assert "grid-row: 1" in item_rule
 
 
-def test_provider_identity_omits_empty_aside_and_uses_single_column_state():
+def test_provider_identity_has_no_legacy_aside_when_metadata_is_empty():
     html = render_prestador(identity_overrides={
         "empresa_logo_url": "", "direccion": "", "horarios": "", "whatsapp": ""
     })
 
-    assert 'class="tourism-heading-card provider-identity provider-identity--single"' in html
+    assert 'class="tourism-heading-card provider-identity"' in html
     assert 'class="provider-identity__aside"' not in html
+    assert 'class="provider-metadata"' not in html
 
 
-def test_provider_identity_renders_aside_with_any_essential_data():
+def test_provider_identity_integrates_logo_title_and_metadata():
     html = render_prestador(identity_overrides={
-        "empresa_logo_url": "", "direccion": "Ruta demo 123", "horarios": "", "whatsapp": ""
+        "empresa_logo_url": "/logo.webp", "direccion": "Ruta demo 123", "horarios": "", "whatsapp": ""
     })
 
     assert 'class="tourism-heading-card provider-identity"' in html
-    assert 'class="provider-identity__aside"' in html
+    intro = re.search(r'<div class="provider-identity__intro">(.*?)</div>\s*</div>', html, re.DOTALL).group(1)
+    assert 'class="provider-logo"' in intro
+    assert "Cabañas Demo" in intro
+    assert 'class="provider-metadata"' in html
+    assert 'class="provider-identity__aside"' not in html
 
 
-def test_provider_single_column_state_is_preserved_at_tablet_breakpoint():
+def test_provider_navigation_is_not_sticky():
     css = open("app/static/css/portal.css", encoding="utf-8").read()
-    tablet_css = css.split("@media (max-width: 1024px) {", 1)[1].split("/* Mobile */", 1)[0]
+    provider_css = css.split("/* PUBLIC PROVIDER PAGE", 1)[1]
 
-    assert ".tourism-heading-card.provider-identity--single { grid-template-columns: 1fr; }" in tablet_css
+    assert ".portal-topnav { margin-bottom: 24px; position: static; }" in provider_css
+    assert "position: sticky" not in provider_css
 
 
 def test_single_photo_grid_is_preserved_at_mobile_breakpoint():
     css = open("app/static/css/portal.css", encoding="utf-8").read()
-    mobile_css = css.split("/* Mobile */", 1)[1]
+    mobile_css = css.split("@media (max-width: 700px)", 1)[1]
 
     assert ".public-gallery--count-1 .public-gallery__mosaic { grid-template-columns: 1fr; grid-template-rows: 1fr; }" in mobile_css
     assert ".public-gallery--count-1 .public-gallery__item { grid-column: 1 / -1; grid-row: 1; }" in mobile_css
     assert ".public-gallery--count-2 .public-gallery__mosaic" in mobile_css
     assert ".public-gallery--count-3 .public-gallery__mosaic" in mobile_css
     assert ".public-gallery__item:nth-child(n + 4)" in mobile_css
+
+
+def test_category_is_rendered_once_without_a_duplicate_chip():
+    html = render_prestador("alojamiento")
+
+    assert html.count("Alojamientos · Cabaña") == 1
+    assert html.count('class="provider-category"') == 1
+    assert "tourism-heading-meta" not in html
+
+
+def test_schedules_are_plain_text_without_pill_nesting():
+    html = render_prestador(identity_overrides={"horarios": "Días: Lunes a domingo | Horarios: 9:00 a 13:00 | Todo el año: Sí"})
+
+    assert "Lunes a domingo" in html
+    assert "9:00 a 13:00" in html
+    assert "Abierto todo el año" in html
+    assert 'class="provider-schedule-text"' in html
+    assert "schedule-line" not in html
+
+
+def test_empty_gallery_is_compact_and_has_no_mosaic():
+    html = render_prestador("alojamiento", [])
+    section = re.search(r'<section class="portal-card photos-summary-card photos-summary-card--empty" id="fotos">(.*?)</section>', html, re.DOTALL).group(1)
+
+    assert "Fotos del lugar" in section
+    assert "Todavía no hay fotos disponibles." in section
+    assert "public-gallery__mosaic" not in section
+
+
+def test_legacy_nested_identity_and_fact_classes_are_absent():
+    html = render_prestador("alojamiento")
+
+    assert "provider-identity__aside" not in html
+    assert "prestador-contact-lines" not in html
+    assert "provider-meta-icon" not in html
+    assert "schedule-line" not in html
 
 
 def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():
@@ -168,7 +211,8 @@ def test_public_gallery_is_only_in_photos_section_and_hero_is_restored():
 
     assert 'class="tourism-gallery ' in hero
     assert 'class="tourism-gallery-main ' in hero
-    assert 'class="tourism-gallery-side"' in hero
+    assert "tourism-gallery--single" in hero
+    assert 'class="tourism-gallery-side"' not in hero
     assert "public-gallery" not in hero
     assert "Fotos del lugar" in photos_section
     assert 'class="public-gallery public-gallery--count-1"' in photos_section
