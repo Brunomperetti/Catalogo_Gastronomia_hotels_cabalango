@@ -103,7 +103,7 @@ def test_public_gallery_renders_one_photo_without_mutating_empresa():
     assert "Cabañas Demo" in html
 
 
-def test_public_gallery_single_photo_css_uses_a_uniform_bounded_grid():
+def test_public_gallery_single_photo_css_uses_the_full_available_width():
     css = open("app/static/css/portal.css", encoding="utf-8").read()
 
     grid_rule = re.findall(
@@ -111,7 +111,7 @@ def test_public_gallery_single_photo_css_uses_a_uniform_bounded_grid():
     )[0]
     item_rule = re.findall(r"\.public-gallery__item \{([^}]*)\}", css)[-1]
 
-    assert "minmax(0, 520px)" in grid_rule
+    assert "grid-template-columns: 1fr" in grid_rule
     assert "aspect-ratio: 4 / 3" in item_rule
 
 
@@ -147,13 +147,25 @@ def test_provider_navigation_is_not_sticky():
     assert "position: sticky" not in provider_css
 
 
-def test_single_photo_grid_is_preserved_at_mobile_breakpoint():
+def test_single_photo_grid_stays_full_width_between_481_and_700px():
     css = open("app/static/css/portal.css", encoding="utf-8").read()
-    mobile_css = css.split("@media (max-width: 700px)", 1)[1]
+    tablet_css = css.split("@media (max-width: 700px)", 1)[1].split("@media (max-width: 480px)", 1)[0]
 
-    assert ".public-gallery--count-1 .public-gallery__grid" in mobile_css
-    assert ".public-gallery--count-2 .public-gallery__grid" in mobile_css
-    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in mobile_css
+    single_rule = re.search(
+        r"\.public-gallery--count-1 \.public-gallery__grid \{([^}]*)\}", tablet_css
+    ).group(1)
+    assert "grid-template-columns: 1fr" in single_rule
+    assert "repeat(2" not in single_rule
+
+
+def test_two_photo_grid_keeps_two_columns_between_481_and_700px():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    tablet_css = css.split("@media (max-width: 700px)", 1)[1].split("@media (max-width: 480px)", 1)[0]
+
+    two_photo_rule = re.search(
+        r"\.public-gallery--count-2 \.public-gallery__grid \{([^}]*)\}", tablet_css
+    ).group(1)
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in two_photo_rule
 
 
 def test_category_is_rendered_once_without_a_duplicate_chip():
@@ -167,8 +179,28 @@ def test_category_is_rendered_once_without_a_duplicate_chip():
 def test_service_category_does_not_append_subtype_twice():
     html = render_prestador("servicios", subtipo="Almacén")
 
-    assert html.count("Almacenes y kioscos · Almacén") == 3
+    assert html.count("Almacenes y kioscos · Almacén") == 2
     assert "Almacenes y kioscos · Almacén · Almacén" not in html
+
+
+def test_service_practical_fact_uses_specific_subtype_only():
+    html = render_prestador("servicios", subtipo="Almacén")
+    identity = re.search(
+        r'<div class="tourism-heading-card provider-identity">(.*?)</div>\s*</section>',
+        html,
+        re.DOTALL,
+    ).group(1)
+    practical = re.search(
+        r'<section class="portal-card quick-facts-card">(.*?)</section>',
+        html,
+        re.DOTALL,
+    ).group(1)
+
+    assert identity.count("Almacenes y kioscos · Almacén") == 2
+    assert "Resumen del lugar" in identity
+    assert "Tipo de servicio" in practical
+    assert "Almacén" in practical
+    assert "Almacenes y kioscos · Almacén" not in practical
 
 
 def test_schedules_are_plain_text_without_pill_nesting():

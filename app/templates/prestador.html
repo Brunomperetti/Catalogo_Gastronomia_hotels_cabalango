@@ -95,7 +95,7 @@
             <p class="portal-card-label">Datos útiles</p>
             <h2>Información práctica</h2>
                 <dl class="prestador-facts quick-facts-grid">
-                <div>{{ provider_icon('type') }}<span><dt>Tipo de servicio</dt><dd>{{ provider_category }}</dd></span></div>
+                <div>{{ provider_icon('type') }}<span><dt>Tipo de servicio</dt><dd>{{ empresa.subtipo if kind == 'servicios' and empresa.subtipo else provider_category }}</dd></span></div>
                 {% if empresa.horarios %}<div>{{ provider_icon('clock') }}<span><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{% set clean_part = part.replace('Días: ', '').replace('Horarios: ', '') %}{% if 'lunes a domingo' in clean_part|lower or 'lunes, martes, miércoles, jueves, viernes, sábado, domingo' in clean_part|lower %}Todos los días{% else %}{{ clean_part.replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}{% endif %}</span>{% endfor %}</dd></span></div>{% endif %}
                 {% if empresa.direccion %}<div>{{ provider_icon('pin') }}<span><dt>Dirección</dt><dd>{{ empresa.direccion }}</dd></span></div>{% endif %}
                 {% if empresa.telefono or empresa.whatsapp %}<div>{{ provider_icon('phone') }}<span><dt>Teléfono / WhatsApp</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></span></div>{% endif %}
