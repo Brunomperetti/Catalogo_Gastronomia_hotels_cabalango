@@ -77,7 +77,8 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
 def test_provider_stylesheet_uses_promo_lightbox_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260814-provider-promo-lightbox-1" in template
+    assert "?v=20260814-provider-lightbox-sizing-1" in template
+    assert "?v=20260814-provider-promo-lightbox-1" not in template
     assert "?v=20260814-provider-opening-1" not in template
     assert "?v=20260810-commerce-services-1" not in template
 
