@@ -34,7 +34,7 @@ from reportlab.lib.pagesizes import A4
 
 from app.database import SessionLocal, engine, Base
 from app import models
-from app.agenda import CATEGORIES, MOMENTS, TYPES, derived_status, get_public_activities, group_public_agenda, now_cabalango, validate_activity
+from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, derived_status, get_public_activities, group_public_agenda, local_datetime, now_cabalango, publication_window_for_event, validate_activity
 
 app = FastAPI()
 APP_BUILD = "2026-07-01-descubri-cabalango-v1"
@@ -350,6 +350,21 @@ def ensure_actividad_agenda_table():
     """Idempotent, additive migration: no existing table or row is altered."""
     if "actividades_agenda" not in set(inspect(engine).get_table_names()):
         Base.metadata.create_all(bind=engine, tables=[models.ActividadAgenda.__table__])
+    else:
+        columns = {column["name"] for column in inspect(engine).get_columns("actividades_agenda")}
+        additions = {
+            "oficial": "BOOLEAN NOT NULL DEFAULT FALSE",
+            "estado": "VARCHAR NOT NULL DEFAULT 'programado'",
+            "publicar_desde": "TIMESTAMP", "destacar_home_desde": "TIMESTAMP",
+            "ocultar_desde": "TIMESTAMP", "mostrar_en_home": "BOOLEAN NOT NULL DEFAULT FALSE",
+            "prioridad_home": "INTEGER NOT NULL DEFAULT 0",
+        }
+        with engine.begin() as conn:
+            for name, sql_type in additions.items():
+                if name not in columns:
+                    conn.execute(text(f"ALTER TABLE actividades_agenda ADD COLUMN {name} {sql_type}"))
+            for name in additions:
+                conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_actividades_agenda_{name} ON actividades_agenda({name})"))
 
 
 def ensure_solicitud_prestador_table():
@@ -2757,20 +2772,33 @@ def admin_activities(request: Request, edit: int | None = None, error: str = "",
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     items = db.query(models.ActividadAgenda).order_by(models.ActividadAgenda.fecha_inicio.desc(), models.ActividadAgenda.titulo).all()
-    return templates.TemplateResponse("admin_actividades.html", {"request": request, "items": items, "editing": db.get(models.ActividadAgenda, edit) if edit else None, "categories": CATEGORIES, "moments": MOMENTS, "types": TYPES, "status": derived_status, "error": error, "msg": msg})
+    return templates.TemplateResponse("admin_actividades.html", {"request": request, "items": items, "editing": db.get(models.ActividadAgenda, edit) if edit else None, "categories": CATEGORIES, "moments": MOMENTS, "types": TYPES, "states": PERSISTED_STATES, "status": derived_status, "error": error, "msg": msg})
 
 
 @app.post("/admin/actividades/guardar")
-async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: int | None = Form(None), publicado: str | None = Form(None), destacado: str | None = Form(None), imagen: UploadFile | None = File(None), db: Session = Depends(get_db)):
+async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: int | None = Form(None), publicado: str | None = Form(None), destacado: str | None = Form(None), oficial: str | None = Form(None), estado: str = Form("programado"), publicar_desde: str = Form(""), destacar_home_desde: str = Form(""), ocultar_desde: str = Form(""), mostrar_en_home: str | None = Form(None), prioridad_home: int = Form(0), imagen: UploadFile | None = File(None), db: Session = Depends(get_db)):
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     item = db.get(models.ActividadAgenda, id) if id else models.ActividadAgenda(created_at=utc_now())
     if id and not item: raise HTTPException(404)
-    values = {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden, "publicado": bool(publicado), "destacado": bool(destacado)}
+    old_defaults = publication_window_for_event(item.fecha_inicio, item.fecha_fin) if id and item.tipo == "evento" and item.fecha_inicio and item.fecha_fin else {}
+    old_windows = {name: getattr(item, name) for name in ("publicar_desde", "destacar_home_desde", "ocultar_desde")}
+    values = {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden, "publicado": bool(publicado), "destacado": bool(destacado), "oficial": bool(oficial), "estado": estado, "mostrar_en_home": bool(mostrar_en_home), "prioridad_home": prioridad_home}
     for name, value in values.items():
-        setattr(item, name, value if name in {"publicado", "destacado", "orden"} else value or None)
+        setattr(item, name, value if name in {"publicado", "destacado", "oficial", "mostrar_en_home", "prioridad_home", "orden", "estado"} else value or None)
     item.tipo, item.categoria, item.momento = tipo, categoria, momento
     item.fecha_inicio, item.fecha_fin, item.updated_at = parse_local_form_datetime(fecha_inicio), parse_local_form_datetime(fecha_fin), utc_now()
+    submitted_windows = {"publicar_desde": publicar_desde, "destacar_home_desde": destacar_home_desde, "ocultar_desde": ocultar_desde}
+    for name, value in submitted_windows.items():
+        setattr(item, name, parse_local_form_datetime(value))
+    if tipo == "evento" and item.fecha_inicio and item.fecha_fin:
+        suggestions = publication_window_for_event(item.fecha_inicio, item.fecha_fin)
+        for name, suggested in suggestions.items():
+            was_automatic = id and old_windows[name] is not None and local_datetime(old_windows[name]) == old_defaults.get(name)
+            submitted = parse_local_form_datetime(submitted_windows[name])
+            kept_old_automatic = submitted is not None and old_windows[name] is not None and local_datetime(submitted) == local_datetime(old_windows[name])
+            if not submitted_windows[name] or (estado == "reprogramado" and was_automatic and kept_old_automatic):
+                setattr(item, name, suggested)
     # Keep published URLs stable when an editor changes a title.
     item.slug = item.slug if id else unique_agenda_slug(db, titulo)
     try:
@@ -2791,8 +2819,8 @@ def admin_activity_duplicate(request: Request, item_id: int, db: Session = Depen
     if isinstance(user, RedirectResponse): return user
     source = db.get(models.ActividadAgenda, item_id)
     if not source: raise HTTPException(404)
-    copied = {c.name: getattr(source, c.name) for c in models.ActividadAgenda.__table__.columns if c.name not in {"id", "slug", "fecha_inicio", "fecha_fin", "publicado", "created_at", "updated_at"}}
-    duplicate = models.ActividadAgenda(**copied, slug=unique_agenda_slug(db, f"{source.titulo}-copia"), fecha_inicio=None, fecha_fin=None, publicado=False, created_at=utc_now(), updated_at=utc_now())
+    copied = {c.name: getattr(source, c.name) for c in models.ActividadAgenda.__table__.columns if c.name not in {"id", "slug", "fecha_inicio", "fecha_fin", "publicado", "estado", "publicar_desde", "destacar_home_desde", "ocultar_desde", "created_at", "updated_at"}}
+    duplicate = models.ActividadAgenda(**copied, slug=unique_agenda_slug(db, f"{source.titulo}-copia"), fecha_inicio=None, fecha_fin=None, publicado=False, estado="borrador", publicar_desde=None, destacar_home_desde=None, ocultar_desde=None, created_at=utc_now(), updated_at=utc_now())
     db.add(duplicate); db.commit()
     return RedirectResponse(f"/admin/actividades?edit={duplicate.id}", 303)
 

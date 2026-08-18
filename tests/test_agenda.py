@@ -2,9 +2,10 @@ from datetime import datetime
 
 import pytest
 from sqlalchemy import create_engine
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from app.agenda import CABALANGO_TZ, derived_status, get_public_activities, group_public_agenda, validate_activity
+from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, publication_window_for_event, validate_activity
 from app.database import Base
 from app.models import ActividadAgenda
 
@@ -79,3 +80,81 @@ def test_activity_with_invalid_validity_range_is_rejected():
     item = ActividadAgenda(tipo="actividad", titulo="Temporada inválida", slug="temporada-invalida", categoria="otros", momento="dia", publicado=True, fecha_inicio=datetime(2026, 8, 10, 20), fecha_fin=datetime(2026, 8, 10, 19))
     with pytest.raises(ValueError, match="anterior"):
         validate_activity(item)
+
+
+def scheduled_event(**kwargs):
+    values = dict(tipo="evento", titulo="Programado", slug="programado", categoria="cultura", momento="dia",
+                  publicado=True, estado="programado", mostrar_en_home=True,
+                  fecha_inicio=datetime(2026, 11, 21, 18), fecha_fin=datetime(2026, 11, 21, 22),
+                  publicar_desde=datetime(2026, 11, 7, 18), destacar_home_desde=datetime(2026, 11, 14, 18),
+                  ocultar_desde=datetime(2026, 11, 21, 22))
+    values.update(kwargs)
+    return ActividadAgenda(**values)
+
+
+def test_model_defaults_constraints_and_timezone_fields(db):
+    item = ActividadAgenda(tipo="actividad", titulo="Default", slug="default", categoria="otros", momento="dia")
+    db.add(item); db.commit(); db.refresh(item)
+    assert (item.oficial, item.estado, item.mostrar_en_home, item.prioridad_home) == (False, "programado", False, 0)
+    aware = datetime(2026, 11, 7, 18, tzinfo=CABALANGO_TZ)
+    item.publicar_desde = aware; item.prioridad_home = 100; db.commit()
+    assert local_datetime(item.publicar_desde) == aware
+    item.estado = "HOY"; db.add(item)
+    with pytest.raises(IntegrityError):
+        db.commit()
+
+
+def test_publication_window_uses_cabalango_time():
+    start = datetime(2026, 11, 21, 18, tzinfo=CABALANGO_TZ)
+    end = datetime(2026, 11, 21, 22, tzinfo=CABALANGO_TZ)
+    assert publication_window_for_event(start, end) == {
+        "publicar_desde": datetime(2026, 11, 7, 18, tzinfo=CABALANGO_TZ),
+        "destacar_home_desde": datetime(2026, 11, 14, 18, tzinfo=CABALANGO_TZ),
+        "ocultar_desde": end,
+    }
+
+
+@pytest.mark.parametrize(("changes", "now", "expected"), [
+    ({}, datetime(2026, 11, 7, 17, 59), False),
+    ({}, datetime(2026, 11, 7, 18), True),
+    ({}, datetime(2026, 11, 20, 12), True),
+    ({}, datetime(2026, 11, 21, 22, 1), False),
+    ({"publicado": False}, datetime(2026, 11, 20), False),
+    ({"estado": "cancelado"}, datetime(2026, 11, 20), False),
+    ({"estado": "borrador"}, datetime(2026, 11, 20), False),
+    ({"estado": "realizado"}, datetime(2026, 11, 20), False),
+    ({"estado": "reprogramado"}, datetime(2026, 11, 20), True),
+])
+def test_scheduled_public_visibility(changes, now, expected):
+    assert is_publicly_visible(scheduled_event(**changes), now.replace(tzinfo=CABALANGO_TZ)) is expected
+
+
+def test_legacy_null_windows_remain_visible():
+    item = scheduled_event(publicar_desde=None, ocultar_desde=None)
+    assert is_publicly_visible(item, datetime(2026, 11, 20, tzinfo=CABALANGO_TZ))
+
+
+@pytest.mark.parametrize(("changes", "now", "expected"), [
+    ({"mostrar_en_home": False}, datetime(2026, 11, 20), False),
+    ({}, datetime(2026, 11, 14, 17, 59), False),
+    ({}, datetime(2026, 11, 14, 18), True),
+    ({"estado": "cancelado"}, datetime(2026, 11, 20), False),
+    ({"estado": "realizado"}, datetime(2026, 11, 20), False),
+    ({"publicado": False}, datetime(2026, 11, 20), False),
+    ({}, datetime(2026, 11, 21, 22, 1), False),
+])
+def test_home_eligibility(changes, now, expected):
+    assert is_home_eligible(scheduled_event(**changes), now.replace(tzinfo=CABALANGO_TZ)) is expected
+
+
+@pytest.mark.parametrize(("start", "end", "now", "label"), [
+    ((10, 10), (10, 22), (10, 12), "EN CURSO"),
+    ((10, 18), (10, 22), (10, 12), "HOY EN CABALANGO"),
+    ((11, 18), (11, 22), (10, 12), "MAÑANA"),
+    ((15, 18), (15, 22), (10, 12), "ESTA SEMANA"),
+    ((20, 18), (20, 22), (10, 12), "PRÓXIMAMENTE"),
+    ((30, 18), (30, 22), (10, 12), None),
+])
+def test_promotion_labels(start, end, now, label):
+    dt = lambda parts: datetime(2026, 11, *parts, tzinfo=CABALANGO_TZ)
+    assert derive_promotion_label(scheduled_event(fecha_inicio=dt(start), fecha_fin=dt(end)), dt(now)) == label

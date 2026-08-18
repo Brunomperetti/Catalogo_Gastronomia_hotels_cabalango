@@ -147,6 +147,37 @@ def test_edit_keeps_slug_stable_and_accepts_zero_order(agenda_app):
         assert item.orden == 0
 
 
+def test_admin_saves_schedule_defaults_manual_override_and_new_flags(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    base = {"tipo": "evento", "titulo": "Festival oficial", "categoria": "cultura", "momento": "noche",
+            "fecha_inicio": "2026-11-21T18:00", "fecha_fin": "2026-11-21T22:00", "publicado": "1",
+            "oficial": "1", "mostrar_en_home": "1", "prioridad_home": "75", "estado": "programado"}
+    assert client.post("/admin/actividades/guardar", data=base, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="festival-oficial").one()
+        item_id = item.id
+        assert (item.oficial, item.mostrar_en_home, item.prioridad_home) == (True, True, 75)
+        assert item.publicar_desde == datetime(2026, 11, 7, 18)
+        assert item.destacar_home_desde == datetime(2026, 11, 14, 18)
+        assert item.ocultar_desde == datetime(2026, 11, 21, 22)
+
+    edited = dict(base, id=str(item_id), estado="reprogramado", fecha_inicio="2026-12-05T18:00",
+                  fecha_fin="2026-12-05T22:00", publicar_desde="2026-10-01T09:00")
+    assert client.post("/admin/actividades/guardar", data=edited, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert item.estado == "reprogramado"
+        assert item.publicar_desde == datetime(2026, 10, 1, 9)  # manual value survives
+        assert item.destacar_home_desde == datetime(2026, 11, 28, 18)  # automatic value follows new date
+
+    cancelled = dict(edited, estado="cancelado", publicar_desde="2026-10-01T09:00",
+                     destacar_home_desde="2026-11-28T18:00", ocultar_desde="2026-12-05T22:00")
+    client.post("/admin/actividades/guardar", data=cancelled, follow_redirects=False)
+    with TestingSession() as db:
+        assert db.get(ActividadAgenda, item_id).estado == "cancelado"
+
+
 def test_card_omits_short_description_when_it_matches_title(agenda_app):
     client, TestingSession = agenda_app
     with TestingSession() as db:
