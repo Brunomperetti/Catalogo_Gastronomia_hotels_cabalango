@@ -115,6 +115,36 @@ def derive_promotion_label(item: models.ActividadAgenda, now: datetime) -> str |
     return None
 
 
+_HOME_LABEL_ORDER = {
+    "EN CURSO": 0,
+    "HOY EN CABALANGO": 1,
+    "MAÑANA": 2,
+    "ESTA SEMANA": 3,
+    "PRÓXIMAMENTE": 4,
+    None: 5,
+}
+
+
+def get_home_agenda_events(db: Session, now=None, limit=3):
+    """Return the eligible events for Home in editorial urgency order."""
+    now = local_datetime(now or now_cabalango())
+    candidates = db.query(models.ActividadAgenda).filter(
+        models.ActividadAgenda.tipo == "evento",
+        models.ActividadAgenda.publicado.is_(True),
+        models.ActividadAgenda.mostrar_en_home.is_(True),
+    ).all()
+    eligible = [item for item in candidates if is_home_eligible(item, now)]
+    eligible.sort(key=lambda item: (
+        _HOME_LABEL_ORDER[derive_promotion_label(item, now)],
+        -(item.prioridad_home or 0),
+        local_datetime(item.fecha_inicio) or datetime.max.replace(tzinfo=CABALANGO_TZ),
+        not bool(item.oficial),
+        not bool(item.destacado),
+        item.titulo.casefold(),
+    ))
+    return eligible[:max(0, limit)]
+
+
 def derived_status(item: models.ActividadAgenda, now: datetime | None = None) -> str:
     now = local_datetime(now or now_cabalango())
     if item.estado == "cancelado":
@@ -167,6 +197,14 @@ def group_public_agenda(items, now=None):
 
 
 _MONTHS = ("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC")
+
+
+def prepare_home_agenda_events(items, now=None):
+    """Build compact Home cards from events already selected by the domain."""
+    cards = prepare_public_agenda(items, now=now, limit=3)["events"]
+    for card in cards:
+        card["category"] = CATEGORIES.get(card["item"].categoria, card["item"].categoria)
+    return cards
 
 
 def prepare_public_agenda(items, now=None, limit=6):

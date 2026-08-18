@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, publication_window_for_event, validate_activity
+from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_home_agenda_events, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, publication_window_for_event, validate_activity
 from app.database import Base
 from app.models import ActividadAgenda
 
@@ -206,3 +206,47 @@ def test_home_eligibility(changes, now, expected):
 def test_promotion_labels(start, end, now, label):
     dt = lambda parts: datetime(2026, 11, *parts, tzinfo=CABALANGO_TZ)
     assert derive_promotion_label(scheduled_event(fecha_inicio=dt(start), fecha_fin=dt(end)), dt(now)) == label
+
+
+def add_home_event(db, slug, start, end, **kwargs):
+    item = scheduled_event(
+        titulo=slug.replace("-", " ").title(), slug=slug,
+        fecha_inicio=start.replace(tzinfo=None), fecha_fin=end.replace(tzinfo=None),
+        destacar_home_desde=kwargs.pop("destacar_home_desde", datetime(2026, 8, 1)),
+        ocultar_desde=kwargs.pop("ocultar_desde", end.replace(tzinfo=None)), **kwargs,
+    )
+    db.add(item)
+    db.commit()
+    return item
+
+
+def test_home_selection_uses_exact_window_and_excludes_ineligible_states(db):
+    start = datetime(2026, 9, 1, 14, tzinfo=CABALANGO_TZ)
+    end = datetime(2026, 9, 1, 18, tzinfo=CABALANGO_TZ)
+    add_home_event(db, "ventana-exacta", start, end, destacar_home_desde=datetime(2026, 8, 25, 14))
+    for slug, changes in (
+        ("sin-home", {"mostrar_en_home": False}), ("sin-publicar", {"publicado": False}),
+        ("borrador", {"estado": "borrador"}), ("cancelado", {"estado": "cancelado"}),
+        ("realizado", {"estado": "realizado"}),
+        ("ocultado", {"ocultar_desde": datetime(2026, 8, 25, 13)}),
+    ):
+        add_home_event(db, slug, start, end, **changes)
+
+    selected = lambda at: [item.slug for item in get_home_agenda_events(db, now=at)]
+    assert "ventana-exacta" not in selected(datetime(2026, 8, 25, 13, 59, tzinfo=CABALANGO_TZ))
+    assert selected(datetime(2026, 8, 25, 14, tzinfo=CABALANGO_TZ)) == ["ventana-exacta"]
+    assert selected(end) == ["ventana-exacta"]
+    assert "ventana-exacta" not in selected(datetime(2026, 9, 1, 18, 1, tzinfo=CABALANGO_TZ))
+
+
+def test_home_ranking_prioritizes_urgency_then_priority_and_limits_to_three(db):
+    now = datetime(2026, 8, 10, 12, tzinfo=CABALANGO_TZ)
+    add_home_event(db, "lejano-prioridad-100", now.replace(day=20, hour=18), now.replace(day=20, hour=20), prioridad_home=100)
+    add_home_event(db, "hoy-prioridad-10", now.replace(hour=18), now.replace(hour=20), prioridad_home=10)
+    add_home_event(db, "semana-prioridad-20", now.replace(day=15, hour=18), now.replace(day=15, hour=20), prioridad_home=20)
+    add_home_event(db, "semana-prioridad-90", now.replace(day=15, hour=19), now.replace(day=15, hour=21), prioridad_home=90)
+    add_home_event(db, "manana", now.replace(day=11, hour=18), now.replace(day=11, hour=20))
+
+    selected = get_home_agenda_events(db, now=now)
+    assert [item.slug for item in selected] == ["hoy-prioridad-10", "manana", "semana-prioridad-90"]
+    assert len(selected) == 3
