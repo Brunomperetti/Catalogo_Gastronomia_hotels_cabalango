@@ -2,17 +2,61 @@ from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.agenda as agenda_domain
+import app.main as main_module
 from app.database import Base
 from app.main import app, get_db, hash_password
 from app.models import ActividadAgenda, Usuario
 
 
 NOW = datetime(2026, 8, 10, 20, 0, tzinfo=agenda_domain.CABALANGO_TZ)
+
+
+def test_legacy_sqlite_agenda_bootstrap_is_additive_and_idempotent(tmp_path, monkeypatch):
+    legacy_engine = create_engine(f"sqlite:///{tmp_path / 'legacy-agenda.db'}")
+    with legacy_engine.begin() as connection:
+        connection.execute(text("""
+            CREATE TABLE actividades_agenda (
+                id INTEGER PRIMARY KEY,
+                tipo VARCHAR NOT NULL,
+                titulo VARCHAR NOT NULL,
+                slug VARCHAR NOT NULL,
+                publicado BOOLEAN NOT NULL DEFAULT FALSE
+            )
+        """))
+        connection.execute(text("""
+            INSERT INTO actividades_agenda (id, tipo, titulo, slug, publicado)
+            VALUES (1, 'evento', 'Evento existente', 'evento-existente', TRUE)
+        """))
+
+    monkeypatch.setattr(main_module, "engine", legacy_engine)
+    main_module.ensure_actividad_agenda_table()
+
+    expected_columns = {
+        "oficial", "estado", "publicar_desde", "destacar_home_desde",
+        "ocultar_desde", "mostrar_en_home", "prioridad_home",
+    }
+    assert expected_columns <= {column["name"] for column in inspect(legacy_engine).get_columns("actividades_agenda")}
+    with legacy_engine.connect() as connection:
+        row = connection.execute(text("""
+            SELECT titulo, oficial, estado, publicar_desde,
+                   destacar_home_desde, ocultar_desde, mostrar_en_home, prioridad_home
+            FROM actividades_agenda WHERE id = 1
+        """)).mappings().one()
+    assert row == {
+        "titulo": "Evento existente", "oficial": 0, "estado": "programado",
+        "publicar_desde": None, "destacar_home_desde": None, "ocultar_desde": None,
+        "mostrar_en_home": 0, "prioridad_home": 0,
+    }
+
+    main_module.ensure_actividad_agenda_table()
+    with legacy_engine.connect() as connection:
+        assert connection.execute(text("SELECT COUNT(*) FROM actividades_agenda")).scalar_one() == 1
+    legacy_engine.dispose()
 
 
 @pytest.fixture

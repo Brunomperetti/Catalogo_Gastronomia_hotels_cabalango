@@ -347,7 +347,13 @@ def ensure_destino_media_table():
 
 
 def ensure_actividad_agenda_table():
-    """Idempotent, additive migration: no existing table or row is altered."""
+    """Add scheduling columns without rebuilding an existing SQLite table.
+
+    SQLite cannot add table-level CHECK constraints with ``ADD COLUMN``.
+    Consequently, legacy tables rely on ``validate_activity`` for state and
+    priority enforcement; the model CHECK constraints apply to newly created
+    tables. Avoiding a silent table rebuild keeps this bootstrap data-safe.
+    """
     if "actividades_agenda" not in set(inspect(engine).get_table_names()):
         Base.metadata.create_all(bind=engine, tables=[models.ActividadAgenda.__table__])
     else:

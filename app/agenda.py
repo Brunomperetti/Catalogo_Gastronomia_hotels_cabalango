@@ -117,12 +117,14 @@ def derive_promotion_label(item: models.ActividadAgenda, now: datetime) -> str |
 
 def derived_status(item: models.ActividadAgenda, now: datetime | None = None) -> str:
     now = local_datetime(now or now_cabalango())
-    if not item.publicado:
-        return "Borrador"
     if item.estado == "cancelado":
         return "Cancelado"
     if item.estado == "realizado":
         return "Realizado"
+    if item.estado == "borrador":
+        return "Borrador"
+    if not item.publicado:
+        return "Borrador"
     if item.tipo == "actividad":
         if item.fecha_inicio and now < local_datetime(item.fecha_inicio):
             return "Próxima"

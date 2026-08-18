@@ -42,6 +42,21 @@ def test_visibility_groups_status_and_timezone(db):
     assert now.utcoffset().total_seconds() == -3 * 3600
 
 
+@pytest.mark.parametrize(("estado", "publicado", "expected"), [
+    ("cancelado", False, "Cancelado"),
+    ("realizado", False, "Realizado"),
+    ("borrador", True, "Borrador"),
+    ("programado", False, "Borrador"),
+])
+def test_persisted_status_precedes_editorial_publication(estado, publicado, expected):
+    item = ActividadAgenda(
+        tipo="evento", titulo="Estado", slug=f"estado-{estado}-{publicado}",
+        categoria="otros", momento="dia", publicado=publicado, estado=estado,
+        fecha_inicio=datetime(2026, 8, 11, 10), fecha_fin=datetime(2026, 8, 11, 12),
+    )
+    assert derived_status(item, datetime(2026, 8, 10, 12, tzinfo=CABALANGO_TZ)) == expected
+
+
 def test_invalid_event_range_is_rejected():
     item = ActividadAgenda(tipo="evento", titulo="Mal", slug="mal", categoria="otros", momento="dia", publicado=True, fecha_inicio=datetime(2026,8,10,20), fecha_fin=datetime(2026,8,10,19))
     with pytest.raises(ValueError, match="anterior"):
