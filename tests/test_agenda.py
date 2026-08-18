@@ -63,6 +63,39 @@ def test_invalid_event_range_is_rejected():
         validate_activity(item)
 
 
+@pytest.mark.parametrize(("start", "end"), [
+    (None, None),
+    (datetime(2026, 9, 10, 18), None),
+    (datetime(2026, 9, 10, 18), datetime(2026, 9, 10, 22)),
+])
+def test_event_draft_accepts_unconfirmed_dates(start, end):
+    item = ActividadAgenda(
+        tipo="evento", titulo="A confirmar", slug="a-confirmar", categoria="otros",
+        momento="dia", estado="borrador", fecha_inicio=start, fecha_fin=end,
+    )
+    validate_activity(item)
+
+
+@pytest.mark.parametrize("estado", ["programado", "reprogramado"])
+def test_active_event_states_still_require_both_dates(estado):
+    item = ActividadAgenda(
+        tipo="evento", titulo="Sin fecha", slug=f"sin-fecha-{estado}", categoria="otros",
+        momento="dia", estado=estado,
+    )
+    with pytest.raises(ValueError, match="requieren fecha"):
+        validate_activity(item)
+
+
+def test_published_home_enabled_draft_is_never_eligible_or_visible():
+    item = ActividadAgenda(
+        tipo="evento", titulo="Borrador", slug="borrador-oculto", categoria="otros",
+        momento="dia", estado="borrador", publicado=True, mostrar_en_home=True,
+    )
+    now = datetime(2026, 9, 1, 12, tzinfo=CABALANGO_TZ)
+    assert not is_publicly_visible(item, now)
+    assert not is_home_eligible(item, now)
+
+
 def test_today_filter_intersects_full_day(db):
     now = datetime(2026,8,10,12,tzinfo=CABALANGO_TZ)
     spanning = make_item(db,"continuado",start=datetime(2026,8,9,23),end=datetime(2026,8,10,14))

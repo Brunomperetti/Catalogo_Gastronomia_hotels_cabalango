@@ -2782,14 +2782,15 @@ def admin_activities(request: Request, edit: int | None = None, error: str = "",
 
 
 @app.post("/admin/actividades/guardar")
-async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: int | None = Form(None), publicado: str | None = Form(None), destacado: str | None = Form(None), oficial: str | None = Form(None), estado: str = Form("programado"), publicar_desde: str = Form(""), destacar_home_desde: str = Form(""), ocultar_desde: str = Form(""), mostrar_en_home: str | None = Form(None), prioridad_home: int = Form(0), imagen: UploadFile | None = File(None), db: Session = Depends(get_db)):
+async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: int | None = Form(None), publicado: str | None = Form(None), destacado: str | None = Form(None), oficial: str | None = Form(None), estado: str | None = Form(None), publicar_desde: str = Form(""), destacar_home_desde: str = Form(""), ocultar_desde: str = Form(""), mostrar_en_home: str | None = Form(None), prioridad_home: int = Form(0), imagen: UploadFile | None = File(None), db: Session = Depends(get_db)):
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     item = db.get(models.ActividadAgenda, id) if id else models.ActividadAgenda(created_at=utc_now())
     if id and not item: raise HTTPException(404)
     old_defaults = publication_window_for_event(item.fecha_inicio, item.fecha_fin) if id and item.tipo == "evento" and item.fecha_inicio and item.fecha_fin else {}
     old_windows = {name: getattr(item, name) for name in ("publicar_desde", "destacar_home_desde", "ocultar_desde")}
-    values = {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden, "publicado": bool(publicado), "destacado": bool(destacado), "oficial": bool(oficial), "estado": estado, "mostrar_en_home": bool(mostrar_en_home), "prioridad_home": prioridad_home}
+    resolved_estado = estado or ("borrador" if tipo == "evento" and (not fecha_inicio or not fecha_fin) else "programado")
+    values = {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden, "publicado": bool(publicado) and not (tipo == "evento" and resolved_estado == "borrador"), "destacado": bool(destacado), "oficial": bool(oficial), "estado": resolved_estado, "mostrar_en_home": bool(mostrar_en_home), "prioridad_home": prioridad_home}
     for name, value in values.items():
         setattr(item, name, value if name in {"publicado", "destacado", "oficial", "mostrar_en_home", "prioridad_home", "orden", "estado"} else value or None)
     item.tipo, item.categoria, item.momento = tipo, categoria, momento
@@ -2803,7 +2804,7 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
             was_automatic = id and old_windows[name] is not None and local_datetime(old_windows[name]) == old_defaults.get(name)
             submitted = parse_local_form_datetime(submitted_windows[name])
             kept_old_automatic = submitted is not None and old_windows[name] is not None and local_datetime(submitted) == local_datetime(old_windows[name])
-            if not submitted_windows[name] or (estado == "reprogramado" and was_automatic and kept_old_automatic):
+            if not submitted_windows[name] or (resolved_estado == "reprogramado" and was_automatic and kept_old_automatic):
                 setattr(item, name, suggested)
     # Keep published URLs stable when an editor changes a title.
     item.slug = item.slug if id else unique_agenda_slug(db, titulo)

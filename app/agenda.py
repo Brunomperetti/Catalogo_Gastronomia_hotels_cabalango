@@ -40,7 +40,7 @@ def validate_activity(item: models.ActividadAgenda) -> None:
         raise ValueError("Tipo inválido")
     if item.categoria not in CATEGORIES or item.momento not in MOMENTS:
         raise ValueError("Categoría o momento inválido")
-    if item.tipo == "evento":
+    if item.tipo == "evento" and item.estado != "borrador":
         if not item.fecha_inicio or not item.fecha_fin:
             raise ValueError("Los eventos requieren fecha y hora de inicio y finalización")
     if item.fecha_inicio and item.fecha_fin and local_datetime(item.fecha_fin) < local_datetime(item.fecha_inicio):

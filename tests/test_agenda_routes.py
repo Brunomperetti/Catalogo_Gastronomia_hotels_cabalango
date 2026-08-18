@@ -222,6 +222,37 @@ def test_admin_saves_schedule_defaults_manual_override_and_new_flags(agenda_app)
         assert db.get(ActividadAgenda, item_id).estado == "cancelado"
 
 
+def test_admin_saves_undated_draft_then_schedules_it_with_defaults(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    draft = {
+        "tipo": "evento", "titulo": "Congreso a confirmar", "categoria": "bienestar",
+        "momento": "dia", "estado": "borrador", "publicado": "1", "mostrar_en_home": "1",
+    }
+    assert client.post("/admin/actividades/guardar", data=draft, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="congreso-a-confirmar").one()
+        item_id = item.id
+        assert item.estado == "borrador"
+        assert item.publicado is False
+        assert item.fecha_inicio is None and item.fecha_fin is None
+        assert item.publicar_desde is None
+        assert item.destacar_home_desde is None
+        assert item.ocultar_desde is None
+
+    scheduled = dict(
+        draft, id=str(item_id), estado="programado", fecha_inicio="2026-11-21T18:00",
+        fecha_fin="2026-11-21T22:00",
+    )
+    assert client.post("/admin/actividades/guardar", data=scheduled, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert item.estado == "programado"
+        assert item.publicar_desde == datetime(2026, 11, 7, 18)
+        assert item.destacar_home_desde == datetime(2026, 11, 14, 18)
+        assert item.ocultar_desde == datetime(2026, 11, 21, 22)
+
+
 def test_card_omits_short_description_when_it_matches_title(agenda_app):
     client, TestingSession = agenda_app
     with TestingSession() as db:
