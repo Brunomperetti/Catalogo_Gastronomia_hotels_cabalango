@@ -2727,7 +2727,10 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/actividades", response_class=HTMLResponse)
 def portal_actividades(request: Request, momento: str = "", categoria: str = "", cuando: str = "", db: Session = Depends(get_db)):
-    items = get_public_activities(db, categoria=categoria, momento=momento, cuando=cuando)
+    agenda_items = get_public_activities(db, cuando=cuando)
+    experience_items = get_public_activities(db, categoria=categoria, momento=momento)
+    items = ([item for item in agenda_items if item.tipo == "evento"]
+             + [item for item in experience_items if item.tipo == "actividad"])
     return templates.TemplateResponse("actividades.html", {"request": request, "agenda": prepare_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"momento": momento, "categoria": categoria, "cuando": cuando}, "active_section": "actividades"})
 
 

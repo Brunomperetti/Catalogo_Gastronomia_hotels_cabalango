@@ -119,15 +119,53 @@ def test_public_listing_and_detail_visibility(agenda_app):
 @pytest.mark.parametrize(
     ("query", "visible", "hidden"),
     [
-        ("cuando=hoy", ("Feria de hoy", "Música esta noche"), ("Evento de mañana", "Yoga permanente", "Feria de temporada")),
-        ("momento=noche", ("Música esta noche", "Evento de mañana"), ("Feria de hoy", "Yoga permanente")),
-        ("categoria=bienestar", ("Yoga permanente", "Evento de mañana"), ("Feria de hoy", "Música esta noche")),
+        ("cuando=hoy", ("Feria de hoy", "Música esta noche", "Yoga permanente", "Feria de temporada"), ("Evento de mañana",)),
+        ("momento=noche", ("Feria de hoy", "Música esta noche", "Evento de mañana", "Feria de temporada"), ("Yoga permanente",)),
+        ("categoria=bienestar", ("Yoga permanente", "Feria de hoy", "Música esta noche", "Evento de mañana"), ("Feria de temporada",)),
     ],
 )
 def test_public_filters(agenda_app, query, visible, hidden):
     html = agenda_app[0].get(f"/actividades?{query}").text
     assert all(title in html for title in visible)
     assert all(title not in html for title in hidden)
+
+
+def test_experience_filters_do_not_change_official_agenda(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.add_all([
+            ActividadAgenda(tipo="actividad", titulo="Sendero naturaleza", slug="sendero-naturaleza", categoria="naturaleza", momento="dia", publicado=True),
+            ActividadAgenda(tipo="actividad", titulo="Taller cultura", slug="taller-cultura", categoria="cultura", momento="noche", publicado=True),
+            ActividadAgenda(tipo="evento", titulo="Festival cultura", slug="festival-cultura", categoria="cultura", momento="dia", publicado=True, fecha_inicio=datetime(2026, 8, 11, 18), fecha_fin=datetime(2026, 8, 11, 20)),
+            ActividadAgenda(tipo="evento", titulo="Encuentro naturaleza", slug="encuentro-naturaleza", categoria="naturaleza", momento="dia", publicado=True, fecha_inicio=datetime(2026, 8, 12, 18), fecha_fin=datetime(2026, 8, 12, 20)),
+        ])
+        db.commit()
+
+    def sections(query):
+        html = client.get(f"/actividades?{query}").text
+        official = html.split('class="official-agenda agenda-section"', 1)[1].split('class="experiences agenda-section"', 1)[0]
+        experiences = html.split('class="experiences agenda-section"', 1)[1]
+        return official, experiences
+
+    official, experiences = sections("categoria=naturaleza")
+    assert "Festival cultura" in official
+    assert "Sendero naturaleza" in experiences and "Taller cultura" not in experiences
+
+    official, experiences = sections("categoria=cultura")
+    assert "Encuentro naturaleza" in official
+    assert "Taller cultura" in experiences and "Sendero naturaleza" not in experiences
+
+    official, experiences = sections("momento=noche")
+    assert "Festival cultura" in official and "Encuentro naturaleza" in official
+    assert "Taller cultura" in experiences and "Sendero naturaleza" not in experiences
+
+    official, experiences = sections("cuando=hoy")
+    assert "Feria de hoy" in official and "Música esta noche" in official
+    assert "Festival cultura" not in official and "Encuentro naturaleza" not in official
+    assert "Sendero naturaleza" in experiences and "Taller cultura" in experiences
+    assert 'aria-label="Filtros de Agenda Oficial"' in official
+    assert ">Hoy</a>" in official
+    assert ">Hoy</a>" not in experiences
 
 
 def test_authenticated_admin_keeps_expired_event_as_finalizado(agenda_app):
