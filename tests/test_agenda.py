@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_home_agenda_events, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, publication_window_for_event, validate_activity
+from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_home_agenda_events, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, prepare_home_agenda_events, publication_window_for_event, validate_activity
 from app.database import Base
 from app.models import ActividadAgenda
 
@@ -248,5 +248,8 @@ def test_home_ranking_prioritizes_urgency_then_priority_and_limits_to_three(db):
     add_home_event(db, "manana", now.replace(day=11, hour=18), now.replace(day=11, hour=20))
 
     selected = get_home_agenda_events(db, now=now)
-    assert [item.slug for item in selected] == ["hoy-prioridad-10", "manana", "semana-prioridad-90"]
+    cards = prepare_home_agenda_events(selected, now=now)
+    expected = ["hoy-prioridad-10", "manana", "semana-prioridad-90"]
+    assert [item.slug for item in selected] == expected
+    assert [card["item"].slug for card in cards] == expected
     assert len(selected) == 3

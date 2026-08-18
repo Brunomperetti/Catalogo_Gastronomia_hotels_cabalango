@@ -199,9 +199,32 @@ def group_public_agenda(items, now=None):
 _MONTHS = ("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC")
 
 
+def prepare_event_card(item, now):
+    """Build presentation data for one event without changing collection order."""
+    start, end = local_datetime(item.fecha_inicio), local_datetime(item.fecha_fin)
+    if start.date() == end.date():
+        date_label = f"{start.day} {_MONTHS[start.month - 1]}"
+    elif start.month == end.month:
+        date_label = f"{start.day}–{end.day} {_MONTHS[start.month - 1]}"
+    else:
+        date_label = f"{start.day} {_MONTHS[start.month - 1]} — {end.day} {_MONTHS[end.month - 1]}"
+
+    schedule = item.horarios.strip() if item.horarios and item.horarios.strip() else None
+    if not schedule and start.time() != time.min and end.time() != time.min:
+        schedule = f"{start:%H:%M}–{end:%H:%M} hs"
+    return {
+        "item": item,
+        "label": derive_promotion_label(item, now),
+        "date_label": date_label,
+        "datetime": start.isoformat(),
+        "schedule": schedule,
+    }
+
+
 def prepare_home_agenda_events(items, now=None):
     """Build compact Home cards from events already selected by the domain."""
-    cards = prepare_public_agenda(items, now=now, limit=3)["events"]
+    now = local_datetime(now or now_cabalango())
+    cards = [prepare_event_card(item, now) for item in items[:3]]
     for card in cards:
         card["category"] = CATEGORIES.get(card["item"].categoria, card["item"].categoria)
     return cards
@@ -218,26 +241,7 @@ def prepare_public_agenda(items, now=None, limit=6):
             item.titulo.casefold(),
         ),
     )
-    cards = []
-    for item in events[:limit]:
-        start, end = local_datetime(item.fecha_inicio), local_datetime(item.fecha_fin)
-        if start.date() == end.date():
-            date_label = f"{start.day} {_MONTHS[start.month - 1]}"
-        elif start.month == end.month:
-            date_label = f"{start.day}–{end.day} {_MONTHS[start.month - 1]}"
-        else:
-            date_label = f"{start.day} {_MONTHS[start.month - 1]} — {end.day} {_MONTHS[end.month - 1]}"
-
-        schedule = item.horarios.strip() if item.horarios and item.horarios.strip() else None
-        if not schedule and start.time() != time.min and end.time() != time.min:
-            schedule = f"{start:%H:%M}–{end:%H:%M} hs"
-        cards.append({
-            "item": item,
-            "label": derive_promotion_label(item, now),
-            "date_label": date_label,
-            "datetime": start.isoformat(),
-            "schedule": schedule,
-        })
+    cards = [prepare_event_card(item, now) for item in events[:limit]]
 
     activities = sorted(
         (item for item in items if item.tipo == "actividad"),

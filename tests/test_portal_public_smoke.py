@@ -270,6 +270,7 @@ def test_home_agenda_is_hidden_when_empty_and_renders_compact_event_cards(monkey
     assert 'href="/actividades/taller-serrano"' in html
     assert 'href="/actividades">Ver agenda completa' in html
     assert '<time datetime="2026-11-21T18:00:00-03:00">21–22 NOV</time>' in html
+    assert html.index("Encuentro del río") < html.index("Taller serrano")
     assert 'src=""' not in html
 
 
