@@ -1,5 +1,8 @@
 from datetime import datetime
+from html import unescape
 from pathlib import Path
+import re
+from urllib.parse import parse_qsl, urlsplit
 
 import pytest
 from fastapi.testclient import TestClient
@@ -166,6 +169,30 @@ def test_experience_filters_do_not_change_official_agenda(agenda_app):
     assert 'aria-label="Filtros de Agenda Oficial"' in official
     assert ">Hoy</a>" in official
     assert ">Hoy</a>" not in experiences
+
+
+def test_filter_links_preserve_independent_query_state(agenda_app):
+    client, _ = agenda_app
+
+    today_html = client.get("/actividades?cuando=hoy").text
+    assert 'href="/actividades?categoria=naturaleza&amp;cuando=hoy"' in today_html
+
+    culture_html = client.get("/actividades?categoria=cultura").text
+    assert 'href="/actividades?cuando=hoy&amp;categoria=cultura"' in culture_html
+
+    combined_html = client.get("/actividades?cuando=hoy&categoria=cultura").text
+    assert 'href="/actividades?momento=noche&amp;cuando=hoy"' in combined_html
+    assert 'href="/actividades?cuando=hoy" class="' in combined_html  # Todo clears experience filters.
+
+    all_filters_html = client.get("/actividades?cuando=hoy&categoria=cultura&momento=noche").text
+    assert 'href="/actividades?categoria=cultura&amp;momento=noche" class="' in all_filters_html  # Próximos clears only cuando.
+
+    for html in (today_html, culture_html, combined_html, all_filters_html):
+        hrefs = [unescape(href) for href in re.findall(r'href="([^"]+)"', html) if href.startswith("/actividades")]
+        assert all(marker not in href for href in hrefs for marker in ("??", "&&", "?&"))
+        for href in hrefs:
+            keys = [key for key, _ in parse_qsl(urlsplit(href).query, keep_blank_values=True)]
+            assert len(keys) == len(set(keys))
 
 
 def test_authenticated_admin_keeps_expired_event_as_finalizado(agenda_app):
