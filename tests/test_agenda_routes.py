@@ -2,17 +2,61 @@ from datetime import datetime
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.agenda as agenda_domain
+import app.main as main_module
 from app.database import Base
 from app.main import app, get_db, hash_password
 from app.models import ActividadAgenda, Usuario
 
 
 NOW = datetime(2026, 8, 10, 20, 0, tzinfo=agenda_domain.CABALANGO_TZ)
+
+
+def test_legacy_sqlite_agenda_bootstrap_is_additive_and_idempotent(tmp_path, monkeypatch):
+    legacy_engine = create_engine(f"sqlite:///{tmp_path / 'legacy-agenda.db'}")
+    with legacy_engine.begin() as connection:
+        connection.execute(text("""
+            CREATE TABLE actividades_agenda (
+                id INTEGER PRIMARY KEY,
+                tipo VARCHAR NOT NULL,
+                titulo VARCHAR NOT NULL,
+                slug VARCHAR NOT NULL,
+                publicado BOOLEAN NOT NULL DEFAULT FALSE
+            )
+        """))
+        connection.execute(text("""
+            INSERT INTO actividades_agenda (id, tipo, titulo, slug, publicado)
+            VALUES (1, 'evento', 'Evento existente', 'evento-existente', TRUE)
+        """))
+
+    monkeypatch.setattr(main_module, "engine", legacy_engine)
+    main_module.ensure_actividad_agenda_table()
+
+    expected_columns = {
+        "oficial", "estado", "publicar_desde", "destacar_home_desde",
+        "ocultar_desde", "mostrar_en_home", "prioridad_home",
+    }
+    assert expected_columns <= {column["name"] for column in inspect(legacy_engine).get_columns("actividades_agenda")}
+    with legacy_engine.connect() as connection:
+        row = connection.execute(text("""
+            SELECT titulo, oficial, estado, publicar_desde,
+                   destacar_home_desde, ocultar_desde, mostrar_en_home, prioridad_home
+            FROM actividades_agenda WHERE id = 1
+        """)).mappings().one()
+    assert row == {
+        "titulo": "Evento existente", "oficial": 0, "estado": "programado",
+        "publicar_desde": None, "destacar_home_desde": None, "ocultar_desde": None,
+        "mostrar_en_home": 0, "prioridad_home": 0,
+    }
+
+    main_module.ensure_actividad_agenda_table()
+    with legacy_engine.connect() as connection:
+        assert connection.execute(text("SELECT COUNT(*) FROM actividades_agenda")).scalar_one() == 1
+    legacy_engine.dispose()
 
 
 @pytest.fixture
@@ -145,6 +189,68 @@ def test_edit_keeps_slug_stable_and_accepts_zero_order(agenda_app):
         item = db.get(ActividadAgenda, item_id)
         assert item.slug == "yoga-permanente"
         assert item.orden == 0
+
+
+def test_admin_saves_schedule_defaults_manual_override_and_new_flags(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    base = {"tipo": "evento", "titulo": "Festival oficial", "categoria": "cultura", "momento": "noche",
+            "fecha_inicio": "2026-11-21T18:00", "fecha_fin": "2026-11-21T22:00", "publicado": "1",
+            "oficial": "1", "mostrar_en_home": "1", "prioridad_home": "75", "estado": "programado"}
+    assert client.post("/admin/actividades/guardar", data=base, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="festival-oficial").one()
+        item_id = item.id
+        assert (item.oficial, item.mostrar_en_home, item.prioridad_home) == (True, True, 75)
+        assert item.publicar_desde == datetime(2026, 11, 7, 18)
+        assert item.destacar_home_desde == datetime(2026, 11, 14, 18)
+        assert item.ocultar_desde == datetime(2026, 11, 21, 22)
+
+    edited = dict(base, id=str(item_id), estado="reprogramado", fecha_inicio="2026-12-05T18:00",
+                  fecha_fin="2026-12-05T22:00", publicar_desde="2026-10-01T09:00")
+    assert client.post("/admin/actividades/guardar", data=edited, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert item.estado == "reprogramado"
+        assert item.publicar_desde == datetime(2026, 10, 1, 9)  # manual value survives
+        assert item.destacar_home_desde == datetime(2026, 11, 28, 18)  # automatic value follows new date
+
+    cancelled = dict(edited, estado="cancelado", publicar_desde="2026-10-01T09:00",
+                     destacar_home_desde="2026-11-28T18:00", ocultar_desde="2026-12-05T22:00")
+    client.post("/admin/actividades/guardar", data=cancelled, follow_redirects=False)
+    with TestingSession() as db:
+        assert db.get(ActividadAgenda, item_id).estado == "cancelado"
+
+
+def test_admin_saves_undated_draft_then_schedules_it_with_defaults(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    draft = {
+        "tipo": "evento", "titulo": "Congreso a confirmar", "categoria": "bienestar",
+        "momento": "dia", "estado": "borrador", "publicado": "1", "mostrar_en_home": "1",
+    }
+    assert client.post("/admin/actividades/guardar", data=draft, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="congreso-a-confirmar").one()
+        item_id = item.id
+        assert item.estado == "borrador"
+        assert item.publicado is False
+        assert item.fecha_inicio is None and item.fecha_fin is None
+        assert item.publicar_desde is None
+        assert item.destacar_home_desde is None
+        assert item.ocultar_desde is None
+
+    scheduled = dict(
+        draft, id=str(item_id), estado="programado", fecha_inicio="2026-11-21T18:00",
+        fecha_fin="2026-11-21T22:00",
+    )
+    assert client.post("/admin/actividades/guardar", data=scheduled, follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert item.estado == "programado"
+        assert item.publicar_desde == datetime(2026, 11, 7, 18)
+        assert item.destacar_home_desde == datetime(2026, 11, 14, 18)
+        assert item.ocultar_desde == datetime(2026, 11, 21, 22)
 
 
 def test_card_omits_short_description_when_it_matches_title(agenda_app):

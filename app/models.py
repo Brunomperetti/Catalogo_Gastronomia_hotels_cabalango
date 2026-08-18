@@ -217,6 +217,16 @@ class DestinoContenido(Base):
 class ActividadAgenda(Base):
     """Editorial activity/event content, deliberately separate from providers."""
     __tablename__ = "actividades_agenda"
+    __table_args__ = (
+        CheckConstraint(
+            "estado IN ('borrador','programado','reprogramado','cancelado','realizado')",
+            name="ck_actividades_agenda_estado",
+        ),
+        CheckConstraint(
+            "prioridad_home BETWEEN 0 AND 100",
+            name="ck_actividades_agenda_prioridad_home",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     tipo = Column(String, nullable=False, index=True)
@@ -237,6 +247,13 @@ class ActividadAgenda(Base):
     url_externa = Column(String, nullable=True)
     imagen_url = Column(String, nullable=True)
     publicado = Column(Boolean, nullable=False, default=False, index=True)
+    oficial = Column(Boolean, nullable=False, default=False, index=True)
+    estado = Column(String, nullable=False, default="programado", index=True)
+    publicar_desde = Column(DateTime(timezone=True), nullable=True, index=True)
+    destacar_home_desde = Column(DateTime(timezone=True), nullable=True, index=True)
+    ocultar_desde = Column(DateTime(timezone=True), nullable=True, index=True)
+    mostrar_en_home = Column(Boolean, nullable=False, default=False, index=True)
+    prioridad_home = Column(Integer, nullable=False, default=0, index=True)
     destacado = Column(Boolean, nullable=False, default=False, index=True)
     orden = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
