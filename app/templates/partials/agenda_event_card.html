@@ -1,0 +1,9 @@
+{% set item = event.item %}<article class="official-event{% if item.oficial %} official-event--institutional{% endif %}">
+  {% if item.imagen_url is string and item.imagen_url|trim %}<img class="official-event__image" src="{{ item.imagen_url }}" alt="{{ item.titulo }}" loading="lazy">{% endif %}
+  <div class="official-event__body">
+    <p class="official-event__labels">{% if item.estado == 'reprogramado' %}<span>NUEVA FECHA</span>{% if event.label %}<span aria-hidden="true">·</span>{% endif %}{% endif %}{% if event.label %}<span class="official-event__label official-event__label--{{ event.label|lower|replace(' ', '-') }}">{{ event.label }}</span>{% endif %}{% if item.oficial %}<span class="official-event__official">Evento oficial</span>{% endif %}</p>
+    <div class="official-event__content"><time class="official-event__date" datetime="{{ event.datetime }}">{{ event.date_label }}</time><div><p class="official-event__category">{{ categories[item.categoria] }}</p><h3>{{ item.titulo }}</h3>{% if item.descripcion_corta and item.descripcion_corta|trim|lower != item.titulo|trim|lower %}<p class="official-event__description">{{ item.descripcion_corta }}</p>{% endif %}</div></div>
+    {% if event.schedule or item.lugar %}<p class="official-event__facts">{% if event.schedule %}{{ event.schedule }}{% endif %}{% if event.schedule and item.lugar %} · {% endif %}{% if item.lugar %}{{ item.lugar }}{% endif %}</p>{% endif %}
+    <div class="official-event__actions"><a href="/actividades/{{ item.slug }}">Ver evento <span aria-hidden="true">→</span></a>{% if item.maps_url is string and item.maps_url|trim %}<a href="{{ item.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}</div>
+  </div>
+</article>

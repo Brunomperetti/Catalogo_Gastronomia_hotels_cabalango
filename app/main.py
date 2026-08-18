@@ -34,7 +34,7 @@ from reportlab.lib.pagesizes import A4
 
 from app.database import SessionLocal, engine, Base
 from app import models
-from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, derived_status, get_public_activities, group_public_agenda, local_datetime, now_cabalango, publication_window_for_event, validate_activity
+from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, derived_status, get_public_activities, group_public_agenda, local_datetime, now_cabalango, prepare_public_agenda, publication_window_for_event, validate_activity
 
 app = FastAPI()
 APP_BUILD = "2026-07-01-descubri-cabalango-v1"
@@ -2728,7 +2728,7 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
 @app.get("/actividades", response_class=HTMLResponse)
 def portal_actividades(request: Request, momento: str = "", categoria: str = "", cuando: str = "", db: Session = Depends(get_db)):
     items = get_public_activities(db, categoria=categoria, momento=momento, cuando=cuando)
-    return templates.TemplateResponse("actividades.html", {"request": request, "groups": group_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"momento": momento, "categoria": categoria, "cuando": cuando}, "active_section": "actividades"})
+    return templates.TemplateResponse("actividades.html", {"request": request, "agenda": prepare_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"momento": momento, "categoria": categoria, "cuando": cuando}, "active_section": "actividades"})
 
 
 @app.get("/actividades/{slug}", response_class=HTMLResponse)
