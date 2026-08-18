@@ -69,7 +69,7 @@ def test_portal_home_smoke():
         assert f'href="{href}"' in response.text
     assert response.text.count("destination-story-more") == 3
     assert 'id="como-llegar"' in response.text
-    assert "?v=20260812-home-art-2" in response.text
+    assert "?v=20260818-home-agenda-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -237,6 +237,41 @@ def test_home_preserves_editable_hero_content(monkeypatch):
     fallback_response = TestClient(app).get("/")
     assert fallback_response.status_code == 200
     assert "Descubrí balnearios, alojamientos, sabores y experiencias locales en un rincón tranquilo de las sierras de Córdoba." in fallback_response.text
+
+
+def test_home_agenda_is_hidden_when_empty_and_renders_compact_event_cards(monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [])
+    empty_html = TestClient(app).get("/").text
+    assert '<section class="home-agenda"' not in empty_html
+    assert "Descubrí Cabalango" in empty_html
+
+    with_image = SimpleNamespace(
+        titulo="Encuentro del río", slug="encuentro-del-rio", imagen_url="/media/evento.webp",
+        estado="reprogramado", oficial=True, categoria="cultura", descripcion_corta="Una propuesta local.", lugar="Costanera",
+    )
+    without_image = SimpleNamespace(
+        titulo="Taller serrano", slug="taller-serrano", imagen_url=None,
+        estado="programado", oficial=False, categoria="otros", descripcion_corta=None, lugar=None,
+    )
+    cards = [
+        {"item": with_image, "label": "ESTA SEMANA", "date_label": "21–22 NOV", "datetime": "2026-11-21T18:00:00-03:00", "schedule": "18:00 hs", "category": "Cultura"},
+        {"item": without_image, "label": "PRÓXIMAMENTE", "date_label": "25 NOV", "datetime": "2026-11-25T10:00:00-03:00", "schedule": None, "category": "Otros"},
+    ]
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: cards)
+    html = TestClient(app).get("/").text
+
+    assert html.count('<article class="home-agenda-event') == 2
+    assert 'data-count="2"' in html
+    assert "NUEVA FECHA" in html and "ESTA SEMANA" in html and "EVENTO OFICIAL" in html
+    assert 'src="/media/evento.webp" alt="Encuentro del río" loading="lazy"' in html
+    assert 'href="/actividades/encuentro-del-rio"' in html
+    assert 'href="/actividades/taller-serrano"' in html
+    assert 'href="/actividades">Ver agenda completa' in html
+    assert '<time datetime="2026-11-21T18:00:00-03:00">21–22 NOV</time>' in html
+    assert html.index("Encuentro del río") < html.index("Taller serrano")
+    assert 'src=""' not in html
 
 
 def test_descubri_cabalango_redirects_to_home():

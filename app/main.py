@@ -34,7 +34,7 @@ from reportlab.lib.pagesizes import A4
 
 from app.database import SessionLocal, engine, Base
 from app import models
-from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, derived_status, get_public_activities, group_public_agenda, local_datetime, now_cabalango, prepare_public_agenda, publication_window_for_event, validate_activity
+from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, derived_status, get_home_agenda_events, get_public_activities, local_datetime, now_cabalango, prepare_home_agenda_events, prepare_public_agenda, publication_window_for_event, validate_activity
 
 app = FastAPI()
 APP_BUILD = "2026-07-01-descubri-cabalango-v1"
@@ -2676,7 +2676,7 @@ def render_destino_home(request: Request, db: Session):
             "content": content,
             "weather": get_cabalango_weather(),
             "active_section": "inicio",
-            "agenda_home": build_home_agenda(db),
+            "home_events": build_home_agenda(db),
         },
     )
 
@@ -2743,11 +2743,8 @@ def actividad_detail(request: Request, slug: str, db: Session = Depends(get_db))
 
 
 def build_home_agenda(db: Session):
-    groups = group_public_agenda(get_public_activities(db))
-    selected = (groups["today"] + groups["night"])[:4]
-    if len(selected) < 4:
-        selected += [i for i in groups["activities"] if i.destacado][:4-len(selected)]
-    return selected
+    now = now_cabalango()
+    return prepare_home_agenda_events(get_home_agenda_events(db, now=now), now=now)
 
 
 def parse_local_form_datetime(value: str):

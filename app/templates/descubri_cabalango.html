@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260812-home-art-2">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260818-home-agenda-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
 </head>
 <body class="catalog-theme-default portal-body">
@@ -75,7 +75,30 @@
         </div>
     </nav>
 
-    {% if agenda_home %}<section class="agenda-section agenda-home"><header><p class="portal-kicker">HOY EN CABALANGO</p><h2>¿Qué hacemos hoy?</h2></header><div class="agenda-grid">{% for item in agenda_home %}{% set categories = {'naturaleza':'Naturaleza','bienestar':'Bienestar','cultura':'Cultura','entretenimiento':'Entretenimiento','familiar':'Para chicos','deporte':'Deporte','artesania':'Artesanía','musica':'Música','otros':'Otros'} %}{% set moments = {'dia':'Día','atardecer':'Atardecer','noche':'Noche','todo_el_dia':'Todo el día'} %}{% include 'partials/agenda_card.html' %}{% endfor %}</div><a class="portal-button" href="/actividades">Ver qué hacer</a></section>{% endif %}
+    {% if home_events %}
+    <section class="home-agenda" aria-labelledby="home-agenda-title">
+        <header class="home-agenda__header">
+            <div><p class="portal-kicker">Agenda</p><h2 id="home-agenda-title">Lo que viene en Cabalango</h2><p>Eventos, encuentros y propuestas para disfrutar Cabalango.</p></div>
+            <a class="home-agenda__all" href="/actividades">Ver agenda completa <span aria-hidden="true">→</span></a>
+        </header>
+        <div class="home-agenda__grid" data-count="{{ home_events|length }}">
+            {% for card in home_events %}{% set item = card.item %}
+            <article class="home-agenda-event{% if item.imagen_url %} home-agenda-event--with-image{% endif %}">
+                {% if item.imagen_url %}<img class="home-agenda-event__image" src="{{ item.imagen_url }}" alt="{{ item.titulo }}" loading="lazy">{% endif %}
+                <div class="home-agenda-event__body">
+                    <p class="home-agenda-event__labels">{% if item.estado == 'reprogramado' %}<span>NUEVA FECHA</span>{% endif %}{% if card.label %}<span>{{ card.label }}</span>{% endif %}{% if item.oficial %}<small>EVENTO OFICIAL</small>{% endif %}</p>
+                    <div class="home-agenda-event__content">
+                        <time datetime="{{ card.datetime }}">{{ card.date_label }}</time>
+                        <div><p class="home-agenda-event__category">{{ card.category }}</p><h3>{{ item.titulo }}</h3>{% if item.descripcion_corta %}<p class="home-agenda-event__description">{{ item.descripcion_corta }}</p>{% endif %}</div>
+                    </div>
+                    {% if card.schedule or item.lugar %}<p class="home-agenda-event__facts">{% if card.schedule %}<span>{{ card.schedule }}</span>{% endif %}{% if item.lugar %}<span>{{ item.lugar }}</span>{% endif %}</p>{% endif %}
+                    <a class="home-agenda-event__link" href="/actividades/{{ item.slug }}">Ver evento <span aria-hidden="true">→</span></a>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
 
     <section class="destination-section destination-about" id="sobre-cabalango">
         <div class="destination-about-intro">
