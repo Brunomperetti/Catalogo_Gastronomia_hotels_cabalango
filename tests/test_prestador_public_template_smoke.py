@@ -361,7 +361,7 @@ def test_provider_promotion_uses_the_high_contrast_editorial_treatment():
         r"\.portal-body \.prestador-page \.promo-highlight strong \{([^}]*)\}", css
     ).group(1)
 
-    assert "linear-gradient(135deg, #3d2e23 0%, #30271f 58%, #293328 100%)" in promo_rule
+    assert "linear-gradient(135deg, #2f241c 0%, #241e18 58%, #20291f 100%)" in promo_rule
     assert "color: #fffaf0" in title_rule
 
 
