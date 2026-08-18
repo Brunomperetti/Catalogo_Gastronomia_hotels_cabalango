@@ -1,4 +1,8 @@
 from datetime import datetime
+from html import unescape
+from pathlib import Path
+import re
+from urllib.parse import parse_qsl, urlsplit
 
 import pytest
 from fastapi.testclient import TestClient
@@ -118,15 +122,77 @@ def test_public_listing_and_detail_visibility(agenda_app):
 @pytest.mark.parametrize(
     ("query", "visible", "hidden"),
     [
-        ("cuando=hoy", ("Feria de hoy", "Música esta noche"), ("Evento de mañana", "Yoga permanente", "Feria de temporada")),
-        ("momento=noche", ("Música esta noche", "Evento de mañana"), ("Feria de hoy", "Yoga permanente")),
-        ("categoria=bienestar", ("Yoga permanente", "Evento de mañana"), ("Feria de hoy", "Música esta noche")),
+        ("cuando=hoy", ("Feria de hoy", "Música esta noche", "Yoga permanente", "Feria de temporada"), ("Evento de mañana",)),
+        ("momento=noche", ("Feria de hoy", "Música esta noche", "Evento de mañana", "Feria de temporada"), ("Yoga permanente",)),
+        ("categoria=bienestar", ("Yoga permanente", "Feria de hoy", "Música esta noche", "Evento de mañana"), ("Feria de temporada",)),
     ],
 )
 def test_public_filters(agenda_app, query, visible, hidden):
     html = agenda_app[0].get(f"/actividades?{query}").text
     assert all(title in html for title in visible)
     assert all(title not in html for title in hidden)
+
+
+def test_experience_filters_do_not_change_official_agenda(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.add_all([
+            ActividadAgenda(tipo="actividad", titulo="Sendero naturaleza", slug="sendero-naturaleza", categoria="naturaleza", momento="dia", publicado=True),
+            ActividadAgenda(tipo="actividad", titulo="Taller cultura", slug="taller-cultura", categoria="cultura", momento="noche", publicado=True),
+            ActividadAgenda(tipo="evento", titulo="Festival cultura", slug="festival-cultura", categoria="cultura", momento="dia", publicado=True, fecha_inicio=datetime(2026, 8, 11, 18), fecha_fin=datetime(2026, 8, 11, 20)),
+            ActividadAgenda(tipo="evento", titulo="Encuentro naturaleza", slug="encuentro-naturaleza", categoria="naturaleza", momento="dia", publicado=True, fecha_inicio=datetime(2026, 8, 12, 18), fecha_fin=datetime(2026, 8, 12, 20)),
+        ])
+        db.commit()
+
+    def sections(query):
+        html = client.get(f"/actividades?{query}").text
+        official = html.split('class="official-agenda agenda-section"', 1)[1].split('class="experiences agenda-section"', 1)[0]
+        experiences = html.split('class="experiences agenda-section"', 1)[1]
+        return official, experiences
+
+    official, experiences = sections("categoria=naturaleza")
+    assert "Festival cultura" in official
+    assert "Sendero naturaleza" in experiences and "Taller cultura" not in experiences
+
+    official, experiences = sections("categoria=cultura")
+    assert "Encuentro naturaleza" in official
+    assert "Taller cultura" in experiences and "Sendero naturaleza" not in experiences
+
+    official, experiences = sections("momento=noche")
+    assert "Festival cultura" in official and "Encuentro naturaleza" in official
+    assert "Taller cultura" in experiences and "Sendero naturaleza" not in experiences
+
+    official, experiences = sections("cuando=hoy")
+    assert "Feria de hoy" in official and "Música esta noche" in official
+    assert "Festival cultura" not in official and "Encuentro naturaleza" not in official
+    assert "Sendero naturaleza" in experiences and "Taller cultura" in experiences
+    assert 'aria-label="Filtros de Agenda Oficial"' in official
+    assert ">Hoy</a>" in official
+    assert ">Hoy</a>" not in experiences
+
+
+def test_filter_links_preserve_independent_query_state(agenda_app):
+    client, _ = agenda_app
+
+    today_html = client.get("/actividades?cuando=hoy").text
+    assert 'href="/actividades?categoria=naturaleza&amp;cuando=hoy"' in today_html
+
+    culture_html = client.get("/actividades?categoria=cultura").text
+    assert 'href="/actividades?cuando=hoy&amp;categoria=cultura"' in culture_html
+
+    combined_html = client.get("/actividades?cuando=hoy&categoria=cultura").text
+    assert 'href="/actividades?momento=noche&amp;cuando=hoy"' in combined_html
+    assert 'href="/actividades?cuando=hoy" class="' in combined_html  # Todo clears experience filters.
+
+    all_filters_html = client.get("/actividades?cuando=hoy&categoria=cultura&momento=noche").text
+    assert 'href="/actividades?categoria=cultura&amp;momento=noche" class="' in all_filters_html  # Próximos clears only cuando.
+
+    for html in (today_html, culture_html, combined_html, all_filters_html):
+        hrefs = [unescape(href) for href in re.findall(r'href="([^"]+)"', html) if href.startswith("/actividades")]
+        assert all(marker not in href for href in hrefs for marker in ("??", "&&", "?&"))
+        for href in hrefs:
+            keys = [key for key, _ in parse_qsl(urlsplit(href).query, keep_blank_values=True)]
+            assert len(keys) == len(set(keys))
 
 
 def test_authenticated_admin_keeps_expired_event_as_finalizado(agenda_app):
@@ -306,3 +372,92 @@ def test_detail_never_renders_none_or_blank_optional_content(agenda_app):
     assert 'class="agenda-description"' not in detail
     assert "<dt>Lugar</dt>" not in detail
     assert "<dt>Dirección</dt>" not in detail
+
+
+def test_public_agenda_is_editorial_separated_and_accessible(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.add_all([
+            ActividadAgenda(
+                tipo="evento", titulo="Taller nueva fecha", slug="taller-nueva-fecha",
+                descripcion_corta="Una ronda para compartir memoria", categoria="cultura",
+                momento="dia", lugar="SUM", horarios="17:00 hs", publicado=True,
+                oficial=True, estado="reprogramado", imagen_url="/media/taller.jpg",
+                fecha_inicio=datetime(2026, 8, 11, 17), fecha_fin=datetime(2026, 8, 11, 19),
+            ),
+            ActividadAgenda(
+                tipo="evento", titulo="Encuentro sin foto", slug="encuentro-sin-foto",
+                categoria="naturaleza", momento="dia", lugar="Plaza Nativa", publicado=True,
+                fecha_inicio=datetime(2026, 8, 12, 9), fecha_fin=datetime(2026, 8, 12, 11),
+            ),
+        ])
+        db.commit()
+
+    response = client.get("/actividades")
+    assert response.status_code == 200
+    html = response.text
+    official = html.split('class="official-agenda agenda-section"', 1)[1].split('class="experiences agenda-section"', 1)[0]
+    experiences = html.split('class="experiences agenda-section"', 1)[1]
+    assert "AGENDA OFICIAL" in official and "Lo próximo en Cabalango" in official
+    assert "Taller nueva fecha" in official and "Encuentro sin foto" in official
+    assert "Yoga permanente" not in official
+    assert "Yoga permanente" in experiences and "Taller nueva fecha" not in experiences
+    assert "NUEVA FECHA" in official and "MAÑANA" in official and "Evento oficial" in official
+    assert '<time class="official-event__date" datetime="2026-08-11T17:00:00-03:00">11 AGO</time>' in official
+    assert 'src="/media/taller.jpg" alt="Taller nueva fecha" loading="lazy"' in official
+    assert official.count('/media/taller.jpg') == 1
+    no_photo_card = official.split("Encuentro sin foto", 1)[0].rsplit('<article class="official-event', 1)[1]
+    assert "<img" not in no_photo_card
+    assert "Plaza Nativa" in official and "Ver evento" in official
+
+
+def test_public_agenda_excludes_invalid_states_windows_and_finished_events(agenda_app):
+    client, TestingSession = agenda_app
+    common = dict(tipo="evento", categoria="cultura", momento="dia", publicado=True,
+                  oficial=True, destacado=True, fecha_inicio=datetime(2026, 8, 11, 10),
+                  fecha_fin=datetime(2026, 8, 11, 12))
+    with TestingSession() as db:
+        db.add_all([
+            ActividadAgenda(titulo="Oculto borrador", slug="oculto-borrador", estado="borrador", **common),
+            ActividadAgenda(titulo="Oculto cancelado", slug="oculto-cancelado", estado="cancelado", **common),
+            ActividadAgenda(titulo="Oculto realizado", slug="oculto-realizado", estado="realizado", **common),
+            ActividadAgenda(titulo="Oculto no publicado", slug="oculto-no-publicado", **(common | {"publicado": False})),
+            ActividadAgenda(titulo="Oculto fuera de ventana", slug="oculto-fuera-ventana", publicar_desde=datetime(2026, 8, 10, 21), **common),
+            ActividadAgenda(titulo="Oculto finalizado", slug="oculto-finalizado", **(common | {"fecha_inicio": datetime(2026, 8, 9, 10), "fecha_fin": datetime(2026, 8, 9, 12)})),
+        ])
+        db.commit()
+    html = client.get("/actividades").text
+    for title in ("Oculto borrador", "Oculto cancelado", "Oculto realizado", "Oculto no publicado", "Oculto fuera de ventana", "Oculto finalizado"):
+        assert title not in html
+
+
+def test_public_agenda_order_limit_and_empty_state(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.query(ActividadAgenda).filter(ActividadAgenda.tipo == "evento").delete()
+        for index in range(7):
+            db.add(ActividadAgenda(
+                tipo="evento", titulo=f"Próximo {index}", slug=f"proximo-{index}",
+                categoria="otros", momento="dia", publicado=True,
+                fecha_inicio=datetime(2026, 8, 11 + index, 10), fecha_fin=datetime(2026, 8, 11 + index, 12),
+            ))
+        db.commit()
+    html = client.get("/actividades").text
+    assert html.index("Próximo 0") < html.index("Próximo 5")
+    assert "Próximo 6" not in html and "Ver agenda completa" not in html
+
+    with TestingSession() as db:
+        db.query(ActividadAgenda).filter(ActividadAgenda.tipo == "evento").delete()
+        db.commit()
+    html = client.get("/actividades").text
+    assert "Por ahora no hay próximos eventos publicados." in html
+    assert "Yoga permanente" in html
+
+
+def test_que_hacer_uses_dedicated_stylesheet_cache_key_only():
+    templates_dir = Path(main_module.__file__).parent / "templates"
+    template = (templates_dir / "actividades.html").read_text()
+    home = (templates_dir / "portal_home.html").read_text()
+    assert "?v=20260818-agenda-official-1" in template
+    assert "?v=20260810-commerce-services-1" not in template
+    assert "?v=20260818-agenda-official-1" not in home

@@ -164,3 +164,45 @@ def group_public_agenda(items, now=None):
     upcoming = sorted([i for i in events if local_datetime(i.fecha_inicio) > end], key=lambda i: local_datetime(i.fecha_inicio))[:6]
     permanent = sorted([i for i in items if i.tipo == "actividad"], key=lambda i: (not i.destacado, i.orden is None, i.orden or 0, i.titulo.casefold()))
     return {"today": today_regular, "night": night, "upcoming": upcoming, "activities": permanent}
+
+
+_MONTHS = ("ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC")
+
+
+def prepare_public_agenda(items, now=None, limit=6):
+    """Build display-only data for the public agenda without duplicating visibility rules."""
+    now = local_datetime(now or now_cabalango())
+    events = sorted(
+        (item for item in items if item.tipo == "evento"),
+        key=lambda item: (
+            local_datetime(item.fecha_inicio), not bool(item.oficial),
+            not bool(item.destacado), item.orden is None, item.orden or 0,
+            item.titulo.casefold(),
+        ),
+    )
+    cards = []
+    for item in events[:limit]:
+        start, end = local_datetime(item.fecha_inicio), local_datetime(item.fecha_fin)
+        if start.date() == end.date():
+            date_label = f"{start.day} {_MONTHS[start.month - 1]}"
+        elif start.month == end.month:
+            date_label = f"{start.day}–{end.day} {_MONTHS[start.month - 1]}"
+        else:
+            date_label = f"{start.day} {_MONTHS[start.month - 1]} — {end.day} {_MONTHS[end.month - 1]}"
+
+        schedule = item.horarios.strip() if item.horarios and item.horarios.strip() else None
+        if not schedule and start.time() != time.min and end.time() != time.min:
+            schedule = f"{start:%H:%M}–{end:%H:%M} hs"
+        cards.append({
+            "item": item,
+            "label": derive_promotion_label(item, now),
+            "date_label": date_label,
+            "datetime": start.isoformat(),
+            "schedule": schedule,
+        })
+
+    activities = sorted(
+        (item for item in items if item.tipo == "actividad"),
+        key=lambda item: (not item.destacado, item.orden is None, item.orden or 0, item.titulo.casefold()),
+    )
+    return {"events": cards, "activities": activities, "has_more_events": len(events) > limit}
