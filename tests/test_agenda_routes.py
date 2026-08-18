@@ -257,6 +257,50 @@ def test_edit_keeps_slug_stable_and_accepts_zero_order(agenda_app):
         assert item.orden == 0
 
 
+@pytest.mark.parametrize(
+    ("case_name", "submitted_order", "expected_order"),
+    [
+        ("empty", "", None), ("missing", None, None), ("whitespace", "   ", None),
+        ("zero", "0", 0), ("numeric", "15", 15),
+    ],
+)
+def test_admin_saves_optional_order(agenda_app, case_name, submitted_order, expected_order):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    data = {
+        "tipo": "actividad", "titulo": f"Actividad orden {case_name}",
+        "categoria": "bienestar", "momento": "dia",
+    }
+    if submitted_order is not None:
+        data["orden"] = submitted_order
+
+    response = client.post("/admin/actividades/guardar", data=data, follow_redirects=False)
+
+    assert response.status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(titulo=data["titulo"]).one()
+        assert item.orden == expected_order
+
+
+def test_admin_rejects_invalid_order_without_persisting(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={
+            "tipo": "actividad", "titulo": "Actividad con orden inválido",
+            "categoria": "bienestar", "momento": "dia", "orden": "abc",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/admin/actividades?")
+    assert "error=" in response.headers["location"]
+    with TestingSession() as db:
+        assert db.query(ActividadAgenda).filter_by(titulo="Actividad con orden inválido").first() is None
+
+
 def test_admin_saves_schedule_defaults_manual_override_and_new_flags(agenda_app):
     client, TestingSession = agenda_app
     login_admin(client)
