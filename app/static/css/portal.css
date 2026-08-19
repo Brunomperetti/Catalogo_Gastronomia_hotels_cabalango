@@ -6126,3 +6126,50 @@ body,
   .public-agenda .official-event__date { font-size: .9rem; max-width: 3.8rem; }
   .public-agenda .official-event__actions a { align-items: center; display: inline-flex; }
 }
+
+/* Home editorial flow: planning is a data chapter, not another photographic story. */
+.destination-guide .destination-planning {
+  background: color-mix(in srgb, var(--portal-sun) 5%, var(--portal-surface));
+  border-block: 1px solid var(--portal-border);
+  box-sizing: border-box;
+  margin: 0 0 clamp(58px, 6vw, 82px);
+  padding: clamp(34px, 4vw, 52px);
+}
+.destination-guide .destination-planning-heading { align-items: end; display: grid; gap: 24px 48px; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); margin-bottom: 22px; }
+.destination-guide .destination-planning-heading h2 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(2.4rem, 4.2vw, 4rem); letter-spacing: -.04em; line-height: 1; margin: 8px 0 10px; }
+.destination-guide .destination-planning-heading p { margin-block: 0; }
+.destination-guide .destination-planning .destination-travel-tip { margin: 0; }
+.destination-guide .destination-planning .destination-weather-card { background: var(--portal-surface); border: 1px solid var(--portal-border); gap: 14px 28px; margin: 0; padding: clamp(20px, 2.5vw, 30px); }
+.destination-guide .destination-planning .weather-advice { margin-top: 16px; padding-block: 10px; }
+.destination-guide .destination-planning .weather-summary div { padding-block: 11px; }
+.destination-guide .destination-planning .weather-forecast { margin-top: 20px; padding-top: 18px; }
+.destination-guide .destination-planning .weather-day { min-height: 124px; padding: 12px; }
+.destination-guide .destination-planning .season-grid { margin-top: 20px; padding-top: 18px; }
+.destination-guide .destination-planning .season-grid p { margin-bottom: 12px; }
+
+/* A single event is an intentional feature; two and three retain their grids. */
+.destination-guide .home-agenda__grid[data-count="1"] { grid-template-columns: minmax(0, 56rem); }
+.destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event--with-image { display: grid; grid-template-columns: minmax(0, 46fr) minmax(0, 54fr); }
+.destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image { aspect-ratio: auto; border-radius: 0; height: 100%; min-height: 290px; }
+.destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__body { padding: clamp(1.4rem, 3vw, 2.25rem); }
+
+/* The final invitation is a quiet typographic full stop, without another hero image. */
+.destination-guide .destination-cta { background: color-mix(in srgb, var(--portal-leaf) 9%, var(--portal-surface)); border-block: 1px solid var(--portal-border); display: block; min-height: 0; overflow: hidden; position: relative; }
+.destination-guide .destination-cta::after { border: 1px solid color-mix(in srgb, var(--portal-water) 30%, transparent); border-radius: 50%; content: ""; height: 260px; position: absolute; right: -80px; top: -130px; width: 260px; }
+.destination-guide .destination-cta > div { padding: clamp(44px, 7vw, 82px); position: relative; z-index: 1; }
+.destination-guide .destination-cta h2 { color: var(--portal-heading); font-size: clamp(2.7rem, 5vw, 4.5rem); max-width: 15ch; }
+.destination-guide .destination-cta > div > p:not(.portal-kicker) { color: var(--portal-text); }
+.destination-guide .destination-cta .portal-button-secondary { border-color: var(--portal-leaf) !important; color: var(--portal-leaf) !important; }
+.destination-guide .destination-cta-mark { color: var(--portal-water); height: 48px; width: 76px; }
+
+@media (max-width: 768px) {
+  .destination-guide .destination-planning-heading { align-items: start; grid-template-columns: 1fr; }
+  .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event--with-image { display: flex; }
+  .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image { aspect-ratio: 16 / 8; min-height: 0; }
+}
+@media (max-width: 520px) {
+  .destination-guide .destination-planning { padding: 32px 20px; }
+  .destination-guide .destination-planning-heading h2 { font-size: clamp(2.35rem, 11vw, 3.1rem); }
+  .destination-guide .destination-planning .weather-day { min-height: 0; padding: 14px 0; }
+  .destination-guide .destination-cta > div { padding: 42px 20px 48px; }
+}

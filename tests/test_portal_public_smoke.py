@@ -56,7 +56,7 @@ def test_portal_home_smoke():
         "Viví Cabalango a tu manera",
         "Escapada de fin de semana",
         "Plan en familia",
-        "Tip de viaje",
+        "Tip para tu visita",
     ]:
         assert visitor_copy in response.text
     for href in [
@@ -69,7 +69,7 @@ def test_portal_home_smoke():
         assert f'href="{href}"' in response.text
     assert response.text.count("destination-story-more") == 3
     assert 'id="como-llegar"' in response.text
-    assert "?v=20260818-home-agenda-1" in response.text
+    assert "?v=20260819-home-editorial-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -87,8 +87,8 @@ def test_portal_home_smoke():
     ]:
         assert full_text in response.text
     assert "Logo_Cabalango.png" in response.text
-    assert "Fotos destacadas" in response.text
-    assert "Ver foto destacada" in response.text
+    assert "Postales del río y las sierras" in response.text
+    assert "Explorar postales" in response.text
     assert "Todas las fotos" not in response.text
     assert "Organizá tu visita a tu ritmo" in response.text
     assert 'href="/alojamientos">Alojamientos' in response.text
@@ -273,6 +273,68 @@ def test_home_agenda_is_hidden_when_empty_and_renders_compact_event_cards(monkey
     assert html.index("Encuentro del río") < html.index("Taller serrano")
     assert 'src=""' not in html
 
+
+@pytest.mark.parametrize("photo_count", [0, 1, 4])
+def test_home_photo_fallbacks_render_for_zero_one_and_multiple_photos(monkeypatch, photo_count):
+    import app.main as main_module
+
+    photos = [
+        SimpleNamespace(id=index + 1, destacado=index == 0, image_path=f"/media/postal-{index + 1}.webp", titulo=f"Postal {index + 1}", categoria="rio_naturaleza", descripcion=None)
+        for index in range(photo_count)
+    ]
+    monkeypatch.setattr(main_module, "get_public_destino_media", lambda db, tipo=None: photos if tipo == "foto" else [])
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [])
+    response = TestClient(app).get("/")
+    assert response.status_code == 200
+    if photo_count >= 4:
+        about = response.text[response.text.index('class="destination-about-intro"'):response.text.index('class="destination-story-grid"')]
+        journeys = response.text[response.text.index('class="destination-journeys"'):response.text.index('class="destination-planning"')]
+        assert '/media/postal-2.webp' in about
+        assert '/media/postal-3.webp' in journeys
+        assert '/media/postal-1.webp' not in about
+
+
+def test_home_editorial_order_and_redundancy(monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [])
+    html = TestClient(app).get("/").text
+    ordered = [
+        "destination-editorial-hero", "destination-quick-links", "destination-about",
+        "destination-journeys", "destination-planning", "destination-nearby",
+        "destination-gallery-section", "destination-cta",
+    ]
+    assert [html.index(marker) for marker in ordered] == sorted(html.index(marker) for marker in ordered)
+    assert "Balnearios, monte y caminatas tranquilas" not in html
+    assert 'id="clima"' in html and 'id="fotos"' in html and 'id="como-llegar"' in html
+
+
+def test_home_planning_preserves_editable_tip_and_cta_has_no_image(monkeypatch):
+    import app.main as main_module
+
+    content = main_module.get_destino_content(next(main_module.get_db()))
+    monkeypatch.setattr(content, "recomendaciones", "TIP TEST")
+    monkeypatch.setattr(main_module, "get_destino_content", lambda db: content)
+    html = TestClient(app).get("/").text
+    planning = html[html.index('class="destination-planning"'):html.index('class="destination-nearby"')]
+    cta = html[html.index('class="destination-cta"'):html.index("</main>")]
+    assert "TIP TEST" in planning
+    assert "Planificá tu visita" in planning
+    assert "<img" not in cta
+    for label in ["Alojamientos", "Gastronomía", "Qué hacer"]:
+        assert label in cta
+
+
+def test_home_editorial_order_includes_agenda_when_present(monkeypatch):
+    import app.main as main_module
+
+    item = SimpleNamespace(titulo="Evento", slug="evento", imagen_url=None, estado="programado", oficial=False, categoria="otros", descripcion_corta=None, lugar=None)
+    card = {"item": item, "label": None, "date_label": "20 AGO", "datetime": "2026-08-20", "schedule": None, "category": "Otros"}
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [card])
+    html = TestClient(app).get("/").text
+    ordered = ["destination-editorial-hero", "destination-quick-links", "home-agenda", "destination-about", "destination-journeys", "destination-planning", "destination-nearby", "destination-gallery-section", "destination-cta"]
+    assert [html.index(marker) for marker in ordered] == sorted(html.index(marker) for marker in ordered)
+    assert 'data-count="1"' in html
 
 def test_descubri_cabalango_redirects_to_home():
     response = TestClient(app).get("/descubri-cabalango", follow_redirects=False)
