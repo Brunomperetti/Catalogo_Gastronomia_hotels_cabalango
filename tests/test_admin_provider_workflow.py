@@ -11,7 +11,7 @@ from sqlalchemy.pool import StaticPool
 
 from app import main
 from app.database import Base
-from app.models import Empresa, SolicitudPrestador, Usuario
+from app.models import CatalogLead, CatalogLeadEvent, Empresa, Producto, Review, SolicitudPrestador, Usuario
 
 
 @pytest.fixture()
@@ -481,3 +481,74 @@ def test_public_routes_remain_available(admin_app):
     for path in ["/", "/servicios", "/gastronomia", "/alojamientos", "/actividades", f"/prestador/{company.slug}"]:
         response = client.get(path)
         assert response.status_code == 200, path
+
+
+def test_admin_permanently_deletes_provider_and_owned_relations(admin_app):
+    client, db, storage = admin_app
+    company = add_company(db, nombre="Prueba errónea", slug="prueba-erronea", activo=True)
+    other = add_company(db, nombre="Prestador real", slug="prestador-real", activo=True)
+    product = Producto(empresa_id=company.id, codigo="TEST", descripcion="Producto", precio=1)
+    review = Review(prestador_id=company.id, nombre="Persona", rating=5, comentario="Opinión", estado="aprobada")
+    lead = CatalogLead(empresa_catalogo_id=company.id, nombre="Lead", empresa="Prueba", email="lead@example.com")
+    db.add_all([product, review, lead])
+    db.flush()
+    event = CatalogLeadEvent(lead_id=lead.id, empresa_catalogo_id=company.id, event_type="view")
+    intake = SolicitudPrestador(
+        external_id="intake-auditable", status="procesada", business_name=company.nombre,
+        raw_payload="{}", converted_entity_type="empresa", converted_entity_id=company.id,
+    )
+    db.add_all([event, intake])
+    db.commit()
+    company_id, other_id, intake_id = company.id, other.id, intake.id
+    media_file = storage / "empresas" / company.slug / "logo.png"
+    media_file.parent.mkdir(parents=True)
+    media_file.write_bytes(b"retained media")
+
+    response = client.post(f"/admin/prestadores/{company_id}/eliminar", follow_redirects=False)
+
+    db.expire_all()
+    assert response.status_code == 303
+    assert db.get(Empresa, company_id) is None
+    assert db.get(Empresa, other_id) is not None
+    assert db.query(Producto).filter_by(empresa_id=company_id).count() == 0
+    assert db.query(Review).filter_by(prestador_id=company_id).count() == 0
+    assert db.query(CatalogLead).filter_by(empresa_catalogo_id=company_id).count() == 0
+    assert db.query(CatalogLeadEvent).filter_by(empresa_catalogo_id=company_id).count() == 0
+    assert db.get(SolicitudPrestador, intake_id) is not None
+    assert db.get(SolicitudPrestador, intake_id).converted_entity_id == company_id
+    assert media_file.read_bytes() == b"retained media"
+    assert client.get("/prestador/prueba-erronea").status_code == 404
+
+
+def test_provider_permanent_delete_requires_admin_and_post(admin_app):
+    _, db, _ = admin_app
+    company = add_company(db, slug="protected")
+    company_id = company.id
+    anonymous = TestClient(main.app)
+
+    get_response = anonymous.get(f"/admin/prestadores/{company_id}/eliminar", follow_redirects=False)
+    post_response = anonymous.post(f"/admin/prestadores/{company_id}/eliminar", follow_redirects=False)
+
+    assert get_response.status_code == 405
+    assert post_response.status_code == 303
+    assert post_response.headers["location"].startswith("/login?")
+    db.expire_all()
+    assert db.get(Empresa, company_id) is not None
+
+
+def test_provider_permanent_delete_missing_id_is_404(admin_app):
+    client, _, _ = admin_app
+    assert client.post("/admin/prestadores/999999/eliminar").status_code == 404
+
+
+def test_provider_edit_has_strong_confirmation_but_empty_admin_does_not(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db, nombre="Nombre dinámico", slug="nombre-dinamico")
+    edit_html = client.get(f"/admin?area=prestador&empresa={company.slug}&tab=prestadores").text
+    assert "Zona de peligro" in edit_html
+    assert "Eliminar definitivamente" in edit_html
+    assert "Nombre dinámico" in edit_html
+    db.delete(company)
+    db.commit()
+    empty_html = client.get("/admin?area=prestador&tab=prestadores").text
+    assert "admin-danger-zone" not in empty_html

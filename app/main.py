@@ -2334,38 +2334,6 @@ async def actualizar_producto(
     redirect_target = f"{products_path}?empresa={quote(target_empresa)}" if target_empresa else products_path
     return RedirectResponse(url=redirect_target, status_code=303)
 
-@app.get("/admin/borrar_empresa/{empresa_id}")
-def borrar_empresa_get(request: Request, empresa_id: int, db: Session = Depends(get_db)):
-    auth = require_admin(request, db)
-    if isinstance(auth, RedirectResponse):
-        return auth
-
-    empresa = db.query(models.Empresa).filter(models.Empresa.id == empresa_id).first()
-    if not empresa:
-        return HTMLResponse("<h1>Empresa no encontrada</h1>", status_code=404)
-
-    slug = empresa.slug
-
-    # borrar de DB
-    db.delete(empresa)
-    db.commit()
-
-    # borrar carpeta estática
-    path = Path(f"app/static/empresas/{slug}")
-    if path.exists():
-        shutil.rmtree(path)
-    media_path = MEDIA_BASE_DIR / slug
-    if media_path.exists():
-        shutil.rmtree(media_path)
-
-    return HTMLResponse(
-        f"<h1>Empresa {slug} eliminada correctamente</h1>"
-    )
-
-
-    
-
-
 # ---------------------------------------------------
 # HOME / DASHBOARDS
 # ---------------------------------------------------
@@ -2841,8 +2809,15 @@ def admin_activity_delete(request: Request, item_id: int, db: Session = Depends(
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     item = db.get(models.ActividadAgenda, item_id)
-    if item: db.delete(item); db.commit()
-    return RedirectResponse("/admin/actividades", 303)
+    if not item:
+        raise HTTPException(status_code=404, detail="Actividad no encontrada")
+    try:
+        db.delete(item)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return RedirectResponse("/admin/actividades?msg=Registro%20eliminado%20definitivamente.", 303)
 
 
 @app.get("/descubri-cabalango", include_in_schema=False)
@@ -5062,29 +5037,33 @@ def listar_empresas(request: Request, db: Session = Depends(get_db)):
         for e in db.query(models.Empresa).all()
     ]
 
-@app.post("/empresa/borrar/{empresa_id}")
-def borrar_empresa(request: Request, empresa_id: int, db: Session = Depends(get_db)):
+@app.post("/admin/prestadores/{empresa_id}/eliminar")
+def eliminar_prestador_admin(request: Request, empresa_id: int, db: Session = Depends(get_db)):
     auth = require_admin(request, db)
     if isinstance(auth, RedirectResponse):
         return auth
 
-    empresa = db.query(models.Empresa).filter(models.Empresa.id == empresa_id).first()
+    empresa = db.get(models.Empresa, empresa_id)
     if not empresa:
-        return {"error": "Empresa no encontrada"}
+        raise HTTPException(status_code=404, detail="Prestador no encontrado")
 
-    # borrar carpeta física
-    empresa_path = Path(f"app/static/empresas/{empresa.slug}")
-    if empresa_path.exists():
-        shutil.rmtree(empresa_path)
-    empresa_media_path = MEDIA_BASE_DIR / empresa.slug
-    if empresa_media_path.exists():
-        shutil.rmtree(empresa_media_path)
+    # Empresa owns products, catalog leads/events, and reviews according to the
+    # existing ORM relationships. Usuario references are retained and detached
+    # (SET NULL). Intake requests have no FK and remain as audit records.
+    try:
+        db.delete(empresa)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
-    # borrar DB (productos se borran por cascade)
-    db.delete(empresa)
-    db.commit()
-
-    return {"status": "ok"}
+    # Media is intentionally retained: URL fields do not prove exclusive file
+    # ownership, so storage cleanup belongs in a separately audited job.
+    return panel_redirect(
+        area="prestador",
+        tab="prestadores",
+        msg="Registro eliminado definitivamente.",
+    )
 
 
 

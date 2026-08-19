@@ -967,3 +967,27 @@
 .intake-status { font-size: .82rem; }
 .intake-status.imported { color: #23623b; }
 .intake-status.pending { color: #8a5a12; }
+
+/* Permanent deletion is available only inside persisted-record edit views. */
+.admin-danger-zone {
+  background: color-mix(in srgb, var(--admin-surface, #fff) 96%, #8f332c 4%);
+  border: 1px solid color-mix(in srgb, var(--admin-border, #d8d0c5) 78%, #8f332c 22%);
+  border-radius: var(--admin-radius-secondary, 14px);
+  margin-top: 32px;
+  padding: 20px;
+}
+.admin-danger-zone h3 { margin: 0 0 10px; }
+.admin-danger-zone p { margin: 8px 0; max-width: 72ch; }
+.admin-danger-zone__trigger { margin-top: 10px; }
+.admin-confirm-dialog {
+  border: 1px solid var(--admin-border, #d8d0c5);
+  border-radius: var(--admin-radius-secondary, 14px);
+  box-shadow: 0 20px 60px rgb(0 0 0 / 25%);
+  color: var(--admin-text, #25211d);
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 24px;
+}
+.admin-confirm-dialog::backdrop { background: rgb(20 18 16 / 55%); }
+.admin-confirm-dialog h2 { margin-top: 0; }
+.admin-confirm-dialog__actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: flex-end; margin-top: 24px; }
+.admin-confirm-dialog__actions form { margin: 0; }

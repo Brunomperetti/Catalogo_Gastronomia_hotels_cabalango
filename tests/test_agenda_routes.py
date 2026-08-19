@@ -418,6 +418,81 @@ def test_detail_never_renders_none_or_blank_optional_content(agenda_app):
     assert "<dt>Dirección</dt>" not in detail
 
 
+@pytest.mark.parametrize("tipo", ["evento", "actividad"])
+def test_admin_permanently_deletes_agenda_records(agenda_app, tipo):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    with TestingSession() as db:
+        item = ActividadAgenda(
+            tipo=tipo, titulo=f"Registro ficticio {tipo}", slug=f"registro-ficticio-{tipo}",
+            categoria="otros", momento="dia", publicado=True,
+            fecha_inicio=datetime(2026, 8, 11, 10) if tipo == "evento" else None,
+            fecha_fin=datetime(2026, 8, 11, 12) if tipo == "evento" else None,
+        )
+        db.add(item)
+        db.commit()
+        item_id, slug = item.id, item.slug
+    assert slug in client.get("/actividades").text
+
+    response = client.post(f"/admin/actividades/{item_id}/eliminar", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/admin/actividades?msg=")
+    with TestingSession() as db:
+        assert db.get(ActividadAgenda, item_id) is None
+    assert slug not in client.get("/actividades").text
+    assert client.get(f"/actividades/{slug}").status_code == 404
+
+
+def test_deleted_home_eligible_event_disappears_from_home(agenda_app, monkeypatch):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    monkeypatch.setattr(main_module, "now_cabalango", lambda: NOW)
+    with TestingSession() as db:
+        item = ActividadAgenda(
+            tipo="evento", titulo="Home ficticio", slug="home-ficticio", categoria="cultura",
+            momento="dia", publicado=True, mostrar_en_home=True, estado="programado",
+            fecha_inicio=datetime(2026, 8, 11, 10), fecha_fin=datetime(2026, 8, 11, 12),
+            destacar_home_desde=datetime(2026, 8, 1, 10),
+        )
+        db.add(item)
+        db.commit()
+        item_id = item.id
+    assert "Home ficticio" in client.get("/").text
+    assert client.post(f"/admin/actividades/{item_id}/eliminar", follow_redirects=False).status_code == 303
+    assert "Home ficticio" not in client.get("/").text
+
+
+def test_agenda_permanent_delete_requires_admin_post_and_existing_id(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item_id = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one().id
+    assert client.get(f"/admin/actividades/{item_id}/eliminar").status_code == 405
+    anonymous_post = client.post(f"/admin/actividades/{item_id}/eliminar", follow_redirects=False)
+    assert anonymous_post.status_code == 303
+    assert anonymous_post.headers["location"].startswith("/login?")
+    with TestingSession() as db:
+        assert db.get(ActividadAgenda, item_id) is not None
+    login_admin(client)
+    assert client.post("/admin/actividades/999999/eliminar").status_code == 404
+
+
+def test_agenda_danger_zone_only_appears_while_editing(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    create_html = client.get("/admin/actividades").text
+    assert "admin-danger-zone" not in create_html
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item_id, title = item.id, item.titulo
+    edit_html = client.get(f"/admin/actividades?edit={item_id}").text
+    assert "Zona de peligro" in edit_html
+    assert "Eliminar definitivamente" in edit_html
+    assert title in edit_html
+    assert f'action="/admin/actividades/{item_id}/eliminar"' in edit_html
+    assert "onsubmit=\"return confirm" not in edit_html
+
+
 def test_public_agenda_is_editorial_separated_and_accessible(agenda_app):
     client, TestingSession = agenda_app
     with TestingSession() as db:

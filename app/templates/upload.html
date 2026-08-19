@@ -410,6 +410,21 @@
                         <details class="admin-collapsible"><summary>Editar slug avanzado</summary><input type="hidden" name="editar_slug" value="1"><label class="field-label">Nuevo slug (URL)</label><input class="input-custom" type="text" name="nuevo_slug" value="{{ empresa_activa.slug }}" placeholder="mi-empresa"></details>
                         <button type="submit" class="btn-primary-custom w-100">Guardar datos del prestador activo</button>
                     </form>
+                    <section class="admin-danger-zone" aria-labelledby="provider-danger-title">
+                        <h3 id="provider-danger-title">Zona de peligro</h3>
+                        <p><strong>Eliminar definitivamente</strong></p>
+                        <p>Utilizá esta opción únicamente para registros de prueba, duplicados o cargas incorrectas. Para establecimientos reales que ya no deban publicarse, utilizá Inactivo.</p>
+                        <button type="button" class="btn-danger-custom admin-danger-zone__trigger" data-dialog-target="delete-provider-dialog">Eliminar definitivamente</button>
+                    </section>
+                    <dialog class="admin-confirm-dialog" id="delete-provider-dialog" aria-labelledby="delete-provider-title">
+                        <h2 id="delete-provider-title">Eliminar definitivamente</h2>
+                        <p>Vas a eliminar «<strong>{{ empresa_activa.nombre }}</strong>». Esta acción no se puede deshacer.</p>
+                        <p>Si se trata de un establecimiento real que dejó de funcionar o no debe mostrarse, conviene marcarlo como inactivo.</p>
+                        <div class="admin-confirm-dialog__actions">
+                            <form method="dialog"><button type="submit" class="btn-secondary-custom">Cancelar</button></form>
+                            <form method="post" action="/admin/prestadores/{{ empresa_activa.id }}/eliminar"><button type="submit" class="btn-danger-custom">Eliminar definitivamente</button></form>
+                        </div>
+                    </dialog>
                     </div>
                     </details>
                 </section>
@@ -434,6 +449,14 @@
             </div>
         </section>
 {% endif %}
+
+<script>
+document.querySelectorAll('[data-dialog-target]').forEach(function (trigger) {
+    trigger.addEventListener('click', function () {
+        document.getElementById(trigger.dataset.dialogTarget).showModal();
+    });
+});
+</script>
 
         {% if admin_area == 'portal' and active_tab == 'tecnico' %}
 <section id="panel-tecnico" class="admin-tab-panel is-active">
