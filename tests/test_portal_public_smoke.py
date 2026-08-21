@@ -117,21 +117,23 @@ def test_travel_guide_is_public_compact_and_uses_external_sources():
     html = response.text
 
     assert response.status_code == 200
-    for copy in ["Cómo llegar a Cabalango", "En avión", "En colectivo", "En auto", "Consultar horarios"]:
+    for copy in ["Cómo llegar a Cabalango", "En avión", "En colectivo", "En auto", "Remis Cabalango", "Horarios de Fono Bus"]:
         assert copy in html
     assert 'id="como-llegar"' in html
-    assert 'href="https://linktr.ee/grupo_fono_bus"' in html
-    assert "Consultar horarios de Punilla" in html
-    assert 'target="_blank" rel="noopener noreferrer"' in html
-    assert "https://www.fonobus.com.ar/" not in html
+    assert "Aeropuerto → conexión" not in html
+    assert re.search(r'<a[^>]+href="https://wa.me/541166483805"[^>]+target="_blank"[^>]+rel="noopener noreferrer"[^>]*>Consultar traslado por WhatsApp', html)
+    assert re.search(r'<a[^>]+href="https://drive.google.com/file/d/12BSVtKJdSX54f6dZAnfxBOMhVF-5P-w7/view\?usp=drive_link"[^>]+target="_blank"[^>]+rel="noopener noreferrer"[^>]*>Ver horarios de Punilla', html)
+    assert "Abrir en Google Maps" in html
     assert "<table" not in html.lower()
     assert "fonobus_schedule" not in html
+    assert "horarios_fonobus.json" not in html
+    assert not re.search(r"\b(?:08:20|23:40)\b", html)
 
 
 def test_travel_information_does_not_expand_home():
     html = TestClient(app).get("/").text
 
-    for travel_only_copy in ["En avión", "En colectivo", "Horarios de colectivos"]:
+    for travel_only_copy in ["En avión", "En colectivo", "Remis Cabalango", "Horarios de Fono Bus"]:
         assert travel_only_copy not in html
     for existing_link in ["/alojamientos", "/gastronomia", "/actividades", "/servicios?grupo=compras", "/lugares"]:
         assert f'href="{existing_link}"' in html
