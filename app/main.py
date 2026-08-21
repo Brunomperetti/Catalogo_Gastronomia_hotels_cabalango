@@ -2696,6 +2696,14 @@ def portal_home(request: Request, db: Session = Depends(get_db)):
     return render_destino_home(request, db)
 
 
+@app.get("/como-llegar", response_class=HTMLResponse)
+def como_llegar(request: Request):
+    return templates.TemplateResponse(
+        "como_llegar.html",
+        {"request": request, "active_section": ""},
+    )
+
+
 @app.get("/lugares", response_class=HTMLResponse)
 def lugares_index(request: Request, db: Session = Depends(get_db)):
     lugares = lugares_order(db.query(models.LugarDescubrir).filter(models.LugarDescubrir.visible == True)).all()
