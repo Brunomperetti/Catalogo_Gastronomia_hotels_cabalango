@@ -108,6 +108,7 @@
                 <div class="admin-nav-group__heading"><span class="admin-nav-eyebrow">Portal / destino</span><strong id="admin-nav-portal-title">Contenido global de Cabalango</strong></div>
                 <div class="admin-tabs admin-tabs--portal" aria-label="Secciones del portal">
                     <a class="admin-tab admin-tab--global" href="/admin/actividades">Qué hacer</a>
+                    <a class="admin-tab admin-tab--global" href="/admin/lugares">Lugares para descubrir</a>
                     {% for tab_id, label in [('cabalango','Descubrí Cabalango'),('configuracion','Configuración'),('tecnico','Técnico')] %}
                     <a id="tab-{{ 'avanzado' if tab_id == 'tecnico' else tab_id }}" class="admin-tab {% if tab_id == 'cabalango' %}admin-tab--global{% elif tab_id == 'tecnico' %}admin-tab--warning{% endif %} {% if active_tab == tab_id %}is-active{% endif %}" href="/admin?area=portal&tab={{ tab_id }}" {% if active_tab == tab_id %}aria-current="page"{% endif %}>{{ label }}</a>
                     {% endfor %}

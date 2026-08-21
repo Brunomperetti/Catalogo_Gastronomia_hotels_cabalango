@@ -199,6 +199,39 @@ class DestinoMedia(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
 
 
+class LugarDescubrir(Base):
+    __tablename__ = "lugares_descubrir"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, nullable=False)
+    slug = Column(String, nullable=False, unique=True, index=True)
+    categoria = Column(String, nullable=False, index=True)
+    descripcion_corta = Column(String(180), nullable=False, default="")
+    descripcion = Column(Text, nullable=True)
+    imagen_principal_url = Column(String, nullable=True)
+    maps_url = Column(String, nullable=True)
+    como_llegar = Column(Text, nullable=True)
+    servicios = Column(Text, nullable=True)
+    recomendaciones = Column(Text, nullable=True)
+    visible = Column(Boolean, nullable=False, default=False, index=True)
+    destacado = Column(Boolean, nullable=False, default=False, index=True)
+    orden = Column(Integer, nullable=True, index=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    fotos = relationship("LugarDescubrirFoto", back_populates="lugar", cascade="all, delete-orphan", order_by="LugarDescubrirFoto.orden, LugarDescubrirFoto.id")
+
+
+class LugarDescubrirFoto(Base):
+    __tablename__ = "lugares_descubrir_fotos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    lugar_id = Column(Integer, ForeignKey("lugares_descubrir.id", ondelete="CASCADE"), nullable=False, index=True)
+    image_url = Column(String, nullable=False)
+    orden = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    lugar = relationship("LugarDescubrir", back_populates="fotos")
+
+
 class DestinoContenido(Base):
     __tablename__ = "destino_contenido"
 

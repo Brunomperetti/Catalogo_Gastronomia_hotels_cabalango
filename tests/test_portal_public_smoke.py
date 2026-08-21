@@ -69,7 +69,7 @@ def test_portal_home_smoke():
         assert f'href="{href}"' in response.text
     assert response.text.count("destination-story-more") == 3
     assert 'id="como-llegar"' in response.text
-    assert "?v=20260819-home-editorial-1" in response.text
+    assert "?v=20260821-home-places-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -87,8 +87,8 @@ def test_portal_home_smoke():
     ]:
         assert full_text in response.text
     assert "Logo_Cabalango.png" in response.text
-    assert "Postales del río y las sierras" in response.text
-    assert "Explorar postales" in response.text
+    assert "Postales del río y las sierras" not in response.text
+    assert "Lugares para descubrir" not in response.text
     assert "Todas las fotos" not in response.text
     assert "Organizá tu visita a tu ritmo" in response.text
     assert 'href="/alojamientos">Alojamientos' in response.text
@@ -302,11 +302,11 @@ def test_home_editorial_order_and_redundancy(monkeypatch):
     ordered = [
         "destination-editorial-hero", "destination-quick-links", "destination-about",
         "destination-journeys", "destination-planning", "destination-nearby",
-        "destination-gallery-section", "destination-cta",
+        "destination-cta",
     ]
     assert [html.index(marker) for marker in ordered] == sorted(html.index(marker) for marker in ordered)
     assert "Balnearios, monte y caminatas tranquilas" not in html
-    assert 'id="clima"' in html and 'id="fotos"' in html and 'id="como-llegar"' in html
+    assert 'id="clima"' in html and 'id="fotos"' not in html and 'id="como-llegar"' in html
 
 
 def test_home_planning_preserves_editable_tip_and_cta_has_no_image(monkeypatch):
@@ -332,7 +332,7 @@ def test_home_editorial_order_includes_agenda_when_present(monkeypatch):
     card = {"item": item, "label": None, "date_label": "20 AGO", "datetime": "2026-08-20", "schedule": None, "category": "Otros"}
     monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [card])
     html = TestClient(app).get("/").text
-    ordered = ["destination-editorial-hero", "destination-quick-links", "home-agenda", "destination-about", "destination-journeys", "destination-planning", "destination-nearby", "destination-gallery-section", "destination-cta"]
+    ordered = ["destination-editorial-hero", "destination-quick-links", "home-agenda", "destination-about", "destination-journeys", "destination-planning", "destination-nearby", "destination-cta"]
     assert [html.index(marker) for marker in ordered] == sorted(html.index(marker) for marker in ordered)
     assert 'data-count="1"' in html
 
