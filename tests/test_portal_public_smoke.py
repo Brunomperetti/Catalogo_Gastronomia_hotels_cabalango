@@ -120,8 +120,10 @@ def test_travel_guide_is_public_compact_and_uses_external_sources():
     for copy in ["Cómo llegar a Cabalango", "En avión", "En colectivo", "En auto", "Consultar horarios"]:
         assert copy in html
     assert 'id="como-llegar"' in html
-    assert 'href="https://www.fonobus.com.ar/"' in html
+    assert 'href="https://linktr.ee/grupo_fono_bus"' in html
+    assert "Consultar horarios de Punilla" in html
     assert 'target="_blank" rel="noopener noreferrer"' in html
+    assert "https://www.fonobus.com.ar/" not in html
     assert "<table" not in html.lower()
     assert "fonobus_schedule" not in html
 
