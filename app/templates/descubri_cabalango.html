@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260819-home-editorial-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260821-home-places-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
 </head>
 <body class="catalog-theme-default portal-body">
@@ -61,7 +61,7 @@
                 <li><svg aria-hidden="true"><use href="#icon-compass"/></svg>Escapadas tranquilas</li>
                 <li><svg aria-hidden="true"><use href="#icon-people"/></svg>Vida local</li>
             </ul>
-            <div class="hero-actions" aria-label="Empezar a explorar"><a class="portal-button" href="/actividades">Explorar Cabalango</a><a class="destination-hero-link" href="/alojamientos">Dónde dormir</a><a class="destination-hero-link" href="/gastronomia">Dónde comer</a><a class="destination-hero-link" href="#fotos">Ver fotos y videos</a></div>
+            <div class="hero-actions" aria-label="Empezar a explorar"><a class="portal-button" href="/actividades">Explorar Cabalango</a><a class="destination-hero-link" href="/alojamientos">Dónde dormir</a><a class="destination-hero-link" href="/gastronomia">Dónde comer</a><a class="destination-hero-link" href="/lugares">Ver lugares</a></div>
         </div>
         <figure class="destination-hero-image">{% if hero_photo and hero_photo.image_path %}<img src="{{ hero_photo.image_path }}" alt="{{ hero_photo.titulo or 'Río y paisaje serrano de Cabalango' }}"><figcaption><span>Río y naturaleza</span><strong>{{ hero_photo.titulo or 'Balnearios de Cabalango' }}</strong></figcaption>{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Postal cálida de Cabalango"></div>{% endif %}</figure>
     </section>
@@ -210,33 +210,14 @@
         <p class="destination-nearby-footnote"><strong>Para seguir camino:</strong> La Falda, a 45 km aprox., suma Siete Cascadas, miradores, paseos y festivales a una escapada por el valle.</p>
     </section>
 
-    <section id="fotos" class="destination-section destination-gallery-section">
-        <header class="destination-gallery-heading">
-            <div>
-                <p class="portal-kicker">Postales de Cabalango</p>
-                <h2>Postales del río y las sierras</h2>
-                <p class="destination-gallery-intro">Río, monte y vida serrana: una mirada a los paisajes que hacen único al destino.</p>
-            </div>
-            <a class="destination-gallery-link" href="{% if featured_photos %}#foto-{{ featured_photos[0].id }}{% else %}#fotos{% endif %}">Explorar postales <svg aria-hidden="true" focusable="false"><use href="#icon-open"/></svg></a>
-        </header>
-        {% if featured_photos %}
-        <div class="destination-editorial-gallery">
-            {% for foto in featured_photos %}
-            <figure class="destination-photo-card {% if loop.index == 1 %}is-primary{% endif %}">
-                <a href="#foto-{{ foto.id }}" aria-label="Ampliar {{ foto.titulo or categories.get(foto.categoria, 'foto de Cabalango') }}">
-                    <img src="{{ foto.image_path }}" alt="{{ foto.titulo or categories.get(foto.categoria, 'Foto de Cabalango') }}"{% if loop.index > 1 %} loading="lazy"{% endif %}>
-                    <figcaption>
-                        {% if categories.get(foto.categoria) %}<span>{{ categories.get(foto.categoria) }}</span>{% endif %}
-                        <strong>{{ foto.titulo or 'Una postal de Cabalango' }}</strong>
-                        {% if foto.descripcion %}<small>{{ foto.descripcion|truncate(92, False, '…') }}</small>{% endif %}
-                        <i aria-hidden="true">↗</i>
-                    </figcaption>
-                </a>
-            </figure>
-            {% endfor %}
+    {% if lugares %}
+    <section id="lugares" class="destination-section destination-places-section" aria-labelledby="places-title">
+        <header class="destination-gallery-heading"><div><p class="portal-kicker">RINCONES DE CABALANGO</p><h2 id="places-title">Lugares para descubrir</h2><p class="destination-gallery-intro">Naturaleza, río y paseos para conocer Cabalango a tu ritmo.</p></div><a class="destination-gallery-link" href="/lugares">Ver todos <span aria-hidden="true">→</span></a></header>
+        <div class="destination-places-grid" data-count="{{ lugares|length }}">
+        {% for lugar in lugares %}<a class="destination-place-card{% if loop.first %} is-primary{% endif %}" href="/lugares/{{ lugar.slug }}" aria-label="Conocer {{ lugar.nombre }}"><img src="{{ lugar.imagen_principal_url }}" alt="{{ lugar.nombre }}"{% if not loop.first %} loading="lazy"{% endif %}><span class="destination-place-overlay"><small>{{ lugar_categories.get(lugar.categoria, lugar.categoria) }}</small><strong>{{ lugar.nombre }}</strong><em>{{ lugar.descripcion_corta }}</em><b>Conocer el lugar →</b></span></a>{% endfor %}
         </div>
-        {% else %}<div class="portal-empty"><h2>La galería está lista para recibir fotos</h2><p>Desde el admin se pueden cargar postales del río, las sierras, ferias y actividades.</p></div>{% endif %}
     </section>
+    {% endif %}
 
     {% if main_video_url %}<section class="destination-section destination-video-section"><p class="portal-kicker">Videos / recorridos</p><h2>Recorré el destino</h2><article class="destination-video-feature"><div><span>Video destacado</span><h3>Un recorrido para sentir Cabalango antes de llegar</h3><p>Accedé al material audiovisual del destino en una nueva pestaña.</p></div><a class="portal-button" href="{{ main_video_url }}" target="_blank" rel="noopener">Ver recorrido</a></article></section>{% endif %}
 

@@ -45,6 +45,8 @@ MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 INTAKE_MEDIA_DIR = STORAGE_DIR / "intake"
 PRODUCTOS_MEDIA_TYPE = "productos"
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
+LUGAR_CATEGORIES = {"balneario": "Balneario", "naturaleza": "Naturaleza", "cascadas": "Cascadas", "paseo": "Paseo"}
+LUGAR_IMAGE_MAX_BYTES = 8 * 1024 * 1024
 ALLOWED_MENU_IMAGE_EXTENSIONS = ALLOWED_IMAGE_EXTENSIONS
 PRICE_POLICY_VALUES = {"mostrar", "consultar", "automatico"}
 STOCK_POLICY_VALUES = {"mostrar", "ocultar", "automatico"}
@@ -85,6 +87,7 @@ def run_startup_db_maintenance():
         ensure_review_columns()
         ensure_destino_media_table()
         ensure_destino_contenido_table()
+        ensure_lugares_tables()
         ensure_actividad_agenda_table()
         ensure_solicitud_prestador_table()
         ensure_default_admin_user()
@@ -344,6 +347,11 @@ def ensure_destino_media_table():
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_tipo ON destino_media(tipo)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_categoria ON destino_media(categoria)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_visible ON destino_media(visible)"))
+
+
+def ensure_lugares_tables():
+    """Additive, idempotent bootstrap; existing destination data is untouched."""
+    Base.metadata.create_all(bind=engine, tables=[models.LugarDescubrir.__table__, models.LugarDescubrirFoto.__table__])
 
 
 def ensure_actividad_agenda_table():
@@ -850,6 +858,38 @@ async def save_destino_image(upload: UploadFile) -> str:
     with open(target_dir / filename, "wb") as f:
         f.write(await upload.read())
     return build_destino_media_url(filename)
+
+
+def lugares_order(query):
+    return query.order_by(models.LugarDescubrir.destacado.desc(), models.LugarDescubrir.orden.is_(None), models.LugarDescubrir.orden.asc(), models.LugarDescubrir.nombre.asc(), models.LugarDescubrir.id.asc())
+
+
+def lugar_slug(nombre: str, db: Session) -> str:
+    base = unicodedata.normalize("NFKD", nombre).encode("ascii", "ignore").decode().lower()
+    base = re.sub(r"[^a-z0-9]+", "-", base).strip("-") or "lugar"
+    candidate, suffix = base, 2
+    while db.query(models.LugarDescubrir).filter_by(slug=candidate).first():
+        candidate, suffix = f"{base}-{suffix}", suffix + 1
+    return candidate
+
+
+async def save_lugar_image(upload: UploadFile, slug: str) -> str:
+    ext = Path(upload.filename or "").suffix.lower()
+    if ext not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError("Formato inválido. Usá JPG, JPEG, PNG o WEBP.")
+    data = await upload.read(LUGAR_IMAGE_MAX_BYTES + 1)
+    if not data or len(data) > LUGAR_IMAGE_MAX_BYTES:
+        raise ValueError("La imagen debe pesar hasta 8 MB.")
+    try:
+        with Image.open(BytesIO(data)) as image:
+            image.verify()
+    except (UnidentifiedImageError, OSError):
+        raise ValueError("El archivo no es una imagen válida.")
+    target = STORAGE_DIR / "lugares" / slug
+    target.mkdir(parents=True, exist_ok=True)
+    filename = safe_unique_filename(upload, "lugar")
+    (target / filename).write_bytes(data)
+    return f"{MEDIA_URL_PREFIX}/lugares/{slug}/{filename}"
 
 def get_public_destino_media(db: Session, tipo: str | None = None) -> list[models.DestinoMedia]:
     query = db.query(models.DestinoMedia).filter(models.DestinoMedia.visible == True)
@@ -2645,6 +2685,8 @@ def render_destino_home(request: Request, db: Session):
             "weather": get_cabalango_weather(),
             "active_section": "inicio",
             "home_events": build_home_agenda(db),
+            "lugares": lugares_order(db.query(models.LugarDescubrir).filter(models.LugarDescubrir.visible == True)).limit(4).all(),
+            "lugar_categories": LUGAR_CATEGORIES,
         },
     )
 
@@ -2652,6 +2694,128 @@ def render_destino_home(request: Request, db: Session):
 @app.get("/", response_class=HTMLResponse)
 def portal_home(request: Request, db: Session = Depends(get_db)):
     return render_destino_home(request, db)
+
+
+@app.get("/lugares", response_class=HTMLResponse)
+def lugares_index(request: Request, db: Session = Depends(get_db)):
+    lugares = lugares_order(db.query(models.LugarDescubrir).filter(models.LugarDescubrir.visible == True)).all()
+    return templates.TemplateResponse("lugares.html", {"request": request, "lugares": lugares, "lugar_categories": LUGAR_CATEGORIES, "active_section": "actividades"})
+
+
+@app.get("/lugares/{slug}", response_class=HTMLResponse)
+def lugar_detail(slug: str, request: Request, db: Session = Depends(get_db)):
+    lugar = db.query(models.LugarDescubrir).filter_by(slug=slug, visible=True).first()
+    if not lugar:
+        raise HTTPException(404, "Lugar no encontrado")
+    return templates.TemplateResponse("lugar_detalle.html", {"request": request, "lugar": lugar, "categoria_label": LUGAR_CATEGORIES.get(lugar.categoria, lugar.categoria.title()), "servicios": [x.strip() for x in (lugar.servicios or "").splitlines() if x.strip()], "active_section": "actividades"})
+
+
+@app.get("/admin/lugares", response_class=HTMLResponse)
+def admin_lugares(request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse): return auth
+    return templates.TemplateResponse("admin_lugares.html", {"request": request, "lugares": lugares_order(db.query(models.LugarDescubrir)).all(), "categories": LUGAR_CATEGORIES})
+
+
+@app.get("/admin/lugares/nuevo", response_class=HTMLResponse)
+def admin_lugar_new(request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse): return auth
+    return templates.TemplateResponse("admin_lugar_form.html", {"request": request, "lugar": None, "categories": LUGAR_CATEGORIES, "error": request.query_params.get("error", "")})
+
+
+@app.get("/admin/lugares/{lugar_id}/editar", response_class=HTMLResponse)
+def admin_lugar_edit(lugar_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse): return auth
+    lugar = db.get(models.LugarDescubrir, lugar_id)
+    if not lugar: raise HTTPException(404, "Lugar no encontrado")
+    return templates.TemplateResponse("admin_lugar_form.html", {"request": request, "lugar": lugar, "categories": LUGAR_CATEGORIES, "error": request.query_params.get("error", "")})
+
+
+async def persist_lugar(request: Request, db: Session, lugar: models.LugarDescubrir | None):
+    form = await request.form()
+    nombre, categoria = clean_text(form.get("nombre"), default=""), clean_text(form.get("categoria"), default="")
+    corta = clean_text(form.get("descripcion_corta"), default="")
+    visible = form.get("visible") == "1"
+    if not nombre or categoria not in LUGAR_CATEGORIES or len(corta) > 180:
+        raise ValueError("Completá nombre, una categoría válida y una descripción corta de hasta 180 caracteres.")
+    principal = form.get("imagen_principal")
+    if visible and (not corta or (lugar is None and not has_uploaded_file(principal)) or (lugar is not None and not lugar.imagen_principal_url and not has_uploaded_file(principal))):
+        raise ValueError("Para publicar, agregá descripción corta e imagen principal.")
+    raw_order = clean_text(form.get("orden"), default="")
+    try: orden = None if raw_order == "" else int(raw_order)
+    except ValueError: raise ValueError("El orden debe ser un número entero o quedar vacío.")
+    if lugar is None:
+        lugar = models.LugarDescubrir(nombre=nombre, slug=lugar_slug(nombre, db), categoria=categoria)
+        db.add(lugar)
+    lugar.nombre, lugar.categoria, lugar.descripcion_corta = nombre, categoria, corta
+    maps_url = clean_text(form.get("maps_url"), default="")
+    if maps_url and urlparse(maps_url).scheme not in {"http", "https"}:
+        raise ValueError("El enlace de Google Maps debe comenzar con http:// o https://.")
+    for field in ("descripcion", "como_llegar", "servicios", "recomendaciones"):
+        setattr(lugar, field, clean_text(form.get(field), default="") or None)
+    lugar.maps_url = maps_url or None
+    lugar.visible, lugar.destacado, lugar.orden = visible, form.get("destacado") == "1", orden
+    if has_uploaded_file(principal): lugar.imagen_principal_url = await save_lugar_image(principal, lugar.slug)
+    db.flush()
+    uploads = [item for item in form.getlist("galeria") if has_uploaded_file(item)]
+    if len(lugar.fotos) + len(uploads) > 5: raise ValueError("La galería admite hasta 5 fotos adicionales.")
+    next_order = max([foto.orden for foto in lugar.fotos] or [-1]) + 1
+    for upload in uploads:
+        db.add(models.LugarDescubrirFoto(lugar=lugar, image_url=await save_lugar_image(upload, lugar.slug), orden=next_order)); next_order += 1
+    db.commit()
+    return lugar
+
+
+@app.post("/admin/lugares/crear")
+async def admin_lugar_create(request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse): return auth
+    try: lugar = await persist_lugar(request, db, None)
+    except ValueError as exc: db.rollback(); return RedirectResponse(f"/admin/lugares/nuevo?error={quote(str(exc))}", 303)
+    return RedirectResponse(f"/admin/lugares/{lugar.id}/editar", 303)
+
+
+@app.post("/admin/lugares/{lugar_id}/editar")
+async def admin_lugar_update(lugar_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse): return auth
+    lugar = db.get(models.LugarDescubrir, lugar_id)
+    if not lugar: raise HTTPException(404, "Lugar no encontrado")
+    try: await persist_lugar(request, db, lugar)
+    except ValueError as exc: db.rollback(); return RedirectResponse(f"/admin/lugares/{lugar_id}/editar?error={quote(str(exc))}", 303)
+    return RedirectResponse(f"/admin/lugares/{lugar_id}/editar", 303)
+
+
+@app.post("/admin/lugares/{lugar_id}/fotos/{foto_id}/eliminar")
+def admin_lugar_photo_delete(lugar_id: int, foto_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse): return auth
+    foto = db.query(models.LugarDescubrirFoto).filter_by(id=foto_id, lugar_id=lugar_id).first()
+    if not foto: raise HTTPException(404, "Foto no encontrada")
+    try:
+        db.delete(foto)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return RedirectResponse(f"/admin/lugares/{lugar_id}/editar", 303)
+
+
+@app.post("/admin/lugares/{lugar_id}/eliminar")
+def admin_lugar_delete(lugar_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse): return auth
+    lugar = db.get(models.LugarDescubrir, lugar_id)
+    if not lugar: raise HTTPException(404, "Lugar no encontrado")
+    try:
+        db.delete(lugar)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return RedirectResponse("/admin/lugares", 303)
 
 
 @app.get("/gastronomia", response_class=HTMLResponse)
