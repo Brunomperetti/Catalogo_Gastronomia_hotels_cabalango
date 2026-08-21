@@ -64,12 +64,14 @@ def test_portal_home_smoke():
         "/alojamientos",
         "/gastronomia",
         "/servicios?grupo=compras",
-        "#como-llegar",
+        "/como-llegar",
     ]:
         assert f'href="{href}"' in response.text
     assert response.text.count("destination-story-more") == 3
     assert 'id="como-llegar"' in response.text
-    assert "?v=20260821-home-places-1" in response.text
+    assert "Cómo llegar y moverse" in response.text
+    assert 'href="#como-llegar"' not in response.text
+    assert "?v=20260821-home-places-2" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -108,7 +110,32 @@ def test_portal_home_smoke():
         assert nearby_copy in response.text
     assert "destination-nearby-map" in response.text
     assert "Si buscás más movimiento" not in response.text
-    assert "aproximadamente 6 km" not in response.text
+
+
+def test_travel_guide_is_public_compact_and_uses_external_sources():
+    response = TestClient(app).get("/como-llegar")
+    html = response.text
+
+    assert response.status_code == 200
+    for copy in ["Cómo llegar a Cabalango", "En avión", "En colectivo", "En auto", "Consultar horarios"]:
+        assert copy in html
+    assert 'id="como-llegar"' in html
+    assert 'href="https://linktr.ee/grupo_fono_bus"' in html
+    assert "Consultar horarios de Punilla" in html
+    assert 'target="_blank" rel="noopener noreferrer"' in html
+    assert "https://www.fonobus.com.ar/" not in html
+    assert "<table" not in html.lower()
+    assert "fonobus_schedule" not in html
+
+
+def test_travel_information_does_not_expand_home():
+    html = TestClient(app).get("/").text
+
+    for travel_only_copy in ["En avión", "En colectivo", "Horarios de colectivos"]:
+        assert travel_only_copy not in html
+    for existing_link in ["/alojamientos", "/gastronomia", "/actividades", "/servicios?grupo=compras", "/lugares"]:
+        assert f'href="{existing_link}"' in html
+    assert "aproximadamente 6 km" not in html
 
 
 def test_weather_parses_apparent_temperature_and_up_to_seven_days(monkeypatch):
