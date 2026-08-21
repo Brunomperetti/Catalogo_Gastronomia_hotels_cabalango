@@ -79,6 +79,23 @@ def test_portal_css_defines_every_place_count_and_mobile_override():
     assert 'display:flex;height:auto;max-width:none;flex-direction:column' in css
 
 
+def test_places_home_and_admin_expose_stable_layout_hooks(env):
+    client, _ = env
+    create(client, "Rincón ordenado", order="2", featured=True)
+
+    home = client.get("/").text
+    admin = client.get("/admin/lugares").text
+
+    assert 'class="destination-places-grid" data-count="1"' in home
+    assert 'class="destination-place-card is-primary"' in home
+    assert 'class="destination-place-overlay"' in home
+    assert 'class="admin-places-table" role="table"' in admin
+    assert 'class="admin-place-thumbnail" role="cell" data-label="Foto"' in admin
+    assert 'data-label="Visible"' in admin
+    assert 'data-label="Destacado"' in admin
+    assert 'class="admin-place-actions" role="cell" data-label="Acciones"' in admin
+
+
 def test_public_detail_hidden_and_index(env):
     client,db=env; create(client,"Visible",order="0"); create(client,"Secreto",visible=False)
     visible=db.query(LugarDescubrir).filter_by(nombre="Visible").one(); hidden=db.query(LugarDescubrir).filter_by(nombre="Secreto").one()
