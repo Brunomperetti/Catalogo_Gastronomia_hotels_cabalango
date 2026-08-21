@@ -9,45 +9,44 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:opsz,wght@6..72,400;6..72,600;6..72,700&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260821-travel-guide-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260821-travel-guide-2">
 </head>
 <body class="catalog-theme-default portal-body">
 <main class="portal-shell travel-guide">
     {% include "partials/portal_nav.html" %}
     <header class="travel-guide__hero" id="como-llegar">
-        <div><p class="portal-kicker">Planificá tu viaje</p><h1>Cómo llegar a Cabalango</h1><p>En avión, colectivo o auto: encontrá la opción más simple para llegar y moverte por el Valle de Punilla.</p></div>
+        <div><p class="portal-kicker">Planificá tu viaje</p><h1>Cómo llegar a Cabalango</h1><p>En avión, colectivo o auto: elegí la conexión más simple para tu viaje por el Valle de Punilla.</p></div>
         <svg viewBox="0 0 180 90" aria-hidden="true"><path d="M10 72c35-61 51 17 87-34s48 22 73-25"/><circle cx="10" cy="72" r="5"/><circle cx="170" cy="13" r="5"/></svg>
     </header>
 
     <section class="travel-guide__modes" aria-label="Formas de llegar a Cabalango">
         <article class="travel-mode travel-mode--air">
-            <svg class="travel-mode__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 13 7-2V5.5a2 2 0 0 1 4 0V10l6-2v3l-6 3v4l2 1v2l-4-1-4 1v-2l2-1v-3l-7 1Z"/></svg>
+            <svg class="travel-mode__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16.2 13.8 13l-.7 6.2 2.2 1.4-.4 1.4-3.4-.8-3.2.8-.4-1.4 2.1-1.4-.7-6.2-6.9 3.2-.4-1.8 7-5.2V5.8C9 3.7 10.1 2 11.5 2S14 3.7 14 5.8v3.4l7.4 5.2Z"/></svg>
             <p class="travel-mode__eyebrow">Llegás a Córdoba</p><h2>En avión</h2>
-            <p>El aeropuerto de referencia es el Aeropuerto Internacional de Córdoba.</p>
-            <h3>Opción más directa</h3><ol class="travel-route"><li>Aeropuerto de Córdoba</li><li>Taxi, remis, app de movilidad o traslado privado</li><li>Cabalango</li></ol>
-            <p>La opción más simple es contratar un traslado directo desde el aeropuerto hasta Cabalango.</p>
-            <h3>Con transporte público</h3><ol class="travel-route"><li>Aeropuerto de Córdoba</li><li>Terminal de Ómnibus de Córdoba</li><li>Villa Carlos Paz</li><li>Cabalango</li></ol>
-            <p>Podés trasladarte hacia la Terminal de Córdoba, continuar a Villa Carlos Paz y conectar allí con un servicio interurbano hacia Cabalango.</p>
+            <p class="travel-mode__intro">El aeropuerto de referencia es el Aeropuerto Internacional de Córdoba.</p>
+            <div class="travel-option"><h3>Más directo</h3><ol class="travel-route"><li>Aeropuerto de Córdoba</li><li>Taxi / remis / app de movilidad / traslado privado</li><li>Cabalango</li></ol></div>
+            <div class="travel-option"><h3>Transporte público</h3><ol class="travel-route"><li>Aeropuerto</li><li>Terminal de Córdoba</li><li>Villa Carlos Paz</li><li>Cabalango</li></ol></div>
+            <p class="travel-mode__note">Para viajar en transporte público, Villa Carlos Paz funciona como la conexión final hacia Cabalango.</p>
         </article>
         <article class="travel-mode travel-mode--bus">
             <svg class="travel-mode__icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="16" rx="3"/><path d="M4 9h16M7 15h.01M17 15h.01M7 19v2M17 19v2"/></svg>
             <p class="travel-mode__eyebrow">Conectá en Punilla</p><h2>En colectivo</h2>
-            <h3>Si llegás a Villa Carlos Paz</h3><ol class="travel-route"><li>Villa Carlos Paz</li><li>Servicio interurbano</li><li>Cabalango</li></ol>
-            <p>Desde allí podés continuar hacia Cabalango con los servicios interurbanos que recorren el corredor de Punilla.</p>
-            <h3>Si llegás a Córdoba Capital</h3><ol class="travel-route"><li>Terminal de Córdoba</li><li>Villa Carlos Paz</li><li>Cabalango</li></ol>
-            <p>Primero conectá con Villa Carlos Paz y desde allí continuá hacia Cabalango.</p>
+            <div class="travel-option"><h3>Desde Villa Carlos Paz</h3><ol class="travel-route"><li>Villa Carlos Paz</li><li>Cabalango</li></ol><p>Desde Villa Carlos Paz podés continuar con el servicio interurbano hacia Cabalango.</p></div>
+            <div class="travel-option"><h3>Desde Córdoba Capital</h3><ol class="travel-route"><li>Terminal de Córdoba</li><li>Villa Carlos Paz</li><li>Cabalango</li></ol><p>Si llegás a Córdoba Capital, primero conectá con Villa Carlos Paz.</p></div>
         </article>
         <article class="travel-mode travel-mode--car">
-            <svg class="travel-mode__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 11 2-5h10l2 5M4 11h16v7H4Z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
-            <p class="travel-mode__eyebrow">Tu propio recorrido</p><h2>En auto</h2>
-            <p>Cabalango se encuentra en el Valle de Punilla, cerca de Villa Carlos Paz y Tanti.</p>
-            <div class="travel-guide__diagram" aria-label="Recorrido de referencia desde Córdoba a Cabalango"><span>Córdoba</span><i>↓</i><span>Villa Carlos Paz</span><i>↓</i><strong>Cabalango</strong><small>Aeropuerto → conexión</small></div>
-            <a class="travel-guide__link" href="https://www.google.com/maps/search/?api=1&amp;query=Cabalango%2C+C%C3%B3rdoba%2C+Argentina" target="_blank" rel="noopener noreferrer">Cómo llegar con Google Maps <span aria-hidden="true">↗</span></a>
+            <div class="travel-mode__heading"><svg class="travel-mode__icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 11 2-5h10l2 5M4 11h16v7H4Z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg><div><p class="travel-mode__eyebrow">Tu propio recorrido</p><h2>En auto</h2></div></div>
+            <p class="travel-mode__intro">Desde Córdoba, el acceso habitual es por Villa Carlos Paz. También podés ingresar desde Tanti.</p>
+            <ol class="travel-route"><li>Córdoba</li><li>Villa Carlos Paz</li><li>Cabalango</li></ol>
+            <a class="travel-guide__link" href="https://www.google.com/maps/search/?api=1&amp;query=Cabalango%2C+C%C3%B3rdoba%2C+Argentina" target="_blank" rel="noopener noreferrer">Abrir en Google Maps <span aria-hidden="true">↗</span></a>
         </article>
     </section>
 
-    <section class="travel-schedules" aria-labelledby="schedules-title"><div><p class="portal-kicker">Colectivos a Cabalango</p><h2 id="schedules-title">Horarios de colectivos</h2><h3>Consultá los horarios actualizados</h3><p>Fono Bus publica allí los horarios vigentes de sus servicios del corredor Punilla.</p></div><div><a class="portal-button" href="https://linktr.ee/grupo_fono_bus" target="_blank" rel="noopener noreferrer">Consultar horarios de Punilla <span aria-hidden="true">↗</span></a><small>Los horarios pueden modificarse. Verificá la información antes de viajar.</small></div></section>
+    <section class="travel-utilities" aria-label="Ayuda para organizar el viaje">
+        <article class="travel-utility travel-utility--transfer"><div><p class="portal-kicker">Necesito traslado</p><h2>Remis Cabalango</h2><p>Servicio local para consultar traslados hacia y desde Cabalango.</p></div><a class="travel-guide__link" href="https://wa.me/541166483805" target="_blank" rel="noopener noreferrer">Consultar traslado por WhatsApp <span aria-hidden="true">→</span></a></article>
+        <article class="travel-utility travel-schedules" aria-labelledby="schedules-title"><div><p class="portal-kicker">Colectivos a Cabalango</p><h2 id="schedules-title">Horarios de Fono Bus</h2><p>Consultá el cronograma vigente del corredor Punilla.</p></div><div><a class="portal-button" href="https://drive.google.com/file/d/12BSVtKJdSX54f6dZAnfxBOMhVF-5P-w7/view?usp=drive_link" target="_blank" rel="noopener noreferrer">Ver horarios de Punilla <span aria-hidden="true">↗</span></a><small>Los horarios pueden modificarse sin previo aviso. Verificá la información antes de viajar.</small></div></article>
+    </section>
 
-    <section class="travel-guide__footer"><aside><h2>Antes de viajar</h2><ul><li>Verificá horarios el mismo día.</li><li>Si viajás en temporada alta, contemplá mayor movimiento.</li><li>Para recorridos y tarifas, consultá siempre las fuentes oficiales.</li></ul></aside><div><p class="portal-kicker">Explorar Cabalango</p><h2>Ya sabés cómo llegar.<br>Ahora elegí cómo vivir Cabalango.</h2><nav aria-label="Continuar explorando"><a href="/alojamientos">Dónde dormir</a><a href="/gastronomia">Dónde comer</a><a href="/actividades">Qué hacer</a></nav></div></section>
+    <section class="travel-guide__footer"><aside><h2>Antes de viajar</h2><ul><li>Verificá los horarios el mismo día.</li><li>En temporada alta puede haber mayor movimiento.</li><li>Para tarifas y recorridos, consultá fuentes oficiales.</li></ul></aside><div><p class="portal-kicker">Explorar Cabalango</p><h2>Ya sabés cómo llegar.<br>Ahora elegí cómo vivir Cabalango.</h2><nav aria-label="Continuar explorando"><a href="/alojamientos">Dónde dormir</a><a href="/gastronomia">Dónde comer</a><a href="/actividades">Qué hacer</a></nav></div></section>
 </main>
 </body></html>
