@@ -2794,7 +2794,12 @@ def admin_lugar_photo_delete(lugar_id: int, foto_id: int, request: Request, db: 
     if isinstance(auth, RedirectResponse): return auth
     foto = db.query(models.LugarDescubrirFoto).filter_by(id=foto_id, lugar_id=lugar_id).first()
     if not foto: raise HTTPException(404, "Foto no encontrada")
-    db.delete(foto); db.commit()
+    try:
+        db.delete(foto)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return RedirectResponse(f"/admin/lugares/{lugar_id}/editar", 303)
 
 
@@ -2804,7 +2809,12 @@ def admin_lugar_delete(lugar_id: int, request: Request, db: Session = Depends(ge
     if isinstance(auth, RedirectResponse): return auth
     lugar = db.get(models.LugarDescubrir, lugar_id)
     if not lugar: raise HTTPException(404, "Lugar no encontrado")
-    db.delete(lugar); db.commit()
+    try:
+        db.delete(lugar)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     return RedirectResponse("/admin/lugares", 303)
 
 

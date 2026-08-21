@@ -58,6 +58,27 @@ def test_home_visibility_limit_priority_and_postcards_replaced(env):
     assert "Oculto" not in html
 
 
+@pytest.mark.parametrize("count", [1, 2, 3, 4])
+def test_home_exposes_exact_place_count_for_count_aware_layout(env, count):
+    client, _ = env
+    for index in range(count):
+        create(client, f"Composición {count}-{index}", str(index))
+
+    html = client.get("/").text
+
+    assert f'data-count="{count}"' in html
+    assert html.count('class="destination-place-card') == count
+
+
+def test_portal_css_defines_every_place_count_and_mobile_override():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+
+    for count in range(1, 5):
+        assert f'.destination-places-grid[data-count="{count}"]' in css
+    assert '@media(max-width:700px)' in css
+    assert 'display:flex;height:auto;max-width:none;flex-direction:column' in css
+
+
 def test_public_detail_hidden_and_index(env):
     client,db=env; create(client,"Visible",order="0"); create(client,"Secreto",visible=False)
     visible=db.query(LugarDescubrir).filter_by(nombre="Visible").one(); hidden=db.query(LugarDescubrir).filter_by(nombre="Secreto").one()
@@ -81,3 +102,31 @@ def test_unauthenticated_admin_cannot_delete(env):
     client,db=env; create(client,"Protegido"); place=db.query(LugarDescubrir).filter_by(nombre="Protegido").one(); client.get("/logout")
     assert client.post(f"/admin/lugares/{place.id}/eliminar",follow_redirects=False).status_code==303
     assert db.get(LugarDescubrir,place.id) is not None
+
+
+@pytest.mark.parametrize("delete_photo", [False, True])
+def test_destructive_commit_failure_rolls_back(monkeypatch, delete_photo):
+    record = SimpleNamespace(id=7)
+
+    class Query:
+        def filter_by(self, **_values): return self
+        def first(self): return record
+
+    class FailingSession:
+        rolled_back = False
+        def query(self, _model): return Query()
+        def get(self, _model, _record_id): return record
+        def delete(self, _record): pass
+        def commit(self): raise RuntimeError("database failure")
+        def rollback(self): self.rolled_back = True
+
+    db = FailingSession()
+    monkeypatch.setattr(main, "require_admin", lambda request, session: object())
+
+    with pytest.raises(RuntimeError, match="database failure"):
+        if delete_photo:
+            main.admin_lugar_photo_delete(1, 7, object(), db)
+        else:
+            main.admin_lugar_delete(7, object(), db)
+
+    assert db.rolled_back is True
