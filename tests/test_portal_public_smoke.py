@@ -124,6 +124,10 @@ def test_travel_guide_is_public_compact_and_uses_external_sources():
     assert re.search(r'<a[^>]+href="https://wa.me/541166483805"[^>]+target="_blank"[^>]+rel="noopener noreferrer"[^>]*>Consultar traslado por WhatsApp', html)
     assert re.search(r'<a[^>]+href="https://drive.google.com/file/d/12BSVtKJdSX54f6dZAnfxBOMhVF-5P-w7/view\?usp=drive_link"[^>]+target="_blank"[^>]+rel="noopener noreferrer"[^>]*>Ver horarios de Punilla', html)
     assert "Abrir en Google Maps" in html
+    for label in ("Abrir en Google Maps", "Consultar traslado por WhatsApp", "Ver horarios de Punilla"):
+        assert "travel-guide__action" in html.split(label, 1)[0].rsplit("<a", 1)[1]
+    for label in ("Dónde dormir", "Dónde comer", "Qué hacer"):
+        assert "travel-guide__action" not in html.split(label, 1)[0].rsplit("<a", 1)[1]
     assert "<table" not in html.lower()
     assert "fonobus_schedule" not in html
     assert "horarios_fonobus.json" not in html
