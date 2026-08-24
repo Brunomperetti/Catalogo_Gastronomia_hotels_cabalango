@@ -189,6 +189,8 @@ class DestinoMedia(Base):
     id = Column(Integer, primary_key=True, index=True)
     tipo = Column(String, nullable=False, default="foto", index=True)
     categoria = Column(String, nullable=False, default="rio_naturaleza", index=True)
+    # Explicit placement; category and order keep their editorial meanings.
+    uso_portal = Column(String, nullable=False, default="general", index=True)
     titulo = Column(String, nullable=True)
     descripcion = Column(Text, nullable=True)
     image_path = Column(String, nullable=True)
