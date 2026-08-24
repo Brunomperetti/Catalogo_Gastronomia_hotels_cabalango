@@ -9,6 +9,10 @@
   if (reduceMotion.matches) return;
 
   const initialSlide = hero.querySelector(".destination-hero-slide.is-active") || slides[0];
+  // Be defensive if markup is ever malformed: enhancement may restore the
+  // fallback, but it must never clear or hide it while candidates are pending.
+  initialSlide.classList.add("is-active");
+  initialSlide.setAttribute("aria-hidden", "false");
   const caption = hero.querySelector("[data-hero-caption]");
   const rotationSlides = [initialSlide];
   let active = 0;

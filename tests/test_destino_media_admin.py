@@ -1,4 +1,5 @@
 from io import BytesIO
+import subprocess
 
 import pytest
 from fastapi.testclient import TestClient
@@ -564,6 +565,8 @@ def test_hero_rotator_preserves_initial_slide_while_preparing_candidates():
     javascript = open("app/static/js/portal-hero-rotator.js", encoding="utf-8").read()
 
     assert 'hero.querySelector(".destination-hero-slide.is-active") || slides[0]' in javascript
+    assert 'initialSlide.classList.add("is-active")' in javascript
+    assert 'initialSlide.setAttribute("aria-hidden", "false")' in javascript
     assert "image.complete" in javascript
     assert 'addEventListener("error"' in javascript
     assert "Promise.all" not in javascript
@@ -571,6 +574,17 @@ def test_hero_rotator_preserves_initial_slide_while_preparing_candidates():
     assert "prepareCandidate(initialSlide)" not in javascript
     assert "rotationSlides.length >= 2" in javascript
     assert "rotationSlides.push(slide)" in javascript
+
+
+def test_hero_rotator_runtime_fail_safe_scenarios():
+    result = subprocess.run(
+        ["node", "--test", "tests/test_portal_hero_rotator.js"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_hero_rotator_crossfades_before_changing_current_slide_and_caption():
