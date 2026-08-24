@@ -58,6 +58,10 @@ def edit(client, item_id, **changes):
     return client.post(f"/admin/cabalango/media/{item_id}/editar", data=data, follow_redirects=False)
 
 
+def home_section(html, class_name):
+    return html.split(f'class="{class_name}', 1)[1].split("</section>", 1)[0]
+
+
 def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admin):
     client, db, _ = destino_admin
     item = add_media(db)
@@ -101,6 +105,72 @@ def test_home_journeys_use_explicit_visible_assignments_and_keep_ctas(destino_ad
     assert html.count('class="destination-journey-card') == 3
     assert 'class="destination-journey-card is-featured"' in html
     assert rio.visible is True
+
+
+def test_home_generic_placements_only_use_general_photos(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    add_media(db, titulo="General secundaria", image_path="/media/general-about.jpg", orden=2)
+    add_media(db, titulo="General destacada", image_path="/media/general-hero.jpg", orden=1, destacado=True)
+    add_media(
+        db,
+        uso_portal="journey_escapada",
+        titulo="Escapada reservada",
+        descripcion="Solo para quedarse",
+        image_path="/media/reserved-escapada.jpg",
+        orden=0,
+        destacado=True,
+    )
+
+    html = client.get("/").text
+    hero = home_section(html, "destination-editorial-hero")
+    about = home_section(html, "destination-section destination-about")
+    journeys = home_section(html, "destination-journeys")
+
+    assert "/media/general-hero.jpg" in hero
+    assert "/media/reserved-escapada.jpg" not in hero
+    assert "/media/general-about.jpg" in about
+    assert "/media/reserved-escapada.jpg" not in about
+    assert "/media/reserved-escapada.jpg" in journeys
+    assert "Escapada reservada" in journeys
+
+
+def test_home_falls_back_to_visible_photos_when_none_are_general(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    add_media(db, uso_portal="journey_escapada", titulo="Única postal", image_path="/media/only-journey.jpg")
+
+    response = client.get("/")
+    hero = home_section(response.text, "destination-editorial-hero")
+    about = home_section(response.text, "destination-section destination-about")
+
+    assert response.status_code == 200
+    assert "/media/only-journey.jpg" in hero
+    assert "/media/only-journey.jpg" in about
+
+
+def test_assigning_general_photo_to_journey_removes_it_from_generic_home_pool(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    retained = add_media(db, titulo="General disponible", image_path="/media/still-general.jpg", orden=2)
+    assigned = add_media(db, titulo="Antes general", image_path="/media/assigned.jpg", orden=1, destacado=True)
+
+    response = edit(client, assigned.id, uso_portal="journey_escapada", titulo="Ahora reservada")
+    db.refresh(retained)
+    db.refresh(assigned)
+    html = client.get("/").text
+    hero = home_section(html, "destination-editorial-hero")
+    about = home_section(html, "destination-section destination-about")
+    journeys = home_section(html, "destination-journeys")
+
+    assert response.status_code == 303
+    assert assigned.uso_portal == "journey_escapada"
+    assert retained.uso_portal == "general"
+    assert "/media/assigned.jpg" not in hero
+    assert "/media/assigned.jpg" not in about
+    assert "/media/still-general.jpg" in hero
+    assert "/media/still-general.jpg" in about
+    assert "/media/assigned.jpg" in journeys
 
 
 def test_home_journeys_fallback_without_assignments_or_for_hidden_item(destino_admin, monkeypatch):

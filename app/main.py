@@ -2703,6 +2703,10 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
 def render_destino_home(request: Request, db: Session):
     content = get_destino_content(db)
     fotos = get_public_destino_media(db, "foto")
+    general_fotos = [
+        foto for foto in fotos
+        if getattr(foto, "uso_portal", "general") == "general"
+    ]
     videos = get_public_destino_media(db, "video")
     journey_media = {
         key: next((foto for foto in fotos if getattr(foto, "uso_portal", "general") == key), None)
@@ -2713,6 +2717,7 @@ def render_destino_home(request: Request, db: Session):
         {
             "request": request,
             "fotos": fotos,
+            "general_fotos": general_fotos,
             "videos": videos,
             "journey_media": journey_media,
             "categories": DESTINO_MEDIA_CATEGORIES,
