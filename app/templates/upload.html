@@ -211,6 +211,7 @@
         </section>
 {% endif %}
 
+        {% endif %}
 
         {% if admin_area == 'portal' and active_tab == 'cabalango' %}
 <section id="panel-cabalango" class="admin-tab-panel is-active">
@@ -299,6 +300,7 @@
         </section>
 {% endif %}
 
+        {% if empresa_activa %}
         {% if admin_area == 'prestador' and active_tab == 'contacto' %}
 <section id="panel-contacto" class="admin-tab-panel is-active"><section class="admin-card admin-card--wide"><div class="card-header-custom"><h2 class="card-title-custom">Contacto y ubicación</h2><p class="card-subtitle-custom">Estos datos ayudan a turistas, vecinos y visitantes a contactarte o llegar al lugar.</p></div><form action="/empresa/editar_panel" method="post" class="stack-form">
                     <input type="hidden" name="admin_tab" value="{{ active_tab }}"><input type="hidden" name="empresa_slug_actual" value="{{ empresa_activa.slug }}"><input type="hidden" name="nombre" value="{{ empresa_activa.nombre }}"><input type="hidden" name="theme" value="{{ empresa_activa.theme }}"><div class="form-grid"><div><label class="field-label">WhatsApp</label><input class="input-custom" name="whatsapp" value="{{ empresa_activa.whatsapp or '' }}"></div><div><label class="field-label">Teléfono</label><input class="input-custom" name="telefono" value="{{ empresa_activa.telefono or '' }}"></div><div><label class="field-label">Instagram / redes</label><input class="input-custom" name="instagram" value="{{ empresa_activa.instagram or '' }}" placeholder="https://instagram.com/tuusuario o @tuusuario"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Facebook</label><input class="input-custom" name="facebook" value="{{ empresa_activa.facebook or '' }}" placeholder="https://facebook.com/tupagina"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Sitio web</label><input class="input-custom" name="web_url" value="{{ empresa_activa.web_url or '' }}" placeholder="https://tusitio.com"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div><div><label class="field-label">Horarios</label><input class="input-custom" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div><div class="full-width"><label class="field-label">Dirección</label><input class="input-custom" name="direccion" value="{{ empresa_activa.direccion or '' }}"></div><div class="full-width"><label class="field-label">Google Maps</label><input class="input-custom" name="maps_url" value="{{ empresa_activa.maps_url or '' }}" placeholder="pegá el link de Google Maps"><small class="form-help">Si pegás un link sin https://, el sistema lo ajustará automáticamente.</small></div></div><button class="btn-primary-custom w-100">Guardar contacto</button></form></section></section>
