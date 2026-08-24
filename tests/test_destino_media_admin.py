@@ -68,6 +68,7 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
     response = client.get("/admin?area=portal&tab=cabalango")
     html = response.text
     assert response.status_code == 200
+    assert "/static/css/admin.css?v=20260824-home-media-admin-2" in html
     for expected_text in (
         "Descubrí Cabalango",
         "Texto editorial del destino",
