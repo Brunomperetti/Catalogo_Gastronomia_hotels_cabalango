@@ -861,7 +861,7 @@ def normalize_destino_uso_portal(value: str) -> str:
 
 def assign_unique_destino_home_use(db: Session, item: models.DestinoMedia, uso_portal: str) -> None:
     """Assign a Home slot and release it from every other record."""
-    uso_portal = normalize_destino_uso_portal(uso_portal)
+    uso_portal = normalize_destino_uso_portal(uso_portal) if item.tipo == "foto" else "general"
     if uso_portal != "general":
         query = db.query(models.DestinoMedia).filter(models.DestinoMedia.uso_portal == uso_portal)
         if item.id is not None:
@@ -3775,7 +3775,7 @@ async def crear_destino_media(
             return panel_redirect(area="portal", tab="cabalango", error="Cargá un link de video.", path="/admin")
         item = models.DestinoMedia(tipo="video", categoria="videos", titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), video_url=url, destacado=bool(destacado), visible=bool(visible), orden=orden)
         db.add(item)
-        assign_unique_destino_home_use(db, item, uso_portal_clean)
+        assign_unique_destino_home_use(db, item, "general")
         created = 1
     else:
         for upload in fotos or []:
@@ -3848,7 +3848,7 @@ async def editar_destino_media(
 
         item.titulo = clean_text(titulo, default="") or None
         item.categoria = categoria_clean
-        assign_unique_destino_home_use(db, item, uso_portal)
+        assign_unique_destino_home_use(db, item, uso_portal if item.tipo == "foto" else "general")
         item.descripcion = clean_text(descripcion, default="") or None
         item.orden = orden_value
         item.destacado = destacado is not None

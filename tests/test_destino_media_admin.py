@@ -145,6 +145,56 @@ def test_admin_edit_assignment_updates_home_and_releases_previous_slot(destino_a
     assert "USO HOME: Plan río" in admin_html
 
 
+def test_create_video_forces_general_without_displacing_home_photo(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    rio = add_media(db, uso_portal="journey_rio", titulo="Foto del río", image_path="/media/rio-correcta.jpg")
+
+    response = client.post(
+        "/admin/cabalango/media",
+        data={
+            "tipo": "video",
+            "categoria": "videos",
+            "uso_portal": "journey_rio",
+            "titulo": "Video del río",
+            "video_url": "https://example.com/video",
+            "visible": "1",
+        },
+        follow_redirects=False,
+    )
+    video = db.query(DestinoMedia).filter(DestinoMedia.tipo == "video").one()
+    db.refresh(rio)
+    html = client.get("/").text
+
+    assert response.status_code == 303
+    assert video.uso_portal == "general"
+    assert rio.uso_portal == "journey_rio"
+    assert "Foto del río" in html
+    assert "/media/rio-correcta.jpg" in html
+
+
+def test_edit_video_forces_general_without_displacing_home_photo(destino_admin):
+    client, db, _ = destino_admin
+    escapada = add_media(db, uso_portal="journey_escapada", titulo="Foto escapada")
+    video = add_media(db, tipo="video", categoria="videos", image_path=None, video_url="https://example.com/original")
+
+    response = edit(
+        client,
+        video.id,
+        categoria="videos",
+        uso_portal="journey_escapada",
+        video_url="https://example.com/editado",
+    )
+    db.refresh(video)
+    db.refresh(escapada)
+
+    assert response.status_code == 303
+    assert video.uso_portal == "general"
+    assert escapada.uso_portal == "journey_escapada"
+    admin_html = client.get("/admin?area=portal&tab=cabalango").text
+    assert "General. Los planes de la Home utilizan fotografías." in admin_html
+
+
 def test_admin_renders_destination_panel_without_active_provider(destino_admin):
     client, db, _ = destino_admin
     db.query(Empresa).delete()
