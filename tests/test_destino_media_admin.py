@@ -64,11 +64,33 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
     response = client.get("/admin?area=portal&tab=cabalango")
     html = response.text
     assert response.status_code == 200
+    for expected_text in (
+        "Descubrí Cabalango",
+        "Texto editorial del destino",
+        "Fotos y videos del destino",
+        "Contenido cargado",
+        "Guardar texto editorial",
+        "Guardar contenido de Cabalango",
+    ):
+        assert expected_text in html
     assert f'id="edit-destino-media-{item.id}"' in html
     assert f"/admin/cabalango/media/{item.id}/editar" in html
     assert "Editar</button>" in html
     assert "Editar</button><button" not in html
     assert "↑ Subir" in html and "↓ Bajar" in html
+    assert "Ocultar" in html
+
+
+def test_admin_renders_destination_panel_without_active_provider(destino_admin):
+    client, db, _ = destino_admin
+    db.query(Empresa).delete()
+    db.commit()
+
+    response = client.get("/admin?area=portal&tab=cabalango")
+
+    assert response.status_code == 200
+    assert "Texto editorial del destino" in response.text
+    assert "Fotos y videos del destino" in response.text
 
 
 def test_edit_updates_fields_states_and_preserves_image(destino_admin):
