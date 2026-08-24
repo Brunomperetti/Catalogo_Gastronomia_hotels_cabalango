@@ -83,7 +83,7 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
     assert "Editar</button><button" not in html
     assert "↑ Subir" in html and "↓ Bajar" in html
     assert "Ocultar" in html
-    assert "Uso en la Home" in html
+    assert "Ubicación opcional" in html
     assert "Sin ubicación fija" in html
 
 
@@ -212,7 +212,8 @@ def test_admin_edit_assignment_updates_home_and_releases_previous_slot(destino_a
     assert "Una experiencia tranquila junto al agua" in html
     assert "/media/replacement.jpg" in html
     admin_html = client.get("/admin?area=portal&tab=cabalango").text
-    assert "USO HOME: Plan río" in admin_html
+    assert "Plan río" in admin_html
+    assert "USO HOME:" not in admin_html
 
 
 def test_create_video_forces_general_without_displacing_home_photo(destino_admin, monkeypatch):
@@ -452,6 +453,36 @@ def test_admin_explains_all_home_placements(destino_admin):
         "Biblioteca de fotos y videos",
     ):
         assert copy in html
+    assert 'class="destination-home-dashboard"' in html
+    assert 'class="destination-home-hero-thumb"' in html or "Usando foto predeterminada" in html
+    assert 'class="destination-home-media-preview"' in html
+
+
+def test_admin_home_slots_have_direct_contextual_dialogs(destino_admin):
+    client, _, _ = destino_admin
+    html = client.get("/admin?area=portal&tab=cabalango").text
+
+    assert 'id="add-destino-hero"' in html
+    hero_dialog = html.split('id="add-destino-hero"', 1)[1].split("</dialog>", 1)[0]
+    assert 'action="/admin/cabalango/media"' in hero_dialog
+    assert 'name="uso_portal" value="home_hero"' in hero_dialog
+    assert 'name="tipo" value="foto"' in hero_dialog
+    assert 'name="visible" value="1"' in hero_dialog
+    assert 'href="#destino-media-form"' not in html
+
+    expected_dialogs = {
+        "home_about": "Cambiar foto de Sobre Cabalango",
+        "journey_rio": "Editar Un día junto al río",
+        "journey_escapada": "Editar Quedarse un poco más",
+        "journey_familia": "Editar Tiempo para compartir",
+    }
+    for slot, title in expected_dialogs.items():
+        assert f'id="home-slot-{slot}"' in html
+        dialog = html.split(f'id="home-slot-{slot}"', 1)[1].split("</dialog>", 1)[0]
+        assert title in dialog
+        assert 'action="/admin/cabalango/media"' in dialog
+        assert f'name="uso_portal" value="{slot}"' in dialog
+        assert '<select' not in dialog
 
 
 def test_hero_rotator_supports_reduced_motion():
