@@ -4,78 +4,80 @@
   if (!hero || slides.length < 2) return;
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  // The server-rendered slide is the sovereign fallback. Reduced motion must not
+  // alter it, and candidate preparation must never decide whether it can stay.
+  if (reduceMotion.matches) return;
+
+  const initialSlide = hero.querySelector(".destination-hero-slide.is-active") || slides[0];
+  // Be defensive if markup is ever malformed: enhancement may restore the
+  // fallback, but it must never clear or hide it while candidates are pending.
+  initialSlide.classList.add("is-active");
+  initialSlide.setAttribute("aria-hidden", "false");
   const caption = hero.querySelector("[data-hero-caption]");
-  let usableSlides = [];
-  let active = 0;
+  const confirmedSlides = new Set([initialSlide]);
+  const getRotationSlides = () => slides.filter((slide) => confirmedSlides.has(slide));
+  let activeSlide = initialSlide;
   let timer;
   let transitioning = false;
 
-  const verifyImage = (image) => new Promise((resolve) => {
+  const prepareCandidate = (image) => new Promise((resolve) => {
+    let settled = false;
     const finish = (loaded) => {
+      if (settled) return;
+      settled = true;
       window.clearTimeout(timeout);
       image.removeEventListener("load", onLoad);
       image.removeEventListener("error", onError);
       resolve(loaded);
     };
-    const decodeLoadedImage = () => {
-      if (typeof image.decode !== "function") {
-        finish(image.naturalWidth > 0);
-        return;
-      }
-      image.decode()
-        .then(() => finish(image.naturalWidth > 0))
-        .catch(() => finish(image.naturalWidth > 0));
-    };
-    const onLoad = () => decodeLoadedImage();
+    const onLoad = () => finish(image.naturalWidth > 0);
     const onError = () => finish(false);
+    // A timeout means "not ready", not "broken". Do not change the slide DOM.
     const timeout = window.setTimeout(() => finish(false), 15000);
 
     if (image.complete) {
-      if (image.naturalWidth > 0) decodeLoadedImage();
-      else finish(false);
+      finish(image.naturalWidth > 0);
       return;
     }
     image.addEventListener("load", onLoad, { once: true });
     image.addEventListener("error", onError, { once: true });
   });
 
-  const selectInitialSlide = () => {
-    const firstValid = usableSlides[0];
-    slides.forEach((slide) => {
-      const selected = slide === firstValid;
-      slide.classList.toggle("is-active", selected);
-      slide.classList.remove("is-incoming");
-      slide.setAttribute("aria-hidden", selected ? "false" : "true");
-    });
-    active = 0;
-    if (caption && firstValid) caption.textContent = firstValid.dataset.caption;
-  };
-
   const showNext = () => {
-    if (transitioning || usableSlides.length < 2) return;
+    const orderedSlides = getRotationSlides();
+    if (transitioning || orderedSlides.length < 2) return;
     transitioning = true;
-    const current = usableSlides[active];
-    const nextIndex = (active + 1) % usableSlides.length;
-    const next = usableSlides[nextIndex];
+    const currentIndex = orderedSlides.indexOf(activeSlide);
+    const current = activeSlide;
+    const next = orderedSlides[(currentIndex + 1) % orderedSlides.length];
 
-    // Keep the current image rendered underneath while the next one fades in.
+    // The confirmed candidate fades over the current image; current stays visible
+    // until the crossfade has conclusively finished.
     next.classList.remove("is-active");
     next.setAttribute("aria-hidden", "false");
     void next.offsetWidth;
     next.classList.add("is-incoming");
 
-    const completeCrossfade = (event) => {
-      if (event.target !== next || event.propertyName !== "opacity") return;
-      next.removeEventListener("transitionend", completeCrossfade);
+    let finalized = false;
+    let fallback;
+    const finalizeCrossfade = () => {
+      if (finalized) return;
+      finalized = true;
+      window.clearTimeout(fallback);
+      next.removeEventListener("transitionend", onTransitionEnd);
       current.classList.remove("is-active");
       current.setAttribute("aria-hidden", "true");
       next.classList.remove("is-incoming");
       next.classList.add("is-active");
-      active = nextIndex;
+      activeSlide = next;
       transitioning = false;
       if (caption) caption.textContent = next.dataset.caption;
     };
-    next.addEventListener("transitionend", completeCrossfade);
+    const onTransitionEnd = (event) => {
+      if (event.target === next && event.propertyName === "opacity") finalizeCrossfade();
+    };
+    next.addEventListener("transitionend", onTransitionEnd);
+    fallback = window.setTimeout(finalizeCrossfade, 1900);
   };
 
   const stop = () => {
@@ -84,20 +86,18 @@
   };
   const start = () => {
     stop();
-    if (!document.hidden && usableSlides.length > 1 && !reduceMotion.matches) {
+    if (!document.hidden && getRotationSlides().length >= 2) {
       timer = window.setInterval(showNext, 8000);
     }
   };
 
-  Promise.all(slides.map(verifyImage)).then((results) => {
-    usableSlides = slides.filter((slide, index) => {
-      const usable = results[index];
-      slide.classList.toggle("is-unusable", !usable);
-      return usable;
+  // Prepare future slides independently: a slow candidate cannot block a ready one.
+  slides.filter((slide) => slide !== initialSlide).forEach((slide) => {
+    prepareCandidate(slide).then((confirmed) => {
+      if (!confirmed) return;
+      confirmedSlides.add(slide);
+      start();
     });
-    if (!usableSlides.length) return;
-    selectInitialSlide();
-    start();
   });
 
   document.addEventListener("visibilitychange", () => {

@@ -1,4 +1,5 @@
 from io import BytesIO
+import subprocess
 
 import pytest
 from fastapi.testclient import TestClient
@@ -560,26 +561,45 @@ def test_hero_rotator_supports_reduced_motion():
     assert "prefers-reduced-motion: reduce" in javascript
 
 
-def test_hero_rotator_preloads_and_skips_failed_images():
+def test_hero_rotator_preserves_initial_slide_while_preparing_candidates():
     javascript = open("app/static/js/portal-hero-rotator.js", encoding="utf-8").read()
 
+    assert 'hero.querySelector(".destination-hero-slide.is-active") || slides[0]' in javascript
+    assert 'initialSlide.classList.add("is-active")' in javascript
+    assert 'initialSlide.setAttribute("aria-hidden", "false")' in javascript
     assert "image.complete" in javascript
-    assert "image.decode()" in javascript
     assert 'addEventListener("error"' in javascript
-    assert "Promise.all(slides.map(verifyImage))" in javascript
-    assert 'classList.toggle("is-unusable", !usable)' in javascript
-    assert "usableSlides.length > 1" in javascript
+    assert "Promise.all" not in javascript
+    assert "is-unusable" not in javascript
+    assert "prepareCandidate(initialSlide)" not in javascript
+    assert "getRotationSlides().length >= 2" in javascript
+    assert "rotationSlides.push" not in javascript
+    assert "confirmedSlides.add(slide)" in javascript
+    assert "orderedSlides.indexOf(activeSlide)" in javascript
+
+
+def test_hero_rotator_runtime_fail_safe_scenarios():
+    result = subprocess.run(
+        ["node", "--test", "tests/test_portal_hero_rotator.js"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
 
 
 def test_hero_rotator_crossfades_before_changing_current_slide_and_caption():
     javascript = open("app/static/js/portal-hero-rotator.js", encoding="utf-8").read()
 
     incoming = javascript.index('next.classList.add("is-incoming")')
-    transition_finished = javascript.index('next.addEventListener("transitionend"')
+    transition_finished = javascript.index("const finalizeCrossfade")
     remove_current = javascript.index('current.classList.remove("is-active")')
     update_caption = javascript.index("caption.textContent = next.dataset.caption")
-    assert incoming < remove_current < transition_finished
-    assert incoming < update_caption < transition_finished
+    assert incoming < transition_finished < remove_current
+    assert incoming < transition_finished < update_caption
+    assert "window.setTimeout(finalizeCrossfade, 1900)" in javascript
+    assert "if (finalized) return" in javascript
 
 
 def test_hero_rotator_visibility_management_keeps_one_timer():
