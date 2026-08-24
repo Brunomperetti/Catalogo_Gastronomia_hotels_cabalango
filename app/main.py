@@ -331,6 +331,7 @@ def ensure_destino_media_table():
     optional_columns = {
         "tipo": "VARCHAR DEFAULT 'foto'",
         "categoria": "VARCHAR DEFAULT 'rio_naturaleza'",
+        "uso_portal": "VARCHAR DEFAULT 'general'",
         "titulo": "VARCHAR",
         "descripcion": "TEXT",
         "image_path": "VARCHAR",
@@ -346,6 +347,7 @@ def ensure_destino_media_table():
                 conn.execute(text(f"ALTER TABLE destino_media ADD COLUMN {column_name} {column_type}"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_tipo ON destino_media(tipo)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_categoria ON destino_media(categoria)"))
+        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_uso_portal ON destino_media(uso_portal)"))
         conn.execute(text("CREATE INDEX IF NOT EXISTS ix_destino_media_visible ON destino_media(visible)"))
 
 
@@ -837,6 +839,35 @@ DESTINO_MEDIA_CATEGORY_DESCRIPTIONS = {
     "actividades": "Caminatas, recorridos y experiencias al aire libre.",
     "videos": "Recorridos para sentir Cabalango antes de llegar.",
 }
+
+DESTINO_MEDIA_HOME_USES = {
+    "general": "General",
+    "journey_rio": "Un día junto al río",
+    "journey_escapada": "Quedarse un poco más",
+    "journey_familia": "Tiempo para compartir",
+}
+DESTINO_MEDIA_HOME_BADGES = {
+    "general": "Uso general",
+    "journey_rio": "USO HOME: Plan río",
+    "journey_escapada": "USO HOME: Plan escapada",
+    "journey_familia": "USO HOME: Plan familia",
+}
+
+
+def normalize_destino_uso_portal(value: str) -> str:
+    value = clean_text(value, default="general").lower()
+    return value if value in DESTINO_MEDIA_HOME_USES else "general"
+
+
+def assign_unique_destino_home_use(db: Session, item: models.DestinoMedia, uso_portal: str) -> None:
+    """Assign a Home slot and release it from every other record."""
+    uso_portal = normalize_destino_uso_portal(uso_portal)
+    if uso_portal != "general":
+        query = db.query(models.DestinoMedia).filter(models.DestinoMedia.uso_portal == uso_portal)
+        if item.id is not None:
+            query = query.filter(models.DestinoMedia.id != item.id)
+        query.update({models.DestinoMedia.uso_portal: "general"}, synchronize_session="fetch")
+    item.uso_portal = uso_portal
 
 def normalize_destino_categoria(value: str) -> str:
     value = clean_text(value, default="rio_naturaleza").lower()
@@ -2673,12 +2704,17 @@ def render_destino_home(request: Request, db: Session):
     content = get_destino_content(db)
     fotos = get_public_destino_media(db, "foto")
     videos = get_public_destino_media(db, "video")
+    journey_media = {
+        key: next((foto for foto in fotos if getattr(foto, "uso_portal", "general") == key), None)
+        for key in ("journey_rio", "journey_escapada", "journey_familia")
+    }
     return templates.TemplateResponse(
         "descubri_cabalango.html",
         {
             "request": request,
             "fotos": fotos,
             "videos": videos,
+            "journey_media": journey_media,
             "categories": DESTINO_MEDIA_CATEGORIES,
             "category_descriptions": DESTINO_MEDIA_CATEGORY_DESCRIPTIONS,
             "content": content,
@@ -3527,6 +3563,8 @@ def admin_panel(
             "destino_content": get_destino_content(db),
             "destino_media": db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc()).all(),
             "destino_categories": DESTINO_MEDIA_CATEGORIES,
+            "destino_home_uses": DESTINO_MEDIA_HOME_USES,
+            "destino_home_badges": DESTINO_MEDIA_HOME_BADGES,
             "servicios_grupos": SERVICIOS_GRUPOS,
             "servicios_subtipos": [item[1] for item in SERVICIOS_SUBTIPOS.values() if item[1] not in {"Transporte", "Estacionamiento", "Lavadero"}] + ["Otro"],
             "servicio_grupo_activo": service_group_key(empresa_activa) if empresa_activa and normalize_theme(empresa_activa.theme) == "servicios" else "",
@@ -3713,6 +3751,7 @@ async def crear_destino_media(
     request: Request,
     tipo: str = Form("foto"),
     categoria: str = Form("rio_naturaleza"),
+    uso_portal: str = Form("general"),
     titulo: str = Form(""),
     descripcion: str = Form(""),
     video_url: str = Form(""),
@@ -3728,12 +3767,15 @@ async def crear_destino_media(
     ensure_destino_media_table()
     tipo_clean = normalize_destino_tipo(tipo)
     categoria_clean = normalize_destino_categoria(categoria)
+    uso_portal_clean = normalize_destino_uso_portal(uso_portal)
     created = 0
     if tipo_clean == "video":
         url = clean_text(video_url, default="")
         if not url:
             return panel_redirect(area="portal", tab="cabalango", error="Cargá un link de video.", path="/admin")
-        db.add(models.DestinoMedia(tipo="video", categoria="videos", titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), video_url=url, destacado=bool(destacado), visible=bool(visible), orden=orden))
+        item = models.DestinoMedia(tipo="video", categoria="videos", titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), video_url=url, destacado=bool(destacado), visible=bool(visible), orden=orden)
+        db.add(item)
+        assign_unique_destino_home_use(db, item, uso_portal_clean)
         created = 1
     else:
         for upload in fotos or []:
@@ -3742,7 +3784,11 @@ async def crear_destino_media(
             if Path(upload.filename).suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
                 continue
             image_url = await save_destino_image(upload)
-            db.add(models.DestinoMedia(tipo="foto", categoria=categoria_clean, titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), image_path=image_url, destacado=bool(destacado), visible=bool(visible), orden=orden))
+            item = models.DestinoMedia(tipo="foto", categoria=categoria_clean, titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), image_path=image_url, destacado=bool(destacado), visible=bool(visible), orden=orden)
+            db.add(item)
+            # A multi-upload fills the selected slot once. Extra photos remain
+            # general rather than silently competing for the same placement.
+            assign_unique_destino_home_use(db, item, uso_portal_clean if created == 0 else "general")
             created += 1
     db.commit()
     msg = f"Contenido del destino agregado ({created})." if created else "No se cargó contenido nuevo."
@@ -3756,6 +3802,8 @@ def toggle_destino_media(media_id: int, request: Request, db: Session = Depends(
     item = db.query(models.DestinoMedia).filter(models.DestinoMedia.id == media_id).first()
     if item:
         item.visible = not bool(item.visible)
+        if item.visible:
+            assign_unique_destino_home_use(db, item, item.uso_portal)
         db.add(item)
         db.commit()
     return panel_redirect(area="portal", tab="cabalango", msg="Contenido actualizado")
@@ -3767,6 +3815,7 @@ async def editar_destino_media(
     request: Request,
     titulo: str = Form(""),
     categoria: str = Form("rio_naturaleza"),
+    uso_portal: str = Form("general"),
     descripcion: str = Form(""),
     orden: str = Form("0"),
     video_url: str = Form(""),
@@ -3799,6 +3848,7 @@ async def editar_destino_media(
 
         item.titulo = clean_text(titulo, default="") or None
         item.categoria = categoria_clean
+        assign_unique_destino_home_use(db, item, uso_portal)
         item.descripcion = clean_text(descripcion, default="") or None
         item.orden = orden_value
         item.destacado = destacado is not None

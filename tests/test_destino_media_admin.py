@@ -42,7 +42,7 @@ def destino_admin(monkeypatch, tmp_path):
 
 
 def add_media(db, **values):
-    defaults = dict(tipo="foto", categoria="rio_naturaleza", titulo="Postal", descripcion="Original", image_path="/media/destino/fotos/original.jpg", orden=1, visible=True, destacado=False)
+    defaults = dict(tipo="foto", categoria="rio_naturaleza", uso_portal="general", titulo="Postal", descripcion="Original", image_path="/media/destino/fotos/original.jpg", orden=1, visible=True, destacado=False)
     defaults.update(values)
     item = DestinoMedia(**defaults)
     db.add(item)
@@ -52,7 +52,7 @@ def add_media(db, **values):
 
 
 def edit(client, item_id, **changes):
-    data = {"titulo": "Postal editada", "categoria": "paisajes", "descripcion": "Descripción renovada", "orden": "0", "visible": "1", "destacado": "1", "video_url": ""}
+    data = {"titulo": "Postal editada", "categoria": "paisajes", "uso_portal": "general", "descripcion": "Descripción renovada", "orden": "0", "visible": "1", "destacado": "1", "video_url": ""}
     data.update(changes)
     data = {key: value for key, value in data.items() if value is not None}
     return client.post(f"/admin/cabalango/media/{item_id}/editar", data=data, follow_redirects=False)
@@ -79,6 +79,70 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
     assert "Editar</button><button" not in html
     assert "↑ Subir" in html and "↓ Bajar" in html
     assert "Ocultar" in html
+    assert "Uso en la Home" in html
+    assert "Uso general" in html
+
+
+def test_home_journeys_use_explicit_visible_assignments_and_keep_ctas(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    rio = add_media(db, uso_portal="journey_rio", titulo="Mañana de río", descripcion="Texto editado", image_path="/media/rio-slot.jpg")
+    add_media(db, uso_portal="journey_escapada", titulo="Escapada personalizada", descripcion="Dos noches tranquilas", image_path="/media/escapada-slot.jpg")
+    add_media(db, uso_portal="journey_familia", titulo="Familia en el monte", descripcion="Un plan compartido", image_path="/media/familia-slot.jpg")
+
+    html = client.get("/").text
+
+    for expected in ("Mañana de río", "Texto editado", "Escapada personalizada", "Dos noches tranquilas", "Familia en el monte", "Un plan compartido"):
+        assert expected in html
+    assert '/media/rio-slot.jpg' in html and '/media/escapada-slot.jpg' in html and '/media/familia-slot.jpg' in html
+    assert '<a href="/actividades">Ver qué hacer' in html
+    assert '<a href="/alojamientos">Ver alojamientos' in html
+    assert '<a href="/actividades">Explorar actividades' in html
+    assert html.count('class="destination-journey-card') == 3
+    assert 'class="destination-journey-card is-featured"' in html
+    assert rio.visible is True
+
+
+def test_home_journeys_fallback_without_assignments_or_for_hidden_item(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    add_media(db, uso_portal="journey_rio", titulo="No publicar", descripcion="Texto oculto", visible=False, image_path="/media/hidden.jpg")
+
+    html = client.get("/").text
+
+    for expected in (
+        "Un día junto al río",
+        "Balnearios, sombra y caminatas para disfrutar sin apuro.",
+        "Quedarse un poco más",
+        "Alojamiento, sabores locales y tranquilidad para desconectar.",
+        "Tiempo para compartir",
+        "Espacios abiertos y naturaleza para disfrutar en familia.",
+    ):
+        assert expected in html
+    assert "No publicar" not in html
+    assert "Texto oculto" not in html
+    assert "/media/hidden.jpg" not in html
+
+
+def test_admin_edit_assignment_updates_home_and_releases_previous_slot(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    previous = add_media(db, uso_portal="journey_rio", titulo="Anterior")
+    replacement = add_media(db, titulo="Biblioteca", image_path="/media/replacement.jpg")
+
+    response = edit(client, replacement.id, uso_portal="journey_rio", titulo="Mañana de río", descripcion="Una experiencia tranquila junto al agua", destacado=None)
+    db.refresh(previous)
+    db.refresh(replacement)
+    html = client.get("/").text
+
+    assert response.status_code == 303
+    assert previous.uso_portal == "general"
+    assert replacement.uso_portal == "journey_rio"
+    assert "Mañana de río" in html
+    assert "Una experiencia tranquila junto al agua" in html
+    assert "/media/replacement.jpg" in html
+    admin_html = client.get("/admin?area=portal&tab=cabalango").text
+    assert "USO HOME: Plan río" in admin_html
 
 
 def test_admin_renders_destination_panel_without_active_provider(destino_admin):
