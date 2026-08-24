@@ -3601,9 +3601,8 @@ button:disabled {
 .destination-hero-image { background: #EFE5D6; border: 1px solid #D8CCBC; border-radius: 30px; margin: 0; min-height: 420px; overflow: hidden; position: relative; }
 .destination-hero-image img { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
 .destination-hero-image.has-rotator .destination-hero-slide { opacity: 0; transition: opacity 1.5s ease; z-index: 0; }
-.destination-hero-image.has-rotator .destination-hero-slide.is-active { opacity: 1; z-index: 1; }
+.destination-hero-image.has-rotator .destination-hero-slide.is-active { opacity: 1; visibility: visible; z-index: 1; }
 .destination-hero-image.has-rotator .destination-hero-slide.is-incoming { opacity: 1; z-index: 2; }
-.destination-hero-image.has-rotator .destination-hero-slide.is-unusable { visibility: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .destination-hero-image.has-rotator .destination-hero-slide { display: none; transition: none; }
   .destination-hero-image.has-rotator .destination-hero-slide.is-active { display: block; opacity: 1; }
