@@ -12,10 +12,11 @@
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
 </head>
 <body class="catalog-theme-default portal-body">
-{% set hero_photo = (fotos|selectattr('destacado')|list|first) or (fotos|first) %}
-{% set alternate_photos = fotos|rejectattr('image_path', 'equalto', hero_photo.image_path)|list if hero_photo else fotos %}
+{% set home_fotos = general_fotos if general_fotos else fotos %}
+{% set hero_photo = (home_fotos|selectattr('destacado')|list|first) or (home_fotos|first) %}
+{% set alternate_photos = home_fotos|rejectattr('image_path', 'equalto', hero_photo.image_path)|list if hero_photo else home_fotos %}
 {% set about_photo = (alternate_photos|first) or hero_photo %}
-{% set featured_photos = fotos[:5] %}
+{% set featured_photos = home_fotos[:5] %}
 {% set main_video_url = content.video_url or ((videos|first).video_url if videos else none) %}
 <main class="portal-shell destination-guide">
     {% include "partials/portal_nav.html" %}
