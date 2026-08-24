@@ -2,14 +2,21 @@ services:
   - type: web
     name: catalogo-repuestos
     env: python
-    plan: free
+    plan: starter
     region: oregon
 
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app.main:app -k uvicorn.workers.UvicornWorker --timeout 120
+
+    disk:
+      name: catalogo-media
+      mountPath: /var/data
+      sizeGB: 1
 
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.6
       - key: PORT
         value: 8000
+      - key: MEDIA_ROOT
+        value: /var/data

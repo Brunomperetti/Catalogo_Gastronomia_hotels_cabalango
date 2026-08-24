@@ -1,5 +1,7 @@
 import json
 import re
+import uuid
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -8,6 +10,59 @@ pytest.importorskip("httpx", reason="FastAPI TestClient requires httpx")
 from fastapi.testclient import TestClient
 
 from app.main import app, run_startup_db_maintenance
+
+
+def test_media_mount_serves_destination_image_bytes():
+    import app.main as main_module
+
+    relative = Path("destino") / "fotos" / f"serving-{uuid.uuid4().hex}.jpg"
+    physical = main_module.STORAGE_DIR / relative
+    physical.parent.mkdir(parents=True, exist_ok=True)
+    expected = b"destination-serving-test"
+    physical.write_bytes(expected)
+    try:
+        response = TestClient(app).get(f"/media/{relative.as_posix()}")
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("image/")
+        assert response.content == expected
+    finally:
+        physical.unlink(missing_ok=True)
+
+
+def test_home_media_src_resolves_through_public_mount(monkeypatch):
+    import app.main as main_module
+
+    relative = Path("destino") / "fotos" / f"hero-{uuid.uuid4().hex}.jpg"
+    physical = main_module.STORAGE_DIR / relative
+    physical.parent.mkdir(parents=True, exist_ok=True)
+    physical.write_bytes(b"hero-http-chain")
+    src = f"/media/{relative.as_posix()}"
+    photo = SimpleNamespace(
+        id=991,
+        tipo="foto",
+        uso_portal="home_hero",
+        visible=True,
+        destacado=False,
+        orden=1,
+        image_path=src,
+        titulo="Hero entregado",
+        categoria="rio_naturaleza",
+        descripcion=None,
+    )
+    monkeypatch.setattr(main_module, "get_public_destino_media", lambda db, tipo=None: [photo] if tipo == "foto" else [])
+    monkeypatch.setattr(main_module, "get_cabalango_weather", lambda: {"available": False})
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [])
+    try:
+        client = TestClient(app)
+        home = client.get("/")
+        assert home.status_code == 200
+        assert f'src="{src}"' in home.text
+        image = client.get(src)
+        assert image.status_code == 200
+        assert image.headers["content-type"].startswith("image/")
+        assert image.content == b"hero-http-chain"
+    finally:
+        physical.unlink(missing_ok=True)
 
 
 @pytest.fixture(scope="module", autouse=True)
