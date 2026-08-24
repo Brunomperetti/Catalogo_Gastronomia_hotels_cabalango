@@ -14,8 +14,9 @@
   initialSlide.classList.add("is-active");
   initialSlide.setAttribute("aria-hidden", "false");
   const caption = hero.querySelector("[data-hero-caption]");
-  const rotationSlides = [initialSlide];
-  let active = 0;
+  const confirmedSlides = new Set([initialSlide]);
+  const getRotationSlides = () => slides.filter((slide) => confirmedSlides.has(slide));
+  let activeSlide = initialSlide;
   let timer;
   let transitioning = false;
 
@@ -43,11 +44,12 @@
   });
 
   const showNext = () => {
-    if (transitioning || rotationSlides.length < 2) return;
+    const orderedSlides = getRotationSlides();
+    if (transitioning || orderedSlides.length < 2) return;
     transitioning = true;
-    const current = rotationSlides[active];
-    const nextIndex = (active + 1) % rotationSlides.length;
-    const next = rotationSlides[nextIndex];
+    const currentIndex = orderedSlides.indexOf(activeSlide);
+    const current = activeSlide;
+    const next = orderedSlides[(currentIndex + 1) % orderedSlides.length];
 
     // The confirmed candidate fades over the current image; current stays visible
     // until the crossfade has conclusively finished.
@@ -67,7 +69,7 @@
       current.setAttribute("aria-hidden", "true");
       next.classList.remove("is-incoming");
       next.classList.add("is-active");
-      active = nextIndex;
+      activeSlide = next;
       transitioning = false;
       if (caption) caption.textContent = next.dataset.caption;
     };
@@ -84,7 +86,7 @@
   };
   const start = () => {
     stop();
-    if (!document.hidden && rotationSlides.length >= 2) {
+    if (!document.hidden && getRotationSlides().length >= 2) {
       timer = window.setInterval(showNext, 8000);
     }
   };
@@ -93,7 +95,7 @@
   slides.filter((slide) => slide !== initialSlide).forEach((slide) => {
     prepareCandidate(slide).then((confirmed) => {
       if (!confirmed) return;
-      rotationSlides.push(slide);
+      confirmedSlides.add(slide);
       start();
     });
   });

@@ -117,6 +117,54 @@ test("two valid slides crossfade both ways without clearing current or caption e
   assert.equal(runtime.caption.textContent, "A");
 });
 
+test("candidate resolution speed never changes DOM editorial order", async () => {
+  const initial = new FakeSlide("A", { active: true, complete: true, naturalWidth: 100 });
+  const second = new FakeSlide("B");
+  const third = new FakeSlide("C");
+  const runtime = createRuntime([initial, second, third]);
+
+  third.naturalWidth = 100;
+  third.listeners.get("load")();
+  await nextTurn();
+  second.naturalWidth = 100;
+  second.listeners.get("load")();
+  await nextTurn();
+
+  const visited = [runtime.caption.textContent];
+  for (const next of [second, third, initial]) {
+    runtime.intervals.at(-1).callback();
+    next.listeners.get("transitionend")({ target: next, propertyName: "opacity" });
+    visited.push(runtime.caption.textContent);
+  }
+
+  assert.deepEqual(visited, ["A", "B", "C", "A"]);
+});
+
+test("a newly confirmed earlier slide does not desynchronize the active slide", async () => {
+  const initial = new FakeSlide("A", { active: true, complete: true, naturalWidth: 100 });
+  const second = new FakeSlide("B");
+  const third = new FakeSlide("C");
+  const runtime = createRuntime([initial, second, third]);
+
+  third.naturalWidth = 100;
+  third.listeners.get("load")();
+  await nextTurn();
+  runtime.intervals.at(-1).callback();
+  third.listeners.get("transitionend")({ target: third, propertyName: "opacity" });
+  assert.equal(third.classList.contains("is-active"), true);
+
+  second.naturalWidth = 100;
+  second.listeners.get("load")();
+  await nextTurn();
+  assert.equal(third.classList.contains("is-active"), true);
+
+  runtime.intervals.at(-1).callback();
+  assert.equal(initial.classList.contains("is-incoming"), true);
+  assert.equal(second.classList.contains("is-incoming"), false);
+  initial.listeners.get("transitionend")({ target: initial, propertyName: "opacity" });
+  assert.equal(runtime.caption.textContent, "A");
+});
+
 test("reduced motion leaves the server-rendered state untouched", () => {
   const initial = new FakeSlide("A", { active: true, complete: true, naturalWidth: 100 });
   const secondary = new FakeSlide("B", { complete: true, naturalWidth: 100 });

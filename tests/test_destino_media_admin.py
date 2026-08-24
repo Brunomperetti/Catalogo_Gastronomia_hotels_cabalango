@@ -572,8 +572,10 @@ def test_hero_rotator_preserves_initial_slide_while_preparing_candidates():
     assert "Promise.all" not in javascript
     assert "is-unusable" not in javascript
     assert "prepareCandidate(initialSlide)" not in javascript
-    assert "rotationSlides.length >= 2" in javascript
-    assert "rotationSlides.push(slide)" in javascript
+    assert "getRotationSlides().length >= 2" in javascript
+    assert "rotationSlides.push" not in javascript
+    assert "confirmedSlides.add(slide)" in javascript
+    assert "orderedSlides.indexOf(activeSlide)" in javascript
 
 
 def test_hero_rotator_runtime_fail_safe_scenarios():
