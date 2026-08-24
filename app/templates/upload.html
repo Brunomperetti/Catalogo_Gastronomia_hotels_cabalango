@@ -259,7 +259,42 @@
             </section>
             <section class="admin-card admin-card--wide mt-4">
                 <div class="card-header-custom"><h2 class="card-title-custom">Contenido cargado</h2><p class="card-subtitle-custom">Cards editoriales con estado, categoría, orden y acciones rápidas. El orden queda preparado para jerarquizar la página pública.</p></div>
-                <div class="destination-admin-grid">{% for item in destino_media %}<article class="destination-admin-card"><div class="destination-admin-thumb">{% if item.image_path %}<img src="{{ item.image_path }}?ts={{ time }}" alt="{{ item.titulo or 'Foto Cabalango' }}">{% elif item.video_url %}<span class="video-preview-mark">▶</span>{% else %}<span>Sin imagen</span>{% endif %}</div><div class="destination-admin-content"><div class="destination-admin-meta"><span>{{ item.tipo|upper }}</span><span>{{ destino_categories.get(item.categoria, item.categoria) }}</span></div><h3>{{ item.titulo or destino_categories.get(item.categoria, item.categoria) }}</h3><p>{{ item.descripcion or 'Sin descripción cargada.' }}</p><div class="destination-admin-badges"><span>Orden {{ item.orden }}</span><span class="{% if item.visible %}is-visible{% else %}is-hidden{% endif %}">{% if item.visible %}Visible{% else %}Oculto{% endif %}</span>{% if item.destacado %}<span>Destacada</span>{% endif %}</div>{% if item.video_url %}<a href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir video</a>{% endif %}<div class="destination-admin-actions"><button class="btn-outline-custom" type="button" disabled>Editar</button><button class="btn-outline-custom" type="button" disabled>↑↓ Orden</button><form method="post" action="/admin/cabalango/media/{{ item.id }}/toggle"><button class="btn-secondary-custom">{% if item.visible %}Ocultar{% else %}Mostrar{% endif %}</button></form></div></div></article>{% else %}<div class="gallery-empty-state">Todavía no hay contenido cargado para el destino.</div>{% endfor %}</div>
+                <div class="destination-admin-grid">
+                    {% for item in destino_media %}
+                    <article class="destination-admin-card">
+                        <div class="destination-admin-thumb">{% if item.image_path %}<img src="{{ item.image_path }}?ts={{ time }}" alt="{{ item.titulo or 'Foto Cabalango' }}">{% elif item.video_url %}<span class="video-preview-mark">▶</span>{% else %}<span>Sin imagen</span>{% endif %}</div>
+                        <div class="destination-admin-content">
+                            <div class="destination-admin-meta"><span>{{ item.tipo|upper }}</span><span>{{ destino_categories.get(item.categoria, item.categoria) }}</span></div>
+                            <h3>{{ item.titulo or destino_categories.get(item.categoria, item.categoria) }}</h3>
+                            <p>{{ item.descripcion or 'Sin descripción cargada.' }}</p>
+                            <div class="destination-admin-badges"><span>Orden {{ item.orden }}</span><span class="{% if item.visible %}is-visible{% else %}is-hidden{% endif %}">{% if item.visible %}Visible{% else %}Oculto{% endif %}</span>{% if item.destacado %}<span>Destacada</span>{% endif %}</div>
+                            {% if item.video_url %}<a href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir video</a>{% endif %}
+                            <div class="destination-admin-actions">
+                                <button class="btn-outline-custom" type="button" onclick="document.getElementById('edit-destino-media-{{ item.id }}').showModal()">Editar</button>
+                                <form method="post" action="/admin/cabalango/media/{{ item.id }}/mover"><input type="hidden" name="direction" value="up"><button class="btn-outline-custom" aria-label="Subir {{ item.titulo or 'contenido' }} en el orden">↑ Subir</button></form>
+                                <form method="post" action="/admin/cabalango/media/{{ item.id }}/mover"><input type="hidden" name="direction" value="down"><button class="btn-outline-custom" aria-label="Bajar {{ item.titulo or 'contenido' }} en el orden">↓ Bajar</button></form>
+                                <form method="post" action="/admin/cabalango/media/{{ item.id }}/toggle"><button class="btn-secondary-custom">{% if item.visible %}Ocultar{% else %}Mostrar{% endif %}</button></form>
+                            </div>
+                        </div>
+                    </article>
+                    <dialog class="destination-edit-dialog" id="edit-destino-media-{{ item.id }}" aria-labelledby="edit-destino-media-title-{{ item.id }}">
+                        <div class="destination-edit-dialog__header"><h2 id="edit-destino-media-title-{{ item.id }}">Editar contenido</h2><form method="dialog"><button class="destination-edit-dialog__close" aria-label="Cerrar diálogo">×</button></form></div>
+                        <form action="/admin/cabalango/media/{{ item.id }}/editar" method="post" enctype="multipart/form-data" class="stack-form">
+                            {% if item.image_path %}<div class="destination-edit-current"><span class="field-label">Imagen actual</span><img src="{{ item.image_path }}?ts={{ time }}" alt="Imagen actual de {{ item.titulo or 'contenido de Cabalango' }}"></div>{% endif %}
+                            <div class="form-grid destination-edit-fields">
+                                <div><label class="field-label" for="destino-title-{{ item.id }}">Título</label><input class="input-custom" id="destino-title-{{ item.id }}" name="titulo" value="{{ item.titulo or '' }}"></div>
+                                <div><label class="field-label" for="destino-category-{{ item.id }}">Categoría</label><select class="input-custom" id="destino-category-{{ item.id }}" name="categoria">{% for key, label in destino_categories.items() %}<option value="{{ key }}" {% if item.categoria == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+                                <div class="full-width"><label class="field-label" for="destino-description-{{ item.id }}">Descripción</label><textarea class="input-custom" id="destino-description-{{ item.id }}" name="descripcion" rows="3">{{ item.descripcion or '' }}</textarea></div>
+                                <div><label class="field-label" for="destino-order-{{ item.id }}">Orden</label><input class="input-custom" id="destino-order-{{ item.id }}" type="number" name="orden" value="{{ item.orden }}" required></div>
+                                <div class="destination-edit-checks"><label class="feature-chip is-enabled"><input type="checkbox" name="visible" value="1" {% if item.visible %}checked{% endif %}> Visible</label><label class="feature-chip is-enabled"><input type="checkbox" name="destacado" value="1" {% if item.destacado %}checked{% endif %}> Destacado</label></div>
+                                <div class="full-width"><label class="field-label" for="destino-image-{{ item.id }}">Nueva imagen (opcional)</label><input class="input-custom" id="destino-image-{{ item.id }}" type="file" name="nueva_imagen" accept="image/*"><small class="form-help">Si no elegís una imagen, se conserva la actual.</small></div>
+                                <div class="full-width"><label class="field-label" for="destino-video-{{ item.id }}">Video URL</label><input class="input-custom" id="destino-video-{{ item.id }}" name="video_url" value="{{ item.video_url or '' }}" placeholder="YouTube, Instagram, Drive o Vimeo"></div>
+                            </div>
+                            <div class="destination-edit-dialog__actions"><button class="btn-outline-custom" type="submit" formmethod="dialog">Cancelar</button><button class="btn-primary-custom" type="submit">Guardar cambios</button></div>
+                        </form>
+                    </dialog>
+                    {% else %}<div class="gallery-empty-state">Todavía no hay contenido cargado para el destino.</div>{% endfor %}
+                </div>
             </section>
         </section>
 {% endif %}

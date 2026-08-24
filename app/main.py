@@ -3760,6 +3760,97 @@ def toggle_destino_media(media_id: int, request: Request, db: Session = Depends(
         db.commit()
     return panel_redirect(area="portal", tab="cabalango", msg="Contenido actualizado")
 
+
+@app.post("/admin/cabalango/media/{media_id}/editar")
+async def editar_destino_media(
+    media_id: int,
+    request: Request,
+    titulo: str = Form(""),
+    categoria: str = Form("rio_naturaleza"),
+    descripcion: str = Form(""),
+    orden: str = Form("0"),
+    video_url: str = Form(""),
+    destacado: str | None = Form(None),
+    visible: str | None = Form(None),
+    nueva_imagen: UploadFile | None = File(None),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    item = db.query(models.DestinoMedia).filter(models.DestinoMedia.id == media_id).first()
+    if item is None:
+        raise HTTPException(status_code=404, detail="Contenido del destino no encontrado")
+
+    try:
+        categoria_clean = clean_text(categoria, default="").lower()
+        if categoria_clean not in DESTINO_MEDIA_CATEGORIES:
+            raise ValueError("Seleccioná una categoría válida.")
+        try:
+            orden_value = int(clean_text(orden, default=""))
+        except (TypeError, ValueError):
+            raise ValueError("El orden debe ser un número entero.")
+
+        image_url = item.image_path
+        if has_uploaded_file(nueva_imagen):
+            if Path(nueva_imagen.filename).suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
+                raise ValueError("La nueva imagen debe tener un formato permitido.")
+            image_url = await save_destino_image(nueva_imagen)
+
+        item.titulo = clean_text(titulo, default="") or None
+        item.categoria = categoria_clean
+        item.descripcion = clean_text(descripcion, default="") or None
+        item.orden = orden_value
+        item.destacado = destacado is not None
+        item.visible = visible is not None
+        item.video_url = clean_text(video_url, default="") or None
+        item.image_path = image_url
+        db.add(item)
+        db.commit()
+    except ValueError as exc:
+        db.rollback()
+        return panel_redirect(area="portal", tab="cabalango", error=str(exc))
+    except Exception:
+        db.rollback()
+        raise
+    return panel_redirect(area="portal", tab="cabalango", msg="Contenido editado correctamente")
+
+
+@app.post("/admin/cabalango/media/{media_id}/mover")
+def mover_destino_media(
+    media_id: int,
+    request: Request,
+    direction: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    items = db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.id.asc()).all()
+    index = next((position for position, item in enumerate(items) if item.id == media_id), None)
+    if index is None:
+        raise HTTPException(status_code=404, detail="Contenido del destino no encontrado")
+    if direction not in {"up", "down"}:
+        db.rollback()
+        return panel_redirect(area="portal", tab="cabalango", error="Dirección de orden inválida")
+
+    neighbor_index = index - 1 if direction == "up" else index + 1
+    if neighbor_index < 0 or neighbor_index >= len(items):
+        return panel_redirect(area="portal", tab="cabalango", msg="El contenido ya está en el extremo")
+    try:
+        neighbor = items[neighbor_index]
+        if items[index].orden != neighbor.orden:
+            items[index].orden, neighbor.orden = neighbor.orden, items[index].orden
+        else:
+            items[index], items[neighbor_index] = items[neighbor_index], items[index]
+            for position, item in enumerate(items):
+                item.orden = position
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return panel_redirect(area="portal", tab="cabalango", msg="Orden actualizado")
+
 @app.post("/empresa/galeria")
 async def actualizar_galeria_empresa_admin(
     request: Request,
