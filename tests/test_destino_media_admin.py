@@ -72,7 +72,7 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
         "Descubrí Cabalango",
         "Texto editorial del destino",
         "Fotos y videos del destino",
-        "Contenido cargado",
+        "Biblioteca de fotos y videos",
         "Guardar texto editorial",
         "Guardar contenido de Cabalango",
     ):
@@ -84,7 +84,7 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
     assert "↑ Subir" in html and "↓ Bajar" in html
     assert "Ocultar" in html
     assert "Uso en la Home" in html
-    assert "Uso general" in html
+    assert "Sin ubicación fija" in html
 
 
 def test_home_journeys_use_explicit_visible_assignments_and_keep_ctas(destino_admin, monkeypatch):
@@ -146,7 +146,7 @@ def test_home_falls_back_to_visible_photos_when_none_are_general(destino_admin, 
 
     assert response.status_code == 200
     assert "/media/only-journey.jpg" in hero
-    assert "/media/only-journey.jpg" in about
+    assert "/media/only-journey.jpg" not in about
 
 
 def test_assigning_general_photo_to_journey_removes_it_from_generic_home_pool(destino_admin, monkeypatch):
@@ -262,7 +262,7 @@ def test_edit_video_forces_general_without_displacing_home_photo(destino_admin):
     assert video.uso_portal == "general"
     assert escapada.uso_portal == "journey_escapada"
     admin_html = client.get("/admin?area=portal&tab=cabalango").text
-    assert "General. Los planes de la Home utilizan fotografías." in admin_html
+    assert "General. Las posiciones de Inicio utilizan fotografías." in admin_html
 
 
 def test_admin_renders_destination_panel_without_active_provider(destino_admin):
@@ -390,3 +390,72 @@ def test_move_duplicate_orders_is_deterministic(destino_admin):
     db.refresh(first); db.refresh(second)
     assert response.status_code == 303
     assert second.orden == 0 and first.orden == 1
+
+
+def test_home_hero_uses_explicit_photos_in_order_and_excludes_other_slots(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    third = add_media(db, uso_portal="home_hero", titulo="Hero tres", image_path="/media/hero-3.jpg", orden=30)
+    first = add_media(db, uso_portal="home_hero", titulo="Hero uno", image_path="/media/hero-1.jpg", orden=10)
+    second = add_media(db, uso_portal="home_hero", titulo="Hero dos", image_path="/media/hero-2.jpg", orden=20)
+    add_media(db, uso_portal="home_about", titulo="Solo about", image_path="/media/about-only.jpg", orden=0)
+    add_media(db, uso_portal="journey_rio", titulo="Solo journey", image_path="/media/journey-only.jpg", orden=0)
+
+    hero = home_section(client.get("/").text, "destination-editorial-hero")
+
+    assert hero.count("destination-hero-slide") == 3
+    assert hero.index(first.image_path) < hero.index(second.image_path) < hero.index(third.image_path)
+    assert "/media/about-only.jpg" not in hero
+    assert "/media/journey-only.jpg" not in hero
+    assert "data-hero-rotator" in hero
+
+
+def test_home_about_assignment_is_exclusive_and_falls_back_only_to_general(destino_admin, monkeypatch):
+    client, db, _ = destino_admin
+    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
+    add_media(db, titulo="General", image_path="/media/general.jpg")
+    add_media(db, uso_portal="journey_familia", titulo="Familia", image_path="/media/familia.jpg")
+    assigned = add_media(db, uso_portal="home_about", titulo="About", image_path="/media/about.jpg")
+
+    about = home_section(client.get("/").text, "destination-section destination-about")
+    assert assigned.image_path in about
+    assert "/media/general.jpg" not in about
+    assert "/media/familia.jpg" not in about
+
+    assigned.visible = False
+    db.commit()
+    about = home_section(client.get("/").text, "destination-section destination-about")
+    assert "/media/general.jpg" in about
+    assert "/media/familia.jpg" not in about
+
+
+def test_fifth_visible_hero_photo_is_rejected_without_releasing_existing(destino_admin):
+    client, db, _ = destino_admin
+    existing = [add_media(db, uso_portal="home_hero", titulo=f"Hero {index}") for index in range(4)]
+    candidate = add_media(db, titulo="Quinta")
+
+    response = edit(client, candidate.id, uso_portal="home_hero", titulo="Quinta")
+    db.expire_all()
+
+    assert response.status_code == 303
+    assert "error=Ya+hay+4+fotos+asignadas+al+Hero" in response.headers["location"]
+    assert db.get(DestinoMedia, candidate.id).uso_portal == "general"
+    assert all(db.get(DestinoMedia, item.id).uso_portal == "home_hero" for item in existing)
+
+
+def test_admin_explains_all_home_placements(destino_admin):
+    client, _, _ = destino_admin
+    html = client.get("/admin?area=portal&tab=cabalango").text
+    for copy in (
+        "Imágenes utilizadas en Inicio", "HERO · DESCUBRÍ CABALANGO", "SOBRE CABALANGO",
+        "Un día junto al río", "Quedarse un poco más", "Tiempo para compartir",
+        "Biblioteca de fotos y videos",
+    ):
+        assert copy in html
+
+
+def test_hero_rotator_supports_reduced_motion():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    javascript = open("app/static/js/portal-hero-rotator.js", encoding="utf-8").read()
+    assert "prefers-reduced-motion: reduce" in css
+    assert "prefers-reduced-motion: reduce" in javascript

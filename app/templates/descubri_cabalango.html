@@ -8,15 +8,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260821-home-places-2">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260824-home-media-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
+    {% if hero_photos|length > 1 %}<script src="{{ url_for('static', path='js/portal-hero-rotator.js') }}?v=20260824-home-media-1" defer></script>{% endif %}
 </head>
 <body class="catalog-theme-default portal-body">
-{% set home_fotos = general_fotos if general_fotos else fotos %}
-{% set hero_photo = (home_fotos|selectattr('destacado')|list|first) or (home_fotos|first) %}
-{% set alternate_photos = home_fotos|rejectattr('image_path', 'equalto', hero_photo.image_path)|list if hero_photo else home_fotos %}
-{% set about_photo = (alternate_photos|first) or hero_photo %}
-{% set featured_photos = home_fotos[:5] %}
 {% set main_video_url = content.video_url or ((videos|first).video_url if videos else none) %}
 <main class="portal-shell destination-guide">
     {% include "partials/portal_nav.html" %}
@@ -64,7 +60,9 @@
             </ul>
             <div class="hero-actions" aria-label="Empezar a explorar"><a class="portal-button" href="/actividades">Explorar Cabalango</a><a class="destination-hero-link" href="/alojamientos">Dónde dormir</a><a class="destination-hero-link" href="/gastronomia">Dónde comer</a><a class="destination-hero-link" href="/lugares">Ver lugares</a></div>
         </div>
-        <figure class="destination-hero-image">{% if hero_photo and hero_photo.image_path %}<img src="{{ hero_photo.image_path }}" alt="{{ hero_photo.titulo or 'Río y paisaje serrano de Cabalango' }}"><figcaption><span>Río y naturaleza</span><strong>{{ hero_photo.titulo or 'Balnearios de Cabalango' }}</strong></figcaption>{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Postal cálida de Cabalango"></div>{% endif %}</figure>
+        <figure class="destination-hero-image{% if hero_photos|length > 1 %} has-rotator{% endif %}" data-hero-rotator>
+            {% if hero_photos %}{% for photo in hero_photos %}<img class="destination-hero-slide{% if loop.first %} is-active{% endif %}" src="{{ photo.image_path }}" alt="{{ photo.titulo or 'Río y paisaje serrano de Cabalango' }}" data-caption="{{ photo.titulo or 'Balnearios de Cabalango' }}" aria-hidden="{{ 'false' if loop.first else 'true' }}">{% endfor %}<figcaption><span>Río y naturaleza</span><strong data-hero-caption>{{ hero_photos[0].titulo or 'Balnearios de Cabalango' }}</strong></figcaption>{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Postal cálida de Cabalango"></div>{% endif %}
+        </figure>
     </section>
 
     <nav class="destination-quick-links" aria-labelledby="quick-links-title">
@@ -130,7 +128,7 @@
 
     <section class="destination-journeys" aria-labelledby="journeys-title">
         <header><p class="portal-kicker">Planes para cada visita</p><h2 id="journeys-title">Viví Cabalango a tu manera</h2><p>Elegí el plan que mejor se adapta a tu visita.</p></header>
-        {% set journey_photos = [alternate_photos[1] if alternate_photos|length > 1 else about_photo, alternate_photos[2] if alternate_photos|length > 2 else hero_photo, alternate_photos[3] if alternate_photos|length > 3 else (alternate_photos|last or hero_photo)] %}
+        {% set journey_photos = journey_fallback_photos %}
         {% set journey_rio = journey_media.get('journey_rio') %}{% set journey_escapada = journey_media.get('journey_escapada') %}{% set journey_familia = journey_media.get('journey_familia') %}
         <div class="destination-journey-grid">
             <article class="destination-journey-card is-featured">{% set journey_photo = journey_rio or journey_photos[0] %}{% if journey_photo %}<img src="{{ journey_photo.image_path }}" alt="Un día junto al río en Cabalango" loading="lazy">{% endif %}<div><p class="destination-journey-number"><svg aria-hidden="true" focusable="false"><use href="#icon-water"/></svg>Pasar el día</p><h3>{{ journey_rio.titulo if journey_rio and journey_rio.titulo else 'Un día junto al río' }}</h3><p>{{ journey_rio.descripcion if journey_rio and journey_rio.descripcion else 'Balnearios, sombra y caminatas para disfrutar sin apuro.' }}</p><a href="/actividades">Ver qué hacer <span aria-hidden="true">→</span></a></div></article>

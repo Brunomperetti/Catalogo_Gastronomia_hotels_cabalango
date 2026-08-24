@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260821-home-places-2" in response.text
+    assert "?v=20260824-home-media-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",

@@ -417,6 +417,19 @@
 .destination-admin-actions { margin-top: 14px; }
 .destination-admin-actions form { display: inline; }
 .destination-admin-actions button { padding-inline: 14px; }
+.destination-home-placements { display: grid; gap: 20px; }
+.destination-home-panel { background: var(--admin-surface-alt); border: 1px solid var(--admin-border); border-radius: 20px; padding: 18px; }
+.destination-home-panel > header { align-items: center; display: flex; gap: 16px; justify-content: space-between; }
+.destination-home-panel h3, .destination-home-panel h4 { color: var(--admin-text-deep); margin: 6px 0; }
+.destination-home-panel p { color: var(--admin-text-soft); margin: 4px 0 12px; }
+.destination-home-items, .destination-home-slots { display: grid; gap: 14px; }
+.destination-home-items { margin-top: 14px; grid-template-columns: repeat(auto-fit,minmax(230px,1fr)); }
+.destination-home-items article { background: var(--admin-surface); border-radius: 14px; overflow: hidden; }
+.destination-home-items article > div:last-child { padding: 12px; }
+.destination-home-slots { grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); }
+.destination-home-thumb { aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; }
+.destination-home-thumb img { height: 100%; object-fit: cover; width: 100%; }
+@media (max-width: 700px) { .destination-home-panel > header { align-items: stretch; flex-direction: column; } }
 @media (max-width: 720px) { .admin-global-banner { align-items: stretch; flex-direction: column; } .admin-tabs-divider { display: none; } }
 
 /* Admin navigation split by ownership: provider vs global portal */

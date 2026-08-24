@@ -842,16 +842,25 @@ DESTINO_MEDIA_CATEGORY_DESCRIPTIONS = {
 
 DESTINO_MEDIA_HOME_USES = {
     "general": "General",
+    "home_hero": "Hero · Descubrí Cabalango",
+    "home_about": "Sobre Cabalango · Una pausa serrana",
     "journey_rio": "Un día junto al río",
     "journey_escapada": "Quedarse un poco más",
     "journey_familia": "Tiempo para compartir",
 }
 DESTINO_MEDIA_HOME_BADGES = {
-    "general": "Uso general",
+    "general": "Sin ubicación fija",
+    "home_hero": "USO HOME: Hero",
+    "home_about": "USO HOME: Sobre Cabalango",
     "journey_rio": "USO HOME: Plan río",
-    "journey_escapada": "USO HOME: Plan escapada",
-    "journey_familia": "USO HOME: Plan familia",
+    "journey_escapada": "USO HOME: Escapada",
+    "journey_familia": "USO HOME: Familia",
 }
+
+DESTINO_UNIQUE_HOME_USES = {
+    "home_about", "journey_rio", "journey_escapada", "journey_familia",
+}
+DESTINO_HERO_LIMIT = 4
 
 
 def normalize_destino_uso_portal(value: str) -> str:
@@ -860,9 +869,19 @@ def normalize_destino_uso_portal(value: str) -> str:
 
 
 def assign_unique_destino_home_use(db: Session, item: models.DestinoMedia, uso_portal: str) -> None:
-    """Assign a Home slot and release it from every other record."""
+    """Assign an explicit Home placement, enforcing its editorial capacity."""
     uso_portal = normalize_destino_uso_portal(uso_portal) if item.tipo == "foto" else "general"
-    if uso_portal != "general":
+    if uso_portal == "home_hero" and bool(item.visible):
+        query = db.query(models.DestinoMedia).filter(
+            models.DestinoMedia.uso_portal == "home_hero",
+            models.DestinoMedia.tipo == "foto",
+            models.DestinoMedia.visible == True,
+        )
+        if item.id is not None:
+            query = query.filter(models.DestinoMedia.id != item.id)
+        if query.count() >= DESTINO_HERO_LIMIT:
+            raise ValueError("Ya hay 4 fotos asignadas al Hero. Quitá una antes de agregar otra.")
+    if uso_portal in DESTINO_UNIQUE_HOME_USES:
         query = db.query(models.DestinoMedia).filter(models.DestinoMedia.uso_portal == uso_portal)
         if item.id is not None:
             query = query.filter(models.DestinoMedia.id != item.id)
@@ -2707,6 +2726,25 @@ def render_destino_home(request: Request, db: Session):
         foto for foto in fotos
         if getattr(foto, "uso_portal", "general") == "general"
     ]
+    explicit_hero = sorted(
+        (foto for foto in fotos if getattr(foto, "uso_portal", "general") == "home_hero"),
+        key=lambda foto: (foto.orden, foto.id),
+    )[:DESTINO_HERO_LIMIT]
+    if explicit_hero:
+        hero_photos = explicit_hero
+    else:
+        hero_fallback = next((foto for foto in general_fotos if foto.destacado), None)
+        hero_fallback = hero_fallback or next(iter(general_fotos), None) or next(iter(fotos), None)
+        hero_photos = [hero_fallback] if hero_fallback else []
+    explicit_about = next(
+        (foto for foto in fotos if getattr(foto, "uso_portal", "general") == "home_about"), None
+    )
+    hero_ids = {foto.id for foto in hero_photos}
+    about_photo = explicit_about or next((foto for foto in general_fotos if foto.id not in hero_ids), None)
+    about_photo = about_photo or next(iter(general_fotos), None)
+    fallback_pool = [foto for foto in general_fotos if foto.id not in hero_ids and foto is not about_photo]
+    if not fallback_pool:
+        fallback_pool = general_fotos
     videos = get_public_destino_media(db, "video")
     journey_media = {
         key: next((foto for foto in fotos if getattr(foto, "uso_portal", "general") == key), None)
@@ -2718,6 +2756,12 @@ def render_destino_home(request: Request, db: Session):
             "request": request,
             "fotos": fotos,
             "general_fotos": general_fotos,
+            "hero_photos": hero_photos,
+            "about_photo": about_photo,
+            "journey_fallback_photos": [
+                fallback_pool[index % len(fallback_pool)] if fallback_pool else None
+                for index in range(3)
+            ],
             "videos": videos,
             "journey_media": journey_media,
             "categories": DESTINO_MEDIA_CATEGORIES,
@@ -3529,6 +3573,11 @@ def admin_panel(
             lead_timeline = build_lead_timeline_rows(lead_events)
 
 
+    destino_media = db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.id.asc()).all()
+    destino_home_media = {
+        use: [item for item in destino_media if item.tipo == "foto" and item.uso_portal == use]
+        for use in DESTINO_MEDIA_HOME_USES if use != "general"
+    }
     response = templates.TemplateResponse(
         "upload.html",
         {
@@ -3566,7 +3615,8 @@ def admin_panel(
             "lead_status_labels": LEAD_STATUS_LABELS,
             "leads_kpis": leads_kpis if empresa_activa else [],
             "destino_content": get_destino_content(db),
-            "destino_media": db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc()).all(),
+            "destino_media": destino_media,
+            "destino_home_media": destino_home_media,
             "destino_categories": DESTINO_MEDIA_CATEGORIES,
             "destino_home_uses": DESTINO_MEDIA_HOME_USES,
             "destino_home_badges": DESTINO_MEDIA_HOME_BADGES,
@@ -3783,17 +3833,28 @@ async def crear_destino_media(
         assign_unique_destino_home_use(db, item, "general")
         created = 1
     else:
-        for upload in fotos or []:
-            if not has_uploaded_file(upload):
-                continue
-            if Path(upload.filename).suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
-                continue
+        valid_uploads = [
+            upload for upload in (fotos or [])
+            if has_uploaded_file(upload) and Path(upload.filename).suffix.lower() in ALLOWED_IMAGE_EXTENSIONS
+        ]
+        if uso_portal_clean == "home_hero" and bool(visible):
+            assigned_count = db.query(models.DestinoMedia).filter(
+                models.DestinoMedia.uso_portal == "home_hero",
+                models.DestinoMedia.tipo == "foto",
+                models.DestinoMedia.visible == True,
+            ).count()
+            if assigned_count + len(valid_uploads) > DESTINO_HERO_LIMIT:
+                return panel_redirect(
+                    area="portal", tab="cabalango",
+                    error="Ya hay 4 fotos asignadas al Hero. Quitá una antes de agregar otra.",
+                    path="/admin",
+                )
+        for upload in valid_uploads:
             image_url = await save_destino_image(upload)
             item = models.DestinoMedia(tipo="foto", categoria=categoria_clean, titulo=clean_text(titulo, default=""), descripcion=clean_text(descripcion, default=""), image_path=image_url, destacado=bool(destacado), visible=bool(visible), orden=orden)
             db.add(item)
-            # A multi-upload fills the selected slot once. Extra photos remain
-            # general rather than silently competing for the same placement.
-            assign_unique_destino_home_use(db, item, uso_portal_clean if created == 0 else "general")
+            selected_use = uso_portal_clean if uso_portal_clean == "home_hero" or created == 0 else "general"
+            assign_unique_destino_home_use(db, item, selected_use)
             created += 1
     db.commit()
     msg = f"Contenido del destino agregado ({created})." if created else "No se cargó contenido nuevo."
@@ -3808,10 +3869,27 @@ def toggle_destino_media(media_id: int, request: Request, db: Session = Depends(
     if item:
         item.visible = not bool(item.visible)
         if item.visible:
-            assign_unique_destino_home_use(db, item, item.uso_portal)
+            try:
+                assign_unique_destino_home_use(db, item, item.uso_portal)
+            except ValueError as exc:
+                db.rollback()
+                return panel_redirect(area="portal", tab="cabalango", error=str(exc))
         db.add(item)
         db.commit()
     return panel_redirect(area="portal", tab="cabalango", msg="Contenido actualizado")
+
+
+@app.post("/admin/cabalango/media/{media_id}/quitar-uso-home")
+def quitar_uso_home_destino_media(media_id: int, request: Request, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    item = db.query(models.DestinoMedia).filter(models.DestinoMedia.id == media_id).first()
+    if item is None:
+        raise HTTPException(status_code=404, detail="Contenido del destino no encontrado")
+    item.uso_portal = "general"
+    db.commit()
+    return panel_redirect(area="portal", tab="cabalango", msg="La foto volvió a la biblioteca general")
 
 
 @app.post("/admin/cabalango/media/{media_id}/editar")
@@ -3853,11 +3931,11 @@ async def editar_destino_media(
 
         item.titulo = clean_text(titulo, default="") or None
         item.categoria = categoria_clean
+        item.visible = visible is not None
         assign_unique_destino_home_use(db, item, uso_portal if item.tipo == "foto" else "general")
         item.descripcion = clean_text(descripcion, default="") or None
         item.orden = orden_value
         item.destacado = destacado is not None
-        item.visible = visible is not None
         item.video_url = clean_text(video_url, default="") or None
         item.image_path = image_url
         db.add(item)
@@ -3881,7 +3959,13 @@ def mover_destino_media(
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse):
         return user
-    items = db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.id.asc()).all()
+    item_to_move = db.query(models.DestinoMedia).filter(models.DestinoMedia.id == media_id).first()
+    if item_to_move is None:
+        raise HTTPException(status_code=404, detail="Contenido del destino no encontrado")
+    query = db.query(models.DestinoMedia)
+    if item_to_move.uso_portal == "home_hero":
+        query = query.filter(models.DestinoMedia.uso_portal == "home_hero")
+    items = query.order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.id.asc()).all()
     index = next((position for position, item in enumerate(items) if item.id == media_id), None)
     if index is None:
         raise HTTPException(status_code=404, detail="Contenido del destino no encontrado")
