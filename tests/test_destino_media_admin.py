@@ -83,7 +83,7 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
     assert "Editar</button><button" not in html
     assert "↑ Subir" in html and "↓ Bajar" in html
     assert "Ocultar" in html
-    assert "Uso en la Home" in html
+    assert "Ubicación opcional" in html
     assert "Sin ubicación fija" in html
 
 
@@ -212,7 +212,8 @@ def test_admin_edit_assignment_updates_home_and_releases_previous_slot(destino_a
     assert "Una experiencia tranquila junto al agua" in html
     assert "/media/replacement.jpg" in html
     admin_html = client.get("/admin?area=portal&tab=cabalango").text
-    assert "USO HOME: Plan río" in admin_html
+    assert "Plan río" in admin_html
+    assert "USO HOME:" not in admin_html
 
 
 def test_create_video_forces_general_without_displacing_home_photo(destino_admin, monkeypatch):
@@ -452,6 +453,103 @@ def test_admin_explains_all_home_placements(destino_admin):
         "Biblioteca de fotos y videos",
     ):
         assert copy in html
+    assert 'class="destination-home-dashboard"' in html
+    assert 'class="destination-home-hero-thumb"' in html or "Usando foto predeterminada" in html
+    assert 'class="destination-home-media-preview"' in html
+
+
+def test_admin_home_slots_have_direct_contextual_dialogs(destino_admin):
+    client, _, _ = destino_admin
+    html = client.get("/admin?area=portal&tab=cabalango").text
+
+    assert 'id="add-destino-hero"' in html
+    hero_dialog = html.split('id="add-destino-hero"', 1)[1].split("</dialog>", 1)[0]
+    assert 'action="/admin/cabalango/media"' in hero_dialog
+    assert 'name="uso_portal" value="home_hero"' in hero_dialog
+    assert 'name="tipo" value="foto"' in hero_dialog
+    assert 'name="visible" value="1"' in hero_dialog
+    assert 'href="#destino-media-form"' not in html
+
+    expected_dialogs = {
+        "home_about": "Cambiar foto de Sobre Cabalango",
+        "journey_rio": "Editar Un día junto al río",
+        "journey_escapada": "Editar Quedarse un poco más",
+        "journey_familia": "Editar Tiempo para compartir",
+    }
+    for slot, title in expected_dialogs.items():
+        assert f'id="home-slot-{slot}"' in html
+        dialog = html.split(f'id="home-slot-{slot}"', 1)[1].split("</dialog>", 1)[0]
+        assert title in dialog
+        assert 'action="/admin/cabalango/media"' in dialog
+        assert f'name="uso_portal" value="{slot}"' in dialog
+        assert '<select' not in dialog
+
+
+def hero_add_button(html):
+    return html.split('class="btn-primary-custom destination-home-add"', 1)[1].split(">", 1)[0]
+
+
+def test_admin_hero_dashboard_ignores_hidden_photo_for_preview_and_limit(destino_admin):
+    client, db, _ = destino_admin
+    for index in range(3):
+        add_media(db, uso_portal="home_hero", titulo=f"Hero visible {index}", image_path=f"/media/hero-visible-{index}.jpg")
+    add_media(db, uso_portal="home_hero", titulo="Hero oculta", image_path="/media/hero-hidden.jpg", visible=False)
+
+    html = client.get("/admin?area=portal&tab=cabalango").text
+
+    assert html.count('class="destination-home-hero-thumb"') == 3
+    assert "disabled" not in hero_add_button(html)
+    assert "/media/hero-hidden.jpg" in html  # Sigue disponible en la Biblioteca.
+    assert "Hero oculta" in html and "Oculto" in html and ">Hero<" in html
+
+
+def test_admin_hero_dashboard_disables_add_at_four_visible_photos(destino_admin):
+    client, db, _ = destino_admin
+    for index in range(4):
+        add_media(db, uso_portal="home_hero", titulo=f"Hero {index}", image_path=f"/media/hero-{index}.jpg")
+
+    html = client.get("/admin?area=portal&tab=cabalango").text
+
+    assert html.count('class="destination-home-hero-thumb"') == 4
+    assert "disabled" in hero_add_button(html)
+    assert 'title="Máximo 4 fotos"' in hero_add_button(html)
+
+
+def test_admin_about_hidden_assignment_uses_fallback_but_stays_in_library(destino_admin):
+    client, db, _ = destino_admin
+    add_media(db, uso_portal="home_about", titulo="About oculta", image_path="/media/about-hidden.jpg", visible=False)
+
+    html = client.get("/admin?area=portal&tab=cabalango").text
+    about_card = html.split('destination-home-panel--about', 1)[1].split("</article>", 1)[0]
+
+    assert "Usando foto predeterminada" in about_card
+    assert "/media/about-hidden.jpg" not in about_card
+    assert "/media/about-hidden.jpg" in html
+    assert "About oculta" in html and "Sobre Cabalango" in html and "Oculto" in html
+
+
+def test_admin_journey_hidden_assignment_uses_default_content(destino_admin):
+    client, db, _ = destino_admin
+    add_media(db, uso_portal="journey_rio", titulo="Río oculto", image_path="/media/rio-hidden.jpg", visible=False)
+
+    html = client.get("/admin?area=portal&tab=cabalango").text
+    journey_card = html.split("PLAN RÍO", 1)[1].split("</article>", 1)[0]
+
+    assert "Usando contenido predeterminado" in journey_card
+    assert "/media/rio-hidden.jpg" not in journey_card
+    assert "/media/rio-hidden.jpg" in html
+
+
+def test_admin_journey_visible_assignment_shows_active_preview(destino_admin):
+    client, db, _ = destino_admin
+    add_media(db, uso_portal="journey_rio", titulo="Río publicado", descripcion="Plan activo", image_path="/media/rio-visible.jpg")
+
+    html = client.get("/admin?area=portal&tab=cabalango").text
+    journey_card = html.split("PLAN RÍO", 1)[1].split("</article>", 1)[0]
+
+    assert "/media/rio-visible.jpg" in journey_card
+    assert "Río publicado" in journey_card and "Plan activo" in journey_card
+    assert "Contenido asignado" in journey_card
 
 
 def test_hero_rotator_supports_reduced_motion():
