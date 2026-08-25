@@ -58,6 +58,10 @@
     next.setAttribute("aria-hidden", "false");
     void next.offsetWidth;
     next.classList.add("is-incoming");
+    // Keep the label tied to the image being revealed, rather than waiting for
+    // the outgoing image to be removed at the end of the crossfade.
+    if (captionCategory) captionCategory.textContent = next.dataset.captionCategory;
+    if (captionTitle) captionTitle.textContent = next.dataset.captionTitle;
 
     let finalized = false;
     let fallback;
@@ -72,8 +76,6 @@
       next.classList.add("is-active");
       activeSlide = next;
       transitioning = false;
-      if (captionCategory) captionCategory.textContent = next.dataset.captionCategory;
-      if (captionTitle) captionTitle.textContent = next.dataset.captionTitle;
     };
     const onTransitionEnd = (event) => {
       if (event.target === next && event.propertyName === "opacity") finalizeCrossfade();
