@@ -3600,7 +3600,7 @@ button:disabled {
 .destination-hero-copy .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
 .destination-hero-image { background: #EFE5D6; border: 1px solid #D8CCBC; border-radius: 30px; margin: 0; min-height: 420px; overflow: hidden; position: relative; }
 .destination-hero-image img { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
-.destination-hero-image.has-rotator .destination-hero-slide { opacity: 0; transition: opacity 1.5s ease; z-index: 0; }
+.destination-hero-image.has-rotator .destination-hero-slide { height: 100%; inset: 0; object-fit: cover; opacity: 0; position: absolute; transition: opacity 1.5s ease; width: 100%; z-index: 0; }
 .destination-hero-image.has-rotator .destination-hero-slide.is-active { opacity: 1; visibility: visible; z-index: 1; }
 .destination-hero-image.has-rotator .destination-hero-slide.is-incoming { opacity: 1; z-index: 2; }
 @media (prefers-reduced-motion: reduce) {
@@ -3667,8 +3667,8 @@ button:disabled {
 /* Premium destination refinements */
 .destination-editorial-hero { grid-template-columns: minmax(0,1.2fr) minmax(300px,.88fr); }
 .destination-hero-image { aspect-ratio: 4 / 3; min-height: 0; }
-.destination-hero-image::after { background: linear-gradient(180deg,rgba(63,47,37,0) 45%,rgba(63,47,37,.34)); content: ""; inset: 0; position: absolute; }
-.destination-hero-image figcaption { background: rgba(63,47,37,.48); color: #FFF9F1; display: grid; gap: 2px; z-index: 1; }
+.destination-hero-image::after { background: linear-gradient(180deg,rgba(63,47,37,0) 45%,rgba(63,47,37,.34)); content: ""; inset: 0; position: absolute; z-index: 3; }
+.destination-hero-image figcaption { background: rgba(63,47,37,.48); color: #FFF9F1; display: grid; gap: 2px; z-index: 4; }
 .destination-hero-image figcaption span { color: #EFE5D6; font-size: .68rem; font-weight: 950; letter-spacing: .14em; text-transform: uppercase; }
 .destination-hero-image figcaption strong { font-weight: 850; }
 .destination-hero-placeholder { background: radial-gradient(circle at 24% 18%, rgba(255,249,241,.9), transparent 34%), linear-gradient(135deg,#EFE5D6,#EEF3E7); min-height: 100%; }
@@ -3712,7 +3712,7 @@ button:disabled {
   min-height: 0;
 }
 
-.destination-hero-image img {
+.destination-hero-image:not(.has-rotator) img {
   display: block;
   height: 100%;
   object-fit: cover;

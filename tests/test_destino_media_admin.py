@@ -609,3 +609,29 @@ def test_hero_rotator_visibility_management_keeps_one_timer():
     assert "stop();" in start
     assert "document.hidden" in javascript
     assert 'document.addEventListener("visibilitychange"' in javascript
+
+
+def test_hero_rotator_css_keeps_slides_absolutely_layered():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    selector = ".destination-hero-image.has-rotator .destination-hero-slide"
+    rule = css.split(f"{selector} {{", 1)[1].split("}", 1)[0]
+
+    for declaration in (
+        "height: 100%",
+        "inset: 0",
+        "object-fit: cover",
+        "opacity: 0",
+        "position: absolute",
+        "width: 100%",
+        "z-index: 0",
+    ):
+        assert declaration in rule
+    assert ".destination-hero-image:not(.has-rotator) img {" in css
+    assert ".destination-hero-image img {\n  display: block;" not in css
+
+
+def test_destination_page_busts_only_hero_stylesheet_cache():
+    template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
+
+    assert "portal.css') }}?v=20260824-hero-layering-fix-1" in template
+    assert "portal-hero-rotator.js') }}?v=20260824-hero-crossfade-2" in template
