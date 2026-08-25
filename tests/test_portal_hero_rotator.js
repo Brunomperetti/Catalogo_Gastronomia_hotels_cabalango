@@ -102,7 +102,7 @@ test("two valid slides crossfade category and title together without changing ei
   await nextTurn();
 
   assert.equal(runtime.intervals.length, 1);
-  assert.equal(runtime.intervals[0].delay, 5000);
+  assert.equal(runtime.intervals[0].delay, 3000);
   runtime.intervals[0].callback();
   assert.equal(initial.classList.contains("is-active"), true);
   assert.equal(secondary.classList.contains("is-incoming"), true);

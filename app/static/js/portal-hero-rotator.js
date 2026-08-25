@@ -89,7 +89,7 @@
   const start = () => {
     stop();
     if (!document.hidden && getRotationSlides().length >= 2) {
-      timer = window.setInterval(showNext, 5000);
+      timer = window.setInterval(showNext, 3000);
     }
   };
 
