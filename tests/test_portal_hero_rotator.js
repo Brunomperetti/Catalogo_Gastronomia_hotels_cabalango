@@ -95,7 +95,7 @@ test("a failed or timed-out secondary slide never hides the initial slide", asyn
   }
 });
 
-test("two valid slides crossfade category and title together without changing either early", async () => {
+test("the incoming slide updates category and title when its crossfade starts", async () => {
   const initial = new FakeSlide("A", { active: true, complete: true, naturalWidth: 100 });
   const secondary = new FakeSlide("Feria de Artesanos", { captionCategory: "Eventos y ferias", complete: true, naturalWidth: 100 });
   const runtime = createRuntime([initial, secondary]);
@@ -106,8 +106,8 @@ test("two valid slides crossfade category and title together without changing ei
   runtime.intervals[0].callback();
   assert.equal(initial.classList.contains("is-active"), true);
   assert.equal(secondary.classList.contains("is-incoming"), true);
-  assert.equal(runtime.captionCategory.textContent, "Río y naturaleza");
-  assert.equal(runtime.captionTitle.textContent, "A");
+  assert.equal(runtime.captionCategory.textContent, "Eventos y ferias");
+  assert.equal(runtime.captionTitle.textContent, "Feria de Artesanos");
   secondary.listeners.get("transitionend")({ target: secondary, propertyName: "opacity" });
   assert.equal(secondary.classList.contains("is-active"), true);
   assert.equal(runtime.captionCategory.textContent, "Eventos y ferias");
@@ -116,7 +116,8 @@ test("two valid slides crossfade category and title together without changing ei
   runtime.intervals[0].callback();
   assert.equal(secondary.classList.contains("is-active"), true);
   assert.equal(initial.classList.contains("is-incoming"), true);
-  assert.equal(runtime.captionTitle.textContent, "Feria de Artesanos");
+  assert.equal(runtime.captionCategory.textContent, "Río y naturaleza");
+  assert.equal(runtime.captionTitle.textContent, "A");
   initial.listeners.get("transitionend")({ target: initial, propertyName: "opacity" });
   assert.equal(initial.classList.contains("is-active"), true);
   assert.equal(runtime.captionCategory.textContent, "Río y naturaleza");

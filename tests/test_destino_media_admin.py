@@ -589,7 +589,7 @@ def test_hero_rotator_runtime_fail_safe_scenarios():
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_hero_rotator_crossfades_before_changing_current_slide_and_caption():
+def test_hero_rotator_updates_caption_when_incoming_crossfade_starts():
     javascript = open("app/static/js/portal-hero-rotator.js", encoding="utf-8").read()
 
     incoming = javascript.index('next.classList.add("is-incoming")')
@@ -597,9 +597,8 @@ def test_hero_rotator_crossfades_before_changing_current_slide_and_caption():
     remove_current = javascript.index('current.classList.remove("is-active")')
     update_category = javascript.index("captionCategory.textContent = next.dataset.captionCategory")
     update_title = javascript.index("captionTitle.textContent = next.dataset.captionTitle")
-    assert incoming < transition_finished < remove_current
-    assert incoming < transition_finished < update_category
-    assert incoming < transition_finished < update_title
+    assert incoming < update_category < transition_finished < remove_current
+    assert incoming < update_title < transition_finished < remove_current
     assert "window.setTimeout(finalizeCrossfade, 1900)" in javascript
     assert "if (finalized) return" in javascript
 
@@ -657,4 +656,4 @@ def test_destination_page_busts_only_hero_stylesheet_cache():
     template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
 
     assert "portal.css') }}?v=20260824-hero-layering-fix-1" in template
-    assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-2" in template
+    assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" in template
