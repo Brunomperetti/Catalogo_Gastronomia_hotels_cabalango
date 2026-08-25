@@ -617,10 +617,11 @@ def test_home_hero_renders_each_media_category_label(destino_admin):
     assert 'data-caption-category="Eventos y ferias" data-caption-title="Feria de Artesanos"' in hero
 
 
-def test_hero_rotation_interval_is_five_seconds():
+def test_hero_rotation_interval_is_three_seconds():
     javascript = open("app/static/js/portal-hero-rotator.js", encoding="utf-8").read()
 
-    assert "window.setInterval(showNext, 5000)" in javascript
+    assert "window.setInterval(showNext, 3000)" in javascript
+    assert "window.setInterval(showNext, 5000)" not in javascript
     assert "window.setInterval(showNext, 8000)" not in javascript
 
 
@@ -656,4 +657,4 @@ def test_destination_page_busts_only_hero_stylesheet_cache():
     template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
 
     assert "portal.css') }}?v=20260824-hero-layering-fix-1" in template
-    assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-1" in template
+    assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-2" in template
