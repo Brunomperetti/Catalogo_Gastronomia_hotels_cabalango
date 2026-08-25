@@ -901,64 +901,6 @@ def get_destino_media_dir() -> Path:
 def build_destino_media_url(filename: str) -> str:
     return f"{MEDIA_URL_PREFIX}/destino/fotos/{filename}"
 
-
-def resolve_local_media_path(image_path: str | None) -> Path | None:
-    """Map an app-managed media URL to its file, rejecting path traversal.
-
-    External URLs and non-media application paths deliberately return ``None``:
-    they cannot, and should not, be validated against this process' filesystem.
-    """
-    parsed = urlparse(clean_text(image_path, default=""))
-    prefix = f"{MEDIA_URL_PREFIX}/"
-    if parsed.scheme or parsed.netloc or not parsed.path.startswith(prefix):
-        return None
-    relative = parsed.path.removeprefix(prefix)
-    if not relative:
-        return None
-    root = STORAGE_DIR.resolve()
-    candidate = (root / relative).resolve()
-    try:
-        candidate.relative_to(root)
-    except ValueError:
-        return None
-    return candidate
-
-
-def is_publishable_destination_photo(photo: models.DestinoMedia) -> bool:
-    """Require local /media references to have a regular file before publishing."""
-    image_path = clean_text(getattr(photo, "image_path", ""), default="")
-    if not bool(getattr(photo, "visible", False)) or not image_path:
-        return False
-    local_path = resolve_local_media_path(image_path)
-    if local_path is None:
-        return not image_path.startswith(f"{MEDIA_URL_PREFIX}/")
-    return local_path.exists() and local_path.is_file()
-
-
-def local_media_file_exists(image_path: str | None) -> bool:
-    local_path = resolve_local_media_path(image_path)
-    return bool(local_path and local_path.exists() and local_path.is_file())
-
-
-def audit_destination_media(db: Session, uso_portal: str | None = None) -> list[dict[str, Any]]:
-    """Return a safe, local diagnostic of destination records and their files."""
-    query = db.query(models.DestinoMedia)
-    if uso_portal:
-        query = query.filter(models.DestinoMedia.uso_portal == uso_portal)
-    rows = []
-    for item in query.order_by(models.DestinoMedia.id.asc()).all():
-        local_path = resolve_local_media_path(item.image_path)
-        rows.append({
-            "id": item.id,
-            "tipo": item.tipo,
-            "uso_portal": item.uso_portal,
-            "visible": bool(item.visible),
-            "image_path": item.image_path,
-            "filesystem_path": str(local_path) if local_path else None,
-            "exists": bool(local_path and local_path.exists() and local_path.is_file()),
-        })
-    return rows
-
 async def save_destino_image(upload: UploadFile) -> str:
     target_dir = get_destino_media_dir()
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -1003,10 +945,7 @@ def get_public_destino_media(db: Session, tipo: str | None = None) -> list[model
     query = db.query(models.DestinoMedia).filter(models.DestinoMedia.visible == True)
     if tipo:
         query = query.filter(models.DestinoMedia.tipo == tipo)
-    items = query.order_by(models.DestinoMedia.destacado.desc(), models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc(), models.DestinoMedia.id.desc()).all()
-    if tipo == "foto":
-        return [item for item in items if is_publishable_destination_photo(item)]
-    return items
+    return query.order_by(models.DestinoMedia.destacado.desc(), models.DestinoMedia.orden.asc(), models.DestinoMedia.created_at.desc(), models.DestinoMedia.id.desc()).all()
 
 
 DESTINO_DEFAULT_CONTENT = {
@@ -3635,11 +3574,6 @@ def admin_panel(
 
 
     destino_media = db.query(models.DestinoMedia).order_by(models.DestinoMedia.orden.asc(), models.DestinoMedia.id.asc()).all()
-    destino_missing_files = {
-        item.id for item in destino_media
-        if item.tipo == "foto" and resolve_local_media_path(item.image_path) is not None
-        and not local_media_file_exists(item.image_path)
-    }
     destino_home_media = {
         use: [item for item in destino_media if item.tipo == "foto" and item.uso_portal == use]
         for use in DESTINO_MEDIA_HOME_USES if use != "general"
@@ -3682,7 +3616,6 @@ def admin_panel(
             "leads_kpis": leads_kpis if empresa_activa else [],
             "destino_content": get_destino_content(db),
             "destino_media": destino_media,
-            "destino_missing_files": destino_missing_files,
             "destino_home_media": destino_home_media,
             "destino_categories": DESTINO_MEDIA_CATEGORIES,
             "destino_home_uses": DESTINO_MEDIA_HOME_USES,

@@ -291,7 +291,7 @@
                             <div class="destination-admin-meta"><span>{{ item.tipo|upper }}</span><span>{{ destino_categories.get(item.categoria, item.categoria) }}</span></div>
                             <h3>{{ item.titulo or destino_categories.get(item.categoria, item.categoria) }}</h3>
                             <p>{{ item.descripcion or 'Sin descripción cargada.' }}</p>
-                            <div class="destination-admin-badges"><span>{{ destino_home_badges.get(item.uso_portal or 'general', 'Sin ubicación fija')|replace('USO HOME: ', '') }}</span><span>Orden {{ item.orden }}</span><span class="{% if item.visible %}is-visible{% else %}is-hidden{% endif %}">{% if item.visible %}Visible{% else %}Oculto{% endif %}</span>{% if item.id in destino_missing_files %}<span class="is-hidden">Archivo no disponible</span>{% endif %}{% if item.destacado %}<span>Destacada</span>{% endif %}</div>
+                            <div class="destination-admin-badges"><span>{{ destino_home_badges.get(item.uso_portal or 'general', 'Sin ubicación fija')|replace('USO HOME: ', '') }}</span><span>Orden {{ item.orden }}</span><span class="{% if item.visible %}is-visible{% else %}is-hidden{% endif %}">{% if item.visible %}Visible{% else %}Oculto{% endif %}</span>{% if item.destacado %}<span>Destacada</span>{% endif %}</div>
                             {% if item.video_url %}<a href="{{ item.video_url }}" target="_blank" rel="noopener">Abrir video</a>{% endif %}
                             <div class="destination-admin-actions">
                                 <button class="btn-outline-custom" type="button" onclick="document.getElementById('edit-destino-media-{{ item.id }}').showModal()">Editar</button>

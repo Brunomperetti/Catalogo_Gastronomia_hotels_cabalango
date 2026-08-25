@@ -1,9 +1,7 @@
 from io import BytesIO
-import asyncio
 import subprocess
 
 import pytest
-from fastapi import UploadFile
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -44,56 +42,14 @@ def destino_admin(monkeypatch, tmp_path):
         engine.dispose()
 
 
-def add_media(db, write_file=True, **values):
+def add_media(db, **values):
     defaults = dict(tipo="foto", categoria="rio_naturaleza", uso_portal="general", titulo="Postal", descripcion="Original", image_path="/media/destino/fotos/original.jpg", orden=1, visible=True, destacado=False)
     defaults.update(values)
-    local_path = main.resolve_local_media_path(defaults.get("image_path"))
-    if write_file and local_path:
-        local_path.parent.mkdir(parents=True, exist_ok=True)
-        local_path.write_bytes(b"destination-image")
     item = DestinoMedia(**defaults)
     db.add(item)
     db.commit()
     db.refresh(item)
     return item
-
-
-def test_destination_save_url_and_inverse_filesystem_resolution(destino_admin):
-    _, _, tmp_path = destino_admin
-    upload = UploadFile(filename="rio.jpg", file=BytesIO(b"jpeg-test-bytes"))
-
-    image_path = asyncio.run(main.save_destino_image(upload))
-    physical_path = main.resolve_local_media_path(image_path)
-
-    assert image_path.startswith("/media/destino/fotos/cabalango-")
-    assert physical_path is not None
-    assert physical_path.is_relative_to(tmp_path / "storage")
-    assert physical_path.read_bytes() == b"jpeg-test-bytes"
-
-
-def test_missing_local_media_is_excluded_and_existing_general_photo_falls_back(destino_admin, monkeypatch):
-    client, db, _ = destino_admin
-    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
-    missing = add_media(db, write_file=False, uso_portal="home_hero", image_path="/media/destino/fotos/missing.jpg", titulo="Hero huérfano")
-    fallback = add_media(db, image_path="/media/destino/fotos/fallback.jpg", titulo="Fallback real", destacado=True)
-
-    response = client.get("/")
-    hero = home_section(response.text, "destination-editorial-hero")
-
-    assert response.status_code == 200
-    assert missing.image_path not in hero
-    assert fallback.image_path in hero
-    assert "Fallback real" in hero
-    admin_html = client.get("/admin?area=portal&tab=cabalango").text
-    assert "Hero huérfano" in admin_html
-    assert "Archivo no disponible" in admin_html
-
-
-def test_external_destination_photo_is_not_filtered_by_filesystem(destino_admin, monkeypatch):
-    client, db, _ = destino_admin
-    monkeypatch.setattr(main, "get_cabalango_weather", lambda: {"available": False})
-    add_media(db, uso_portal="home_hero", image_path="https://cdn.example.test/hero.jpg")
-    assert 'src="https://cdn.example.test/hero.jpg"' in client.get("/").text
 
 
 def edit(client, item_id, **changes):
@@ -351,7 +307,7 @@ def test_edit_replaces_image_without_deleting_previous_file(destino_admin):
     client, db, tmp_path = destino_admin
     item = add_media(db)
     previous = tmp_path / "storage" / "destino" / "fotos" / "original.jpg"
-    previous.parent.mkdir(parents=True, exist_ok=True)
+    previous.parent.mkdir(parents=True)
     previous.write_bytes(b"old")
     response = client.post(
         f"/admin/cabalango/media/{item.id}/editar",
@@ -653,3 +609,29 @@ def test_hero_rotator_visibility_management_keeps_one_timer():
     assert "stop();" in start
     assert "document.hidden" in javascript
     assert 'document.addEventListener("visibilitychange"' in javascript
+
+
+def test_hero_rotator_css_keeps_slides_absolutely_layered():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    selector = ".destination-hero-image.has-rotator .destination-hero-slide"
+    rule = css.split(f"{selector} {{", 1)[1].split("}", 1)[0]
+
+    for declaration in (
+        "height: 100%",
+        "inset: 0",
+        "object-fit: cover",
+        "opacity: 0",
+        "position: absolute",
+        "width: 100%",
+        "z-index: 0",
+    ):
+        assert declaration in rule
+    assert ".destination-hero-image:not(.has-rotator) img {" in css
+    assert ".destination-hero-image img {\n  display: block;" not in css
+
+
+def test_destination_page_busts_only_hero_stylesheet_cache():
+    template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
+
+    assert "portal.css') }}?v=20260824-hero-layering-fix-1" in template
+    assert "portal-hero-rotator.js') }}?v=20260824-hero-crossfade-2" in template
