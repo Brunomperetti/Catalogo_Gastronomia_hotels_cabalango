@@ -6224,21 +6224,23 @@ body,
   margin: 0 0 clamp(58px, 6vw, 82px);
   padding: clamp(32px, 3.5vw, 40px);
 }
-.destination-guide .destination-planning-heading { align-items: end; display: grid; gap: 24px 48px; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); margin-bottom: 24px; }
+.destination-guide .destination-planning-heading { align-items: center; display: grid; gap: 24px 40px; grid-template-columns: minmax(0, 3fr) minmax(280px, 2fr); margin-bottom: 24px; }
 .destination-guide .destination-planning-heading h2 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(2.4rem, 4.2vw, 4rem); letter-spacing: -.04em; line-height: 1; margin: 8px 0 10px; }
 .destination-guide .destination-planning-heading p { margin-block: 0; }
 .destination-guide .destination-planning .destination-travel-tip { margin: 0; }
-.destination-guide .destination-planning .destination-weather-card { background: var(--portal-surface); border: 1px solid var(--portal-border); gap: 0 24px; margin: 0; padding: clamp(24px, 2.5vw, 32px); }
-.destination-guide .destination-planning .weather-intro { margin-bottom: 24px; }
-.destination-guide .destination-planning .weather-live-panel { align-items: stretch; padding: 24px; }
+.destination-guide .destination-planning .destination-weather-card { background: var(--portal-surface); border: 1px solid var(--portal-border); gap: 0; margin: 0; padding: clamp(24px, 2.5vw, 32px); }
+.destination-guide .destination-planning .weather-intro { margin: 0 0 16px; max-width: none; }
+.destination-guide .destination-planning .weather-intro .portal-kicker { font-family: var(--portal-font-sans); font-size: .68rem; letter-spacing: .16em; margin: 0; }
+.destination-guide .destination-planning .weather-live-panel { align-items: stretch; background: color-mix(in srgb, var(--portal-bg) 64%, transparent); border: 1px solid var(--portal-border); border-radius: 16px; grid-template-columns: minmax(0, 3fr) minmax(250px, 2fr); padding: 24px; }
 .destination-guide .destination-planning .weather-current,
 .destination-guide .destination-planning .weather-summary { align-content: center; }
 .destination-guide .destination-planning .weather-advice { margin-top: 16px; padding-block: 10px; }
 .destination-guide .destination-planning .weather-summary div { padding-block: 11px; }
-.destination-guide .destination-planning .weather-forecast { margin-top: 24px; padding-top: 0; }
-.destination-guide .destination-planning .weather-section-heading { padding-bottom: 16px; }
+.destination-guide .destination-planning .weather-forecast { border-top: 0; margin-top: 24px; padding-top: 0; }
+.destination-guide .destination-planning .weather-section-heading { border-bottom: 0; margin-bottom: 16px; padding-bottom: 0; }
+.destination-guide .destination-planning .weather-section-heading strong { font-family: var(--portal-font-sans); font-size: .88rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .destination-guide .destination-planning .weather-days { align-items: stretch; margin-top: 16px; }
-.destination-guide .destination-planning .weather-day { height: 100%; min-height: 124px; padding: 14px 16px; }
+.destination-guide .destination-planning .weather-day { height: 100%; min-height: 0; padding: 16px; }
 .destination-guide .destination-planning .season-grid { margin-top: 24px; padding: 20px 24px; }
 .destination-guide .destination-planning .season-grid p { margin-bottom: 16px; }
 
@@ -6269,11 +6271,11 @@ body,
   .destination-guide .destination-planning-heading { gap: 16px; margin-bottom: 20px; }
   .destination-guide .destination-planning-heading h2 { font-size: clamp(2.35rem, 11vw, 3.1rem); }
   .destination-guide .destination-planning .destination-weather-card { padding: 20px 16px; }
-  .destination-guide .destination-planning .weather-intro { margin-bottom: 20px; }
+  .destination-guide .destination-planning .weather-intro { margin-bottom: 16px; }
   .destination-guide .destination-planning .weather-live-panel { padding: 18px 16px; }
-  .destination-guide .destination-planning .weather-forecast { margin-top: 20px; }
+  .destination-guide .destination-planning .weather-forecast { margin-top: 24px; }
   .destination-guide .destination-planning .weather-day { height: auto; min-height: 0; padding: 14px 16px; }
-  .destination-guide .destination-planning .season-grid { margin-top: 20px; padding: 18px 16px; }
+  .destination-guide .destination-planning .season-grid { margin-top: 24px; padding: 18px 16px; }
   .destination-guide .destination-cta > div { padding: 42px 20px 48px; }
 }
 

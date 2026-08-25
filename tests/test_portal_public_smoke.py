@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260825-weather-spacing-1" in response.text
+    assert "?v=20260825-weather-editorial-compact-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -346,6 +346,15 @@ def test_home_planning_preserves_editable_tip_and_cta_has_no_image(monkeypatch):
     import app.main as main_module
 
     content = main_module.get_destino_content(next(main_module.get_db()))
+    forecast = [
+        {"label": label, "min": 10, "max": 22, "condition": "Despejado", "rain_probability": 0}
+        for label in ["Hoy", "Mañana", "Jueves", "Viernes", "Sábado", "Domingo"]
+    ]
+    monkeypatch.setattr(main_module, "get_cabalango_weather", lambda: {
+        "available": True, "temperature": 20, "condition": "Despejado", "min": 10,
+        "max": 22, "advice": "Llevá abrigo liviano.", "apparent_temperature": 20,
+        "rain_probability": 0, "wind": 8, "forecast": forecast,
+    })
     monkeypatch.setattr(content, "recomendaciones", "TIP TEST")
     monkeypatch.setattr(main_module, "get_destino_content", lambda db: content)
     html = TestClient(app).get("/").text
@@ -353,6 +362,12 @@ def test_home_planning_preserves_editable_tip_and_cta_has_no_image(monkeypatch):
     cta = html[html.index('class="destination-cta"'):html.index("</main>")]
     assert "TIP TEST" in planning
     assert "Planificá tu visita" in planning
+    assert "El clima, antes de salir" in planning
+    assert "Ahora y los próximos días" not in planning
+    assert "Datos útiles" in planning
+    assert "Próximos días" in planning
+    assert "Mejor época para visitar" in planning
+    assert planning.count('class="weather-day"') == 6
     assert "<img" not in cta
     for label in ["Alojamientos", "Gastronomía", "Qué hacer"]:
         assert label in cta

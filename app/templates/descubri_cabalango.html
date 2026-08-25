@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260825-weather-spacing-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260825-weather-editorial-compact-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
     {% if hero_photos|length > 1 %}<script src="{{ url_for('static', path='js/portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" defer></script>{% endif %}
 </head>
@@ -143,7 +143,7 @@
             {% if content.recomendaciones %}<aside class="destination-travel-tip"><svg aria-hidden="true"><use href="#icon-compass"/></svg><div><strong>Tip para tu visita</strong><p>{{ content.recomendaciones }}</p></div></aside>{% endif %}
         </header>
         <section class="destination-weather-card" aria-labelledby="weather-title">
-            <header class="weather-intro"><p class="portal-kicker">Clima en Cabalango</p><h3 id="weather-title">Ahora y los próximos días</h3><p class="weather-intro-copy">El pulso de las sierras, reunido en una guía simple para disfrutar cada momento.</p></header>
+            <header class="weather-intro"><h3 class="portal-kicker" id="weather-title">Clima en Cabalango</h3></header>
             {% if weather.available %}
             <div class="weather-live-panel">
               <div class="weather-current">
