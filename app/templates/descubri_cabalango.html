@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260824-hero-layering-fix-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260825-weather-editorial-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
     {% if hero_photos|length > 1 %}<script src="{{ url_for('static', path='js/portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" defer></script>{% endif %}
 </head>
@@ -143,20 +143,22 @@
             {% if content.recomendaciones %}<aside class="destination-travel-tip"><svg aria-hidden="true"><use href="#icon-compass"/></svg><div><strong>Tip para tu visita</strong><p>{{ content.recomendaciones }}</p></div></aside>{% endif %}
         </header>
         <section class="destination-weather-card" aria-labelledby="weather-title">
-            <header class="weather-intro"><p class="portal-kicker">Clima en Cabalango</p><h3 id="weather-title">Ahora y los próximos días</h3></header>
+            <header class="weather-intro"><p class="portal-kicker">Clima en Cabalango</p><h3 id="weather-title">Ahora y los próximos días</h3><p class="weather-intro-copy">El pulso de las sierras, reunido en una guía simple para disfrutar cada momento.</p></header>
             {% if weather.available %}
-            <div class="weather-current">
+            <div class="weather-live-panel">
+              <div class="weather-current">
                 <p class="weather-layer-label">Ahora</p>
                 {% set current_condition = weather.condition|default('', true)|lower %}
                 {% set current_icon = 'icon-rain' if 'lluv' in current_condition or 'torment' in current_condition else ('icon-sun' if 'despej' in current_condition or 'soleado' in current_condition else ('icon-cloud-sun' if 'parcial' in current_condition else 'icon-cloud')) %}
                 <div class="weather-current-main"><span class="weather-current-icon"><svg aria-hidden="true" focusable="false"><use href="#{{ current_icon }}"/></svg></span><div class="weather-current-reading"><p class="weather-temp">{{ weather.temperature|round|int }}°</p><strong class="weather-condition">{{ weather.condition }}</strong><p class="weather-today-range">Hoy · Mín {{ weather.min|round|int if weather.min is not none else '—' }}° · Máx {{ weather.max|round|int if weather.max is not none else '—' }}°</p></div></div>
                 <aside class="weather-advice"><svg aria-hidden="true" focusable="false"><use href="#icon-leaf"/></svg><div><span>Consejo para hoy</span><strong>{{ weather.advice }}</strong></div></aside>
-            </div>
-            <div class="weather-summary" aria-label="Pronóstico resumido">
+              </div>
+              <div class="weather-summary" aria-label="Pronóstico resumido">
                 <p class="weather-layer-label">Datos útiles</p>
                 <div><svg aria-hidden="true" focusable="false"><use href="#icon-thermometer"/></svg><span>Sensación</span><strong>{{ weather.apparent_temperature|round|int if weather.apparent_temperature is not none else '—' }}°</strong></div>
                 <div><svg aria-hidden="true" focusable="false"><use href="#icon-drop"/></svg><span>Lluvia</span><strong>{{ weather.rain_probability or 0 }}%</strong></div>
                 <div><svg aria-hidden="true" focusable="false"><use href="#icon-wind"/></svg><span>Viento</span><strong>{{ weather.wind|round|int if weather.wind is not none else '—' }} km/h</strong></div>
+              </div>
             </div>
             <div class="weather-forecast" aria-label="Pronóstico extendido">
                 <div class="weather-section-heading"><svg aria-hidden="true" focusable="false"><use href="#icon-calendar"/></svg><strong>Próximos días</strong><span>Pronóstico extendido</span></div>
