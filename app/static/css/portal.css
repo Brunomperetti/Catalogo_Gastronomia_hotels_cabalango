@@ -6228,18 +6228,19 @@ body,
 .destination-guide .destination-planning-heading h2 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: clamp(2.4rem, 4.2vw, 4rem); letter-spacing: -.04em; line-height: 1; margin: 8px 0 10px; }
 .destination-guide .destination-planning-heading p { margin-block: 0; }
 .destination-guide .destination-planning .destination-travel-tip { margin: 0; }
-.destination-guide .destination-planning .destination-weather-card { background: var(--portal-surface); border: 1px solid var(--portal-border); gap: 0; margin: 0; padding: clamp(24px, 2.5vw, 32px); }
+.destination-guide .destination-planning .destination-weather-card { background: var(--portal-surface); border: 1px solid var(--portal-border); display: flex; flex-direction: column; gap: 0; margin: 0; padding: clamp(24px, 2.5vw, 32px); }
 .destination-guide .destination-planning .weather-intro { margin: 0 0 16px; max-width: none; }
 .destination-guide .destination-planning .weather-intro .portal-kicker { font-family: var(--portal-font-sans); font-size: .68rem; letter-spacing: .16em; margin: 0; }
 .destination-guide .destination-planning .weather-live-panel { align-items: stretch; background: color-mix(in srgb, var(--portal-bg) 64%, transparent); border: 1px solid var(--portal-border); border-radius: 16px; grid-template-columns: minmax(0, 3fr) minmax(250px, 2fr); padding: 24px; }
 .destination-guide .destination-planning .weather-current,
-.destination-guide .destination-planning .weather-summary { align-content: center; }
+.destination-guide .destination-planning .weather-summary { align-content: center; min-width: 0; }
+.destination-guide .destination-planning .weather-current { grid-template-columns: minmax(0, 1fr); }
 .destination-guide .destination-planning .weather-advice { margin-top: 16px; padding-block: 10px; }
 .destination-guide .destination-planning .weather-summary div { padding-block: 11px; }
-.destination-guide .destination-planning .weather-forecast { border-top: 0; margin-top: 24px; padding-top: 0; }
+.destination-guide .destination-planning .weather-forecast { border-top: 0; gap: 0; grid-auto-rows: auto; margin-top: 24px; min-height: 0; padding-top: 0; }
 .destination-guide .destination-planning .weather-section-heading { border-bottom: 0; margin-bottom: 16px; padding-bottom: 0; }
 .destination-guide .destination-planning .weather-section-heading strong { font-family: var(--portal-font-sans); font-size: .88rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
-.destination-guide .destination-planning .weather-days { align-items: stretch; margin-top: 16px; }
+.destination-guide .destination-planning .weather-days { align-items: stretch; grid-auto-rows: auto; margin-top: 0; }
 .destination-guide .destination-planning .weather-day { height: 100%; min-height: 0; padding: 16px; }
 .destination-guide .destination-planning .season-grid { margin-top: 24px; padding: 20px 24px; }
 .destination-guide .destination-planning .season-grid p { margin-bottom: 16px; }
@@ -6261,8 +6262,17 @@ body,
 
 @media (max-width: 768px) {
   .destination-guide .destination-planning-heading { align-items: start; grid-template-columns: 1fr; }
-  .destination-guide .destination-planning .weather-live-panel { padding: 22px; }
+  .destination-guide .destination-planning .destination-travel-tip { max-width: none; width: 100%; }
+  .destination-guide .destination-planning .weather-live-panel { grid-template-columns: minmax(0, 1fr); padding: 22px; }
+  .destination-guide .destination-planning .weather-current,
+  .destination-guide .destination-planning .weather-current-main,
+  .destination-guide .destination-planning .weather-current-reading,
+  .destination-guide .destination-planning .weather-summary,
+  .destination-guide .destination-planning .weather-summary div { min-width: 0; }
   .destination-guide .destination-planning .weather-summary { margin-top: 24px; padding-top: 20px; }
+  .destination-guide .destination-planning .weather-summary span,
+  .destination-guide .destination-planning .weather-summary strong,
+  .destination-guide .destination-planning .weather-advice strong { overflow-wrap: anywhere; white-space: normal; }
   .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event--with-image { display: flex; }
   .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image { aspect-ratio: 16 / 8; min-height: 0; }
 }
@@ -6275,6 +6285,7 @@ body,
   .destination-guide .destination-planning .weather-live-panel { padding: 18px 16px; }
   .destination-guide .destination-planning .weather-forecast { margin-top: 24px; }
   .destination-guide .destination-planning .weather-day { height: auto; min-height: 0; padding: 14px 16px; }
+  .destination-guide .destination-planning .weather-days { grid-template-columns: minmax(0, 1fr); }
   .destination-guide .destination-planning .season-grid { margin-top: 24px; padding: 18px 16px; }
   .destination-guide .destination-cta > div { padding: 42px 20px 48px; }
 }
