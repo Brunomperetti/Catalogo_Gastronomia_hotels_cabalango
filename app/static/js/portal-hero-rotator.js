@@ -13,7 +13,8 @@
   // fallback, but it must never clear or hide it while candidates are pending.
   initialSlide.classList.add("is-active");
   initialSlide.setAttribute("aria-hidden", "false");
-  const caption = hero.querySelector("[data-hero-caption]");
+  const captionCategory = hero.querySelector("[data-hero-caption-category]");
+  const captionTitle = hero.querySelector("[data-hero-caption-title]");
   const confirmedSlides = new Set([initialSlide]);
   const getRotationSlides = () => slides.filter((slide) => confirmedSlides.has(slide));
   let activeSlide = initialSlide;
@@ -71,7 +72,8 @@
       next.classList.add("is-active");
       activeSlide = next;
       transitioning = false;
-      if (caption) caption.textContent = next.dataset.caption;
+      if (captionCategory) captionCategory.textContent = next.dataset.captionCategory;
+      if (captionTitle) captionTitle.textContent = next.dataset.captionTitle;
     };
     const onTransitionEnd = (event) => {
       if (event.target === next && event.propertyName === "opacity") finalizeCrossfade();
@@ -87,7 +89,7 @@
   const start = () => {
     stop();
     if (!document.hidden && getRotationSlides().length >= 2) {
-      timer = window.setInterval(showNext, 8000);
+      timer = window.setInterval(showNext, 5000);
     }
   };
 

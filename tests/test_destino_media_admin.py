@@ -595,11 +595,33 @@ def test_hero_rotator_crossfades_before_changing_current_slide_and_caption():
     incoming = javascript.index('next.classList.add("is-incoming")')
     transition_finished = javascript.index("const finalizeCrossfade")
     remove_current = javascript.index('current.classList.remove("is-active")')
-    update_caption = javascript.index("caption.textContent = next.dataset.caption")
+    update_category = javascript.index("captionCategory.textContent = next.dataset.captionCategory")
+    update_title = javascript.index("captionTitle.textContent = next.dataset.captionTitle")
     assert incoming < transition_finished < remove_current
-    assert incoming < transition_finished < update_caption
+    assert incoming < transition_finished < update_category
+    assert incoming < transition_finished < update_title
     assert "window.setTimeout(finalizeCrossfade, 1900)" in javascript
     assert "if (finalized) return" in javascript
+
+
+def test_home_hero_renders_each_media_category_label(destino_admin):
+    client, db, _ = destino_admin
+    add_media(db, categoria="rio_naturaleza", uso_portal="home_hero", titulo="Río", orden=1)
+    add_media(db, categoria="eventos", uso_portal="home_hero", titulo="Feria de Artesanos", orden=2)
+
+    html = client.get("/").text
+    hero = home_section(html, "destination-editorial-hero")
+
+    assert '<span data-hero-caption-category>Río y naturaleza</span>' in hero
+    assert 'data-caption-category="Río y naturaleza" data-caption-title="Río"' in hero
+    assert 'data-caption-category="Eventos y ferias" data-caption-title="Feria de Artesanos"' in hero
+
+
+def test_hero_rotation_interval_is_five_seconds():
+    javascript = open("app/static/js/portal-hero-rotator.js", encoding="utf-8").read()
+
+    assert "window.setInterval(showNext, 5000)" in javascript
+    assert "window.setInterval(showNext, 8000)" not in javascript
 
 
 def test_hero_rotator_visibility_management_keeps_one_timer():
@@ -634,4 +656,4 @@ def test_destination_page_busts_only_hero_stylesheet_cache():
     template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
 
     assert "portal.css') }}?v=20260824-hero-layering-fix-1" in template
-    assert "portal-hero-rotator.js') }}?v=20260824-hero-crossfade-2" in template
+    assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-1" in template

@@ -16,10 +16,10 @@ class FakeClassList {
 }
 
 class FakeSlide {
-  constructor(caption, { active = false, complete = false, naturalWidth = 0 } = {}) {
+  constructor(captionTitle, { active = false, captionCategory = "Río y naturaleza", complete = false, naturalWidth = 0 } = {}) {
     this.classList = new FakeClassList(active ? ["is-active"] : []);
     this.complete = complete;
-    this.dataset = { caption };
+    this.dataset = { captionCategory, captionTitle };
     this.listeners = new Map();
     this.naturalWidth = naturalWidth;
     this.offsetWidth = 640;
@@ -36,7 +36,8 @@ class FakeSlide {
 const nextTurn = () => new Promise((resolve) => setImmediate(resolve));
 
 function createRuntime(slides, { reducedMotion = false } = {}) {
-  const caption = { textContent: slides[0].dataset.caption };
+  const captionCategory = { textContent: slides[0].dataset.captionCategory };
+  const captionTitle = { textContent: slides[0].dataset.captionTitle };
   const documentListeners = new Map();
   const intervals = [];
   const timeouts = [];
@@ -45,7 +46,8 @@ function createRuntime(slides, { reducedMotion = false } = {}) {
       if (selector === ".destination-hero-slide.is-active") {
         return slides.find((slide) => slide.classList.contains("is-active")) || null;
       }
-      if (selector === "[data-hero-caption]") return caption;
+      if (selector === "[data-hero-caption-category]") return captionCategory;
+      if (selector === "[data-hero-caption-title]") return captionTitle;
       return null;
     },
     querySelectorAll() { return slides; },
@@ -72,7 +74,7 @@ function createRuntime(slides, { reducedMotion = false } = {}) {
   };
 
   vm.runInNewContext(rotatorSource, { document, window });
-  return { caption, intervals, timeouts };
+  return { captionCategory, captionTitle, intervals, timeouts };
 }
 
 test("a failed or timed-out secondary slide never hides the initial slide", async () => {
@@ -88,33 +90,37 @@ test("a failed or timed-out secondary slide never hides the initial slide", asyn
     assert.equal(initial.classList.contains("is-active"), true);
     assert.equal(initial.attributes.get("aria-hidden"), "false");
     assert.equal(secondary.classList.contains("is-incoming"), false);
-    assert.equal(runtime.caption.textContent, "A");
+    assert.equal(runtime.captionTitle.textContent, "A");
     assert.equal(runtime.intervals.length, 0);
   }
 });
 
-test("two valid slides crossfade both ways without clearing current or caption early", async () => {
+test("two valid slides crossfade category and title together without changing either early", async () => {
   const initial = new FakeSlide("A", { active: true, complete: true, naturalWidth: 100 });
-  const secondary = new FakeSlide("B", { complete: true, naturalWidth: 100 });
+  const secondary = new FakeSlide("Feria de Artesanos", { captionCategory: "Eventos y ferias", complete: true, naturalWidth: 100 });
   const runtime = createRuntime([initial, secondary]);
   await nextTurn();
 
   assert.equal(runtime.intervals.length, 1);
+  assert.equal(runtime.intervals[0].delay, 5000);
   runtime.intervals[0].callback();
   assert.equal(initial.classList.contains("is-active"), true);
   assert.equal(secondary.classList.contains("is-incoming"), true);
-  assert.equal(runtime.caption.textContent, "A");
+  assert.equal(runtime.captionCategory.textContent, "Río y naturaleza");
+  assert.equal(runtime.captionTitle.textContent, "A");
   secondary.listeners.get("transitionend")({ target: secondary, propertyName: "opacity" });
   assert.equal(secondary.classList.contains("is-active"), true);
-  assert.equal(runtime.caption.textContent, "B");
+  assert.equal(runtime.captionCategory.textContent, "Eventos y ferias");
+  assert.equal(runtime.captionTitle.textContent, "Feria de Artesanos");
 
   runtime.intervals[0].callback();
   assert.equal(secondary.classList.contains("is-active"), true);
   assert.equal(initial.classList.contains("is-incoming"), true);
-  assert.equal(runtime.caption.textContent, "B");
+  assert.equal(runtime.captionTitle.textContent, "Feria de Artesanos");
   initial.listeners.get("transitionend")({ target: initial, propertyName: "opacity" });
   assert.equal(initial.classList.contains("is-active"), true);
-  assert.equal(runtime.caption.textContent, "A");
+  assert.equal(runtime.captionCategory.textContent, "Río y naturaleza");
+  assert.equal(runtime.captionTitle.textContent, "A");
 });
 
 test("candidate resolution speed never changes DOM editorial order", async () => {
@@ -130,11 +136,11 @@ test("candidate resolution speed never changes DOM editorial order", async () =>
   second.listeners.get("load")();
   await nextTurn();
 
-  const visited = [runtime.caption.textContent];
+  const visited = [runtime.captionTitle.textContent];
   for (const next of [second, third, initial]) {
     runtime.intervals.at(-1).callback();
     next.listeners.get("transitionend")({ target: next, propertyName: "opacity" });
-    visited.push(runtime.caption.textContent);
+    visited.push(runtime.captionTitle.textContent);
   }
 
   assert.deepEqual(visited, ["A", "B", "C", "A"]);
@@ -162,7 +168,7 @@ test("a newly confirmed earlier slide does not desynchronize the active slide", 
   assert.equal(initial.classList.contains("is-incoming"), true);
   assert.equal(second.classList.contains("is-incoming"), false);
   initial.listeners.get("transitionend")({ target: initial, propertyName: "opacity" });
-  assert.equal(runtime.caption.textContent, "A");
+  assert.equal(runtime.captionTitle.textContent, "A");
 });
 
 test("reduced motion leaves the server-rendered state untouched", () => {
@@ -172,7 +178,8 @@ test("reduced motion leaves the server-rendered state untouched", () => {
 
   assert.equal(initial.classList.contains("is-active"), true);
   assert.equal(secondary.classList.contains("is-active"), false);
-  assert.equal(runtime.caption.textContent, "A");
+  assert.equal(runtime.captionCategory.textContent, "Río y naturaleza");
+  assert.equal(runtime.captionTitle.textContent, "A");
   assert.equal(runtime.intervals.length, 0);
   assert.equal(runtime.timeouts.length, 0);
 });
