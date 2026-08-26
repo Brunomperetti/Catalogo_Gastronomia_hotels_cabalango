@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260826-weather-final-grid-8">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260826-weather-final-polish-9">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
     {% if hero_photos|length > 1 %}<script src="{{ url_for('static', path='js/portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" defer></script>{% endif %}
 </head>
@@ -150,8 +150,7 @@
                 <p class="weather-layer-label">Ahora</p>
                 {% set current_condition = weather.condition|default('', true)|lower %}
                 {% set current_icon = 'icon-rain' if 'lluv' in current_condition or 'torment' in current_condition else ('icon-sun' if 'despej' in current_condition or 'soleado' in current_condition else ('icon-cloud-sun' if 'parcial' in current_condition else 'icon-cloud')) %}
-                <div class="weather-current-main"><span class="weather-current-icon"><svg aria-hidden="true" focusable="false"><use href="#{{ current_icon }}"/></svg></span><div class="weather-current-reading"><p class="weather-temp">{{ weather.temperature|round|int }}°</p><strong class="weather-condition">{{ weather.condition }}</strong><p class="weather-today-range">Hoy · Mín {{ weather.min|round|int if weather.min is not none else '—' }}° · Máx {{ weather.max|round|int if weather.max is not none else '—' }}°</p></div></div>
-                <aside class="weather-advice"><svg aria-hidden="true" focusable="false"><use href="#icon-leaf"/></svg><div><span>Consejo para hoy</span><strong>{{ weather.advice }}</strong></div></aside>
+                <div class="weather-current-main"><span class="weather-current-icon"><svg aria-hidden="true" focusable="false"><use href="#{{ current_icon }}"/></svg></span><div class="weather-current-reading"><p class="weather-temp">{{ weather.temperature|round|int }}°</p><strong class="weather-condition">{{ weather.condition }}</strong><p class="weather-today-range">Hoy · Mín {{ weather.min|round|int if weather.min is not none else '—' }}° · Máx {{ weather.max|round|int if weather.max is not none else '—' }}°</p><aside class="weather-advice"><svg aria-hidden="true" focusable="false"><use href="#icon-leaf"/></svg><div><span>Consejo para hoy</span><strong>{{ weather.advice }}</strong></div></aside></div></div>
               </div>
               <div class="weather-summary" aria-label="Pronóstico resumido">
                 <p class="weather-layer-label">Datos útiles</p>
