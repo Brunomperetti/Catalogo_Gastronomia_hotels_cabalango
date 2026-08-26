@@ -972,9 +972,14 @@ def get_destino_content(db: Session) -> models.DestinoContenido:
 _weather_cache = {"expires_at": None, "data": None}
 WEATHER_CODE_LABELS = {0: "Despejado", 1: "Mayormente despejado", 2: "Parcialmente nublado", 3: "Nublado", 45: "Neblina", 48: "Neblina", 51: "Llovizna", 53: "Llovizna", 55: "Llovizna", 61: "Lluvia", 63: "Lluvia", 65: "Lluvia intensa", 80: "Chaparrones", 95: "Tormenta"}
 
-def get_cabalango_weather() -> dict:
+def get_cabalango_weather(force_refresh: bool = False) -> dict:
     now = utc_now()
-    if _weather_cache["data"] and _weather_cache["expires_at"] and _weather_cache["expires_at"] > now:
+    if (
+        not force_refresh
+        and _weather_cache["data"]
+        and _weather_cache["expires_at"]
+        and _weather_cache["expires_at"] > now
+    ):
         return _weather_cache["data"]
     params = urlencode({
         "latitude": -31.395,
@@ -993,8 +998,6 @@ def get_cabalango_weather() -> dict:
         except Exception as exc:
             print(f"[weather] Open-Meteo request failed: {type(exc).__name__}: {exc}")
             if attempt == 1:
-                if _weather_cache["data"] and _weather_cache["data"].get("available"):
-                    return _weather_cache["data"]
                 _weather_cache.update({"data": fallback, "expires_at": now + timedelta(minutes=1)})
                 return fallback
 
@@ -1041,8 +1044,6 @@ def get_cabalango_weather() -> dict:
             raise ValueError("Open-Meteo response has no current temperature")
     except Exception as exc:
         print(f"[weather] Open-Meteo request failed: {type(exc).__name__}: {exc}")
-        if _weather_cache["data"] and _weather_cache["data"].get("available"):
-            return _weather_cache["data"]
         _weather_cache.update({"data": fallback, "expires_at": now + timedelta(minutes=1)})
         return fallback
     _weather_cache.update({
@@ -2798,6 +2799,9 @@ def render_destino_home(request: Request, db: Session):
 
 @app.get("/", response_class=HTMLResponse)
 def portal_home(request: Request, db: Session = Depends(get_db)):
+    if request.query_params.get("refresh_weather") == "1":
+        get_cabalango_weather(force_refresh=True)
+        return RedirectResponse(url="/#weather-title", status_code=303)
     return render_destino_home(request, db)
 
 
