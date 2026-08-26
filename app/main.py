@@ -985,9 +985,20 @@ def get_cabalango_weather() -> dict:
         "forecast_days": 7,
     })
     fallback = {"available": False, "message": "Clima no disponible por el momento."}
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(f"https://api.open-meteo.com/v1/forecast?{params}", timeout=5) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            break
+        except Exception as exc:
+            print(f"[weather] Open-Meteo request failed: {type(exc).__name__}: {exc}")
+            if attempt == 1:
+                if _weather_cache["data"] and _weather_cache["data"].get("available"):
+                    return _weather_cache["data"]
+                _weather_cache.update({"data": fallback, "expires_at": now + timedelta(minutes=1)})
+                return fallback
+
     try:
-        with urllib.request.urlopen(f"https://api.open-meteo.com/v1/forecast?{params}", timeout=2.5) as response:
-            payload = json.loads(response.read().decode("utf-8"))
         current = payload.get("current") or {}
         daily = payload.get("daily") or {}
         temp = current.get("temperature_2m")
@@ -1026,9 +1037,18 @@ def get_cabalango_weather() -> dict:
             "advice": advice,
             "forecast": forecast,
         }
-    except Exception:
-        weather = fallback
-    _weather_cache.update({"data": weather, "expires_at": now + timedelta(minutes=25)})
+        if not weather["available"]:
+            raise ValueError("Open-Meteo response has no current temperature")
+    except Exception as exc:
+        print(f"[weather] Open-Meteo request failed: {type(exc).__name__}: {exc}")
+        if _weather_cache["data"] and _weather_cache["data"].get("available"):
+            return _weather_cache["data"]
+        _weather_cache.update({"data": fallback, "expires_at": now + timedelta(minutes=1)})
+        return fallback
+    _weather_cache.update({
+        "data": weather,
+        "expires_at": now + timedelta(minutes=25),
+    })
     return weather
 
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
