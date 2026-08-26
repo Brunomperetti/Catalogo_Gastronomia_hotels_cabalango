@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260826-weather-width-balance-6" in response.text
+    assert "?v=20260826-weather-final-grid-8" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -215,7 +215,18 @@ def test_destination_guide_uses_real_width_containment_not_master_clipping():
 
     assert guide_rules
     assert all("overflow: clip" not in rule for rule in guide_rules)
-    assert "grid-template-columns: repeat(auto-fit, minmax(140px, 1fr))" in css
+    planning_css = css[css.index(".destination-guide .destination-planning {"):]
+    desktop_weather_days = planning_css[
+        planning_css.index(".destination-guide .destination-planning .weather-days {"):
+        planning_css.index(".destination-guide .destination-planning .weather-day {")
+    ]
+    mobile_planning = planning_css[planning_css.index("@media (max-width: 520px)"):]
+    mobile_weather_days = mobile_planning[
+        mobile_planning.index(".destination-guide .destination-planning .weather-days {"):
+        mobile_planning.index(".destination-guide .destination-planning .season-grid {")
+    ]
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in desktop_weather_days
+    assert "grid-template-columns: 1fr" in mobile_weather_days
     assert ".destination-nearby," in css
 
 
