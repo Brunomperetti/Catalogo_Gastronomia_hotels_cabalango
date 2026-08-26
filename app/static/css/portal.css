@@ -6356,11 +6356,11 @@ body,
   .destination-guide .destination-planning .weather-day-condition { line-height: 1.35; min-height: 2.6em; }
   .destination-guide .destination-planning .weather-day-rain { padding-top: 0; }
   .destination-guide .destination-planning .weather-days { grid-auto-rows: 1fr; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
-  .destination-guide .destination-planning .season-grid { background: transparent; border: 0; border-radius: 0; box-sizing: border-box; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 24px; max-width: none; padding: 22px 0; width: 100%; }
+  .destination-guide .destination-planning .season-grid { background: transparent; border: 0; border-radius: 0; box-shadow: none; box-sizing: border-box; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 24px 0 0; max-width: none; padding: 0; width: 100%; }
   .destination-guide .destination-planning .season-grid > div:nth-of-type(n) { border: 0; margin: 0; }
   .destination-guide .destination-planning .season-grid > div:nth-of-type(even) { border-left: 1px solid var(--portal-border); }
   .destination-guide .destination-planning .season-grid > div:nth-of-type(n+3) { border-top: 1px solid var(--portal-border); }
-  .destination-guide .destination-planning .season-grid p { gap: 4px; margin-bottom: 10px; }
+  .destination-guide .destination-planning .season-grid p { gap: 4px; margin: 0 0 10px; padding: 0; }
   .destination-guide .destination-planning .season-grid > div { align-items: center; gap: 4px 10px; grid-template-columns: 35px minmax(0, 1fr); padding: 18px 14px; }
   .destination-guide .destination-planning .season-grid svg { align-self: center; }
   .destination-guide .destination-planning .season-grid span,
