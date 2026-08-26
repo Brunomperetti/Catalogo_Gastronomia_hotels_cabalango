@@ -655,5 +655,5 @@ def test_hero_rotator_css_keeps_slides_absolutely_layered():
 def test_destination_page_busts_only_hero_stylesheet_cache():
     template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
 
-    assert "portal.css') }}?v=20260826-weather-mobile-two-column-11" in template
+    assert "portal.css') }}?v=20260826-weather-season-align-12" in template
     assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" in template
