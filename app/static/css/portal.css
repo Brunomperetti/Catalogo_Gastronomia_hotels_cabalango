@@ -6268,12 +6268,12 @@ body,
 .destination-guide .destination-planning .weather-current,
 .destination-guide .destination-planning .weather-summary { align-content: center; min-width: 0; }
 .destination-guide .destination-planning .weather-current { grid-template-columns: minmax(0, 1fr); }
-.destination-guide .destination-planning .weather-current-main { align-items: center; gap: clamp(24px, 2.5vw, 34px); grid-template-columns: 106px minmax(0, 1fr); width: 100%; }
-.destination-guide .destination-planning .weather-current-reading { max-width: none; width: 100%; }
+.destination-guide .destination-planning .weather-current-main { align-items: start; gap: clamp(22px, 2.3vw, 30px); grid-template-columns: 106px minmax(0, 1fr); width: 100%; }
+.destination-guide .destination-planning .weather-current-reading { display: flex; flex-direction: column; max-width: none; min-width: 0; width: 100%; }
 .destination-guide .destination-planning .weather-current-icon { height: 106px; width: 106px; }
-.destination-guide .destination-planning .weather-temp { font-size: clamp(5rem, 7vw, 6.6rem); line-height: .72; margin-bottom: 8px; }
-.destination-guide .destination-planning .weather-today-range { margin-top: 8px; }
-.destination-guide .destination-planning .weather-advice { box-sizing: border-box; margin-left: clamp(130px, 10vw, 140px); margin-top: 22px; max-width: 420px; padding: 5px 18px; width: min(100%, 420px); }
+.destination-guide .destination-planning .weather-temp { font-size: clamp(5rem, 7vw, 6.6rem); line-height: .78; margin-bottom: 9px; }
+.destination-guide .destination-planning .weather-today-range { margin-top: 7px; }
+.destination-guide .destination-planning .weather-advice { box-sizing: border-box; margin: 20px 0 0; max-width: 420px; padding: 5px 0 5px 14px; width: 100%; }
 .destination-guide .destination-planning .weather-summary div { gap: 3px 16px; min-height: 50px; padding-block: 15px; width: 100%; }
 .destination-guide .destination-planning .weather-summary span { min-width: 0; }
 .destination-guide .destination-planning .weather-summary strong { justify-self: end; text-align: right; }
@@ -6316,7 +6316,6 @@ body,
   .destination-guide .destination-planning .weather-summary,
   .destination-guide .destination-planning .weather-summary div { min-width: 0; }
   .destination-guide .destination-planning .weather-current-main { width: 100%; }
-  .destination-guide .destination-planning .weather-advice { margin-left: 0; }
   .destination-guide .destination-planning .weather-summary { margin-top: 24px; padding-top: 20px; }
   .destination-guide .destination-planning .weather-summary span,
   .destination-guide .destination-planning .weather-summary strong,
@@ -6336,23 +6335,29 @@ body,
   .destination-guide .destination-planning .destination-weather-card { padding: 20px 16px; }
   .destination-guide .destination-planning .weather-intro { margin-bottom: 16px; }
   .destination-guide .destination-planning .weather-live-panel { padding: 20px 0; }
-  .destination-guide .destination-planning .weather-current-main { align-items: center; gap: 16px; grid-template-columns: 72px minmax(0, 1fr); }
+  .destination-guide .destination-planning .weather-current-main { align-items: start; gap: 16px; grid-template-columns: 72px minmax(0, 1fr); }
   .destination-guide .destination-planning .weather-current-icon { height: 72px; width: 72px; }
   .destination-guide .destination-planning .weather-temp { font-size: clamp(3.6rem, 18vw, 4.5rem); margin-bottom: 10px; }
   .destination-guide .destination-planning .weather-condition { line-height: 1.2; }
-  .destination-guide .destination-planning .weather-advice { align-items: flex-start; margin-top: 18px; padding: 4px 0 4px 12px; }
+  .destination-guide .destination-planning .weather-advice { align-items: flex-start; margin-top: 17px; padding: 4px 0 4px 12px; }
   .destination-guide .destination-planning .weather-summary { margin-top: 20px; padding-top: 16px; }
   .destination-guide .destination-planning .weather-summary div { min-height: 44px; padding-block: 10px; }
   .destination-guide .destination-planning .weather-forecast { margin-top: 24px; }
   .destination-guide .destination-planning .weather-section-heading { margin-bottom: 0; }
-  .destination-guide .destination-planning .weather-day { gap: 6px 12px; grid-template-rows: auto auto auto auto; height: auto; min-height: 0; padding: 16px 4px; }
-  .destination-guide .destination-planning .weather-day-heading svg { height: 27px; width: 27px; }
+  .destination-guide .destination-planning .weather-day { gap: 7px 12px; grid-template-rows: auto auto auto auto; height: auto; min-height: 0; padding: 18px 6px; }
+  .destination-guide .destination-planning .weather-day-heading svg { align-self: start; height: 27px; width: 27px; }
+  .destination-guide .destination-planning .weather-day-temperatures { margin: 1px 0 0; }
+  .destination-guide .destination-planning .weather-day-condition { line-height: 1.35; }
+  .destination-guide .destination-planning .weather-day-rain { padding-top: 0; }
   .destination-guide .destination-planning .weather-days { grid-template-columns: 1fr; }
-  .destination-guide .destination-planning .season-grid { grid-template-columns: 1fr; margin-top: 24px; padding: 20px 16px 8px; }
+  .destination-guide .destination-planning .season-grid { grid-template-columns: 1fr; margin-top: 24px; padding: 22px 18px 10px; }
   .destination-guide .destination-planning .season-grid > div { border-left: 0; border-top: 1px solid var(--portal-border); }
   .destination-guide .destination-planning .season-grid > div:first-of-type { border-top: 0; }
-  .destination-guide .destination-planning .season-grid p { gap: 4px; margin-bottom: 8px; }
-  .destination-guide .destination-planning .season-grid > div { gap: 4px 12px; grid-template-columns: 38px 1fr; padding: 14px 0; }
+  .destination-guide .destination-planning .season-grid p { gap: 4px; margin-bottom: 10px; }
+  .destination-guide .destination-planning .season-grid > div { align-items: center; gap: 4px 14px; grid-template-columns: 38px 1fr; padding: 16px 0; }
+  .destination-guide .destination-planning .season-grid svg { align-self: center; }
+  .destination-guide .destination-planning .season-grid span,
+  .destination-guide .destination-planning .season-grid strong { line-height: 1.25; }
   .destination-guide .destination-cta > div { padding: 42px 20px 48px; }
 }
 
