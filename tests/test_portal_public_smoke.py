@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260826-weather-current-composition-10" in response.text
+    assert "?v=20260826-weather-mobile-two-column-11" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -226,7 +226,12 @@ def test_destination_guide_uses_real_width_containment_not_master_clipping():
         mobile_planning.index(".destination-guide .destination-planning .season-grid {")
     ]
     assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in desktop_weather_days
-    assert "grid-template-columns: 1fr" in mobile_weather_days
+    mobile_season_grid = mobile_planning[
+        mobile_planning.index(".destination-guide .destination-planning .season-grid {"):
+        mobile_planning.index(".destination-guide .destination-planning .season-grid > div:nth-of-type(n)")
+    ]
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in mobile_weather_days
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in mobile_season_grid
     assert ".destination-nearby," in css
 
 
