@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260826-weather-season-aligned-14" in response.text
+    assert "?v=20260826-weather-refresh-15" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -192,6 +192,35 @@ def test_weather_fallback_keeps_seasonal_guidance_without_dynamic_values(monkeyp
     assert "Primavera" in response.text
     assert "None" not in response.text
     assert "weather-temp" not in response.text
+    assert "Actualizar clima" in response.text
+
+
+def test_successful_weather_does_not_show_refresh_button(monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "get_cabalango_weather", lambda: {
+        "available": True, "temperature": 21, "apparent_temperature": 20,
+        "condition": "Despejado", "min": 12, "max": 24,
+        "rain_probability": 0, "wind": 8, "advice": "Ideal para recorrer.",
+        "forecast": [],
+    })
+
+    assert "Actualizar clima" not in TestClient(app).get("/").text
+
+
+def test_weather_refresh_forces_request_and_redirects_to_clean_url(monkeypatch):
+    import app.main as main_module
+
+    calls = []
+    monkeypatch.setattr(main_module, "get_cabalango_weather", lambda force_refresh=False: calls.append(force_refresh) or {
+        "available": False,
+        "message": "Clima no disponible por el momento.",
+    })
+    response = TestClient(app).get("/?refresh_weather=1", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/#weather-title"
+    assert calls == [True]
 
 
 def test_weather_service_failure_returns_explicit_fallback(monkeypatch):

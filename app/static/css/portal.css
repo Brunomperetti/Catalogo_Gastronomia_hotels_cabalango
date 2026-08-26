@@ -5567,6 +5567,9 @@ body,
 .weather-fallback > svg { background: var(--portal-bg); border: 1px solid var(--portal-border); border-radius: 50%; box-sizing: border-box; height: 64px; padding: 15px; width: 64px; }
 .weather-fallback strong { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: 1.15rem; }
 .weather-fallback p { color: var(--portal-muted); font-size: .82rem; margin: 5px 0 0; }
+.weather-refresh { border: 1px solid color-mix(in srgb, var(--portal-primary) 55%, var(--portal-border)); border-radius: 999px; color: var(--portal-primary); display: inline-block; font-size: .76rem; font-weight: 700; margin-top: 14px; padding: 7px 13px; text-decoration: none; }
+.weather-refresh:hover { background: color-mix(in srgb, var(--portal-primary) 7%, transparent); border-color: var(--portal-primary); }
+.weather-refresh:focus-visible { outline: 2px solid var(--portal-primary); outline-offset: 3px; }
 
 @media (max-width: 1024px) {
   .destination-guide .destination-weather-card { gap: 0 28px; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); padding: 32px; }

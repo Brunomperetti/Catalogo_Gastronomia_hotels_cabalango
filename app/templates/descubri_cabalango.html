@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260826-weather-season-aligned-14">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260826-weather-refresh-15">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
     {% if hero_photos|length > 1 %}<script src="{{ url_for('static', path='js/portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" defer></script>{% endif %}
 </head>
@@ -164,7 +164,7 @@
                 <div class="weather-days">{% for day in weather.forecast %}{% set day_condition = day.condition|default('', true)|lower %}{% set day_icon = 'icon-rain' if 'lluv' in day_condition or 'torment' in day_condition else ('icon-sun' if 'despej' in day_condition or 'soleado' in day_condition else ('icon-cloud-sun' if 'parcial' in day_condition else 'icon-cloud')) %}<article class="weather-day"><div class="weather-day-heading"><span>{{ day.label }}</span><svg aria-hidden="true" focusable="false"><use href="#{{ day_icon }}"/></svg></div><p class="weather-day-temperatures"><span>{{ day.min|round|int if day.min is not none else '—' }}°</span><i aria-hidden="true">/</i><strong>{{ day.max|round|int if day.max is not none else '—' }}°</strong></p><small class="weather-day-condition">{{ day.condition }}</small><small class="weather-day-rain"><svg aria-hidden="true" focusable="false"><use href="#icon-drop"/></svg><span>Lluvia {{ day.rain_probability or 0 }}%</span></small></article>{% endfor %}</div>
             </div>
             {% else %}
-            <div class="weather-fallback" role="status"><svg aria-hidden="true" focusable="false"><use href="#icon-cloud-sun"/></svg><div><strong>El clima está tomando una pausa</strong><p>Clima no disponible por el momento.</p></div></div>
+            <div class="weather-fallback" role="status"><svg aria-hidden="true" focusable="false"><use href="#icon-cloud-sun"/></svg><div><strong>El clima está tomando una pausa</strong><p>Clima no disponible por el momento.</p><a class="weather-refresh" href="/?refresh_weather=1">↻ Actualizar clima</a></div></div>
             {% endif %}
             <div class="season-grid" aria-label="Temperaturas estacionales orientativas">
                 <p><strong>Mejor época para visitar</strong><span class="season-guidance">Rangos orientativos</span></p>
