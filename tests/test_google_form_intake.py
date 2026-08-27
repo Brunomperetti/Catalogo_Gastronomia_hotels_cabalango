@@ -165,6 +165,55 @@ def test_admin_lists_reviews_and_rejects_request(intake_app, payload):
     assert item.review_notes == "Datos incompletos"
 
 
+def test_admin_deletes_pending_request_records_and_staging_file(intake_app, payload):
+    client, db = intake_app
+    item_id = post_intake(client, payload).json()["id"]
+    post_media(client, payload["external_id"], "cover", "delete-cover")
+    record = db.query(SolicitudPrestadorArchivo).one()
+    record_id = record.id
+    staging_path = main.STORAGE_DIR / record.relative_path
+    assert staging_path.is_file()
+
+    delete_url = f"/admin/solicitudes/{item_id}/eliminar"
+    assert client.post(delete_url, follow_redirects=False).status_code in {302, 303, 307}
+    assert client.get(delete_url, follow_redirects=False).status_code == 405
+    assert db.get(SolicitudPrestador, item_id) is not None
+
+    login_admin(client)
+    listing = client.get("/admin/solicitudes")
+    detail = client.get(f"/admin/solicitudes/{item_id}")
+    assert 'method="post"' in listing.text and ">Eliminar</button>" in listing.text
+    assert "Eliminar solicitud</button>" in detail.text
+
+    response = client.post(delete_url, follow_redirects=False)
+    assert response.status_code == 303
+    assert response.headers["location"] == "/admin/solicitudes"
+    assert db.get(SolicitudPrestador, item_id) is None
+    assert db.get(SolicitudPrestadorArchivo, record_id) is None
+    assert not staging_path.exists()
+    assert client.post("/admin/solicitudes/9999/eliminar").status_code == 404
+
+
+def test_admin_deletes_processed_request_but_preserves_converted_entity(intake_app, payload):
+    client, db = intake_app
+    item_id = post_intake(client, authorized_payload(payload)).json()["id"]
+    login_admin(client)
+    assert client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False).status_code == 303
+    item = db.get(SolicitudPrestador, item_id)
+    company_id = item.converted_entity_id
+    assert item.status == "procesada" and db.get(Empresa, company_id) is not None
+
+    listing = client.get("/admin/solicitudes").text
+    detail = client.get(f"/admin/solicitudes/{item_id}").text
+    assert "solamente la solicitud recibida" in listing
+    assert "no será eliminado" in detail
+
+    response = client.post(f"/admin/solicitudes/{item_id}/eliminar", follow_redirects=False)
+    assert response.status_code == 303
+    assert db.get(SolicitudPrestador, item_id) is None
+    assert db.get(Empresa, company_id) is not None
+
+
 def test_media_auth_and_missing_request(intake_app):
     client, _ = intake_app
     assert post_media(client, "missing", "cover", "a", token=None).status_code == 401
