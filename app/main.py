@@ -18,6 +18,7 @@ import math
 import uuid
 import hashlib
 import hmac
+import logging
 import secrets
 import threading
 import urllib.request
@@ -37,6 +38,7 @@ from app import models
 from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, derived_status, get_home_agenda_events, get_public_activities, local_datetime, now_cabalango, prepare_home_agenda_events, prepare_public_agenda, publication_window_for_event, validate_activity
 
 app = FastAPI()
+logger = logging.getLogger(__name__)
 APP_BUILD = "2026-07-01-descubri-cabalango-v1"
 MEDIA_ROOT_ENV = os.getenv("MEDIA_ROOT")
 MEDIA_URL_PREFIX = (os.getenv("MEDIA_URL", "/media").strip() or "/media").rstrip("/") or "/media"
@@ -3456,6 +3458,38 @@ def admin_intake_convert(solicitud_id: int, request: Request, db: Session = Depe
         )
     destination = converted_admin_url(item, db, "Borrador creado desde la solicitud. Revisalo antes de activarlo.")
     return RedirectResponse(destination or f"/admin/solicitudes/{item.id}", status_code=303)
+
+
+@app.post("/admin/solicitudes/{solicitud_id}/eliminar")
+def admin_intake_delete(solicitud_id: int, request: Request, db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    item = db.get(models.SolicitudPrestador, solicitud_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+    # Capture paths while the child records still exist. The ORM relationship
+    # removes those records, but converted entities are intentionally unrelated
+    # to this delete and must remain untouched.
+    relative_paths = [record.relative_path for record in item.archivos]
+    db.delete(item)
+    db.commit()
+
+    staging_root = INTAKE_MEDIA_DIR.resolve()
+    for relative_path in relative_paths:
+        try:
+            candidate = (STORAGE_DIR / relative_path).resolve()
+            if staging_root not in candidate.parents:
+                logger.error("Refusing to delete intake file outside staging: %s", relative_path)
+                continue
+            candidate.unlink(missing_ok=True)
+        except OSError:
+            # The intake row is already committed: filesystem cleanup is best
+            # effort and must never resurrect or invalidate the database delete.
+            logger.exception("Could not delete intake staging file: %s", relative_path)
+
+    return RedirectResponse(url="/admin/solicitudes", status_code=303)
 
 
 @app.get("/admin/solicitudes/{solicitud_id}/archivo/{archivo_id}")
