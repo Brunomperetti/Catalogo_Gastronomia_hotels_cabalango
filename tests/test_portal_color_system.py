@@ -42,13 +42,26 @@ def test_provider_profile_uses_editorial_colors_and_legible_promotion():
     color_system = css.split("/* Cabalango global color system 2026 */", 1)[1]
 
     assert "main.prestador-page .quick-facts-grid > div > span" in color_system
-    assert "main.prestador-page .prestador-detail-grid .promo-highlight > strong" in color_system
-    assert "main.prestador-page .prestador-detail-grid .promo-highlight > small" in color_system
+    assert "main.prestador-page .prestador-detail-grid .promo-highlight" not in color_system
     assert ".prestador-promo" not in color_system
-    assert "background: var(--portal-surface) !important;" in color_system
-    assert "color: var(--portal-heading) !important;" in color_system
-    assert "color: var(--portal-muted) !important;" in color_system
-    assert "color: var(--portal-primary) !important;" in color_system
+
+    promo_rule = re.search(
+        r"\.portal-body \.prestador-page \.promo-highlight \{([^}]*)\}", color_system
+    ).group(1)
+    title_rule = re.search(
+        r"\.portal-body \.prestador-page \.promo-highlight > div > strong \{([^}]*)\}",
+        color_system,
+    ).group(1)
+    secondary_rule = re.search(
+        r"\.portal-body \.prestador-page \.promo-highlight > div > small \{([^}]*)\}",
+        color_system,
+    ).group(1)
+
+    assert all(color in promo_rule for color in ("#5A392B", "#4A2F25", "#3F281F"))
+    assert "#FFF7EE" in title_rule
+    assert "#F1E4D5" in secondary_rule
+    for inherited_color in ("var(--portal-muted)", "var(--portal-heading)", "var(--portal-text)"):
+        assert inherited_color not in title_rule + secondary_rule
 
 
 def test_public_templates_invalidate_cached_portal_styles():
@@ -57,7 +70,7 @@ def test_public_templates_invalidate_cached_portal_styles():
     for template_path in Path("app/templates").glob("*.html"):
         template = template_path.read_text(encoding="utf-8")
         if "path='css/portal.css'" in template:
-            expected_version = "?v=20260826-weather-refresh-15" if template_path.name == "descubri_cabalango.html" else "?v=20260821-travel-guide-3" if template_path.name == "como_llegar.html" else "?v=20260831-provider-promo-contrast-1" if template_path.name == "prestador.html" else "?v=20260818-agenda-official-1" if template_path.name == "actividades.html" else "?v=20260831-activity-gallery-polish-2" if template_path.name == "actividad_detalle.html" else default_version
+            expected_version = "?v=20260826-weather-refresh-15" if template_path.name == "descubri_cabalango.html" else "?v=20260821-travel-guide-3" if template_path.name == "como_llegar.html" else "?v=20260831-provider-promo-cascade-fix-2" if template_path.name == "prestador.html" else "?v=20260818-agenda-official-1" if template_path.name == "actividades.html" else "?v=20260831-activity-gallery-polish-2" if template_path.name == "actividad_detalle.html" else default_version
             assert expected_version in template
 
 
