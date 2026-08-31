@@ -3135,12 +3135,19 @@ def admin_activity_delete(request: Request, item_id: int, db: Session = Depends(
     item = db.get(models.ActividadAgenda, item_id)
     if not item:
         raise HTTPException(status_code=404, detail="Actividad no encontrada")
+    gallery_urls = [foto.image_url for foto in item.fotos]
+    principal_url = item.imagen_url
     try:
         db.delete(item)
         db.commit()
     except Exception:
         db.rollback()
         raise
+    for image_url in gallery_urls:
+        try:
+            delete_agenda_gallery_file(image_url, principal_url)
+        except OSError:
+            logger.exception("No se pudo eliminar una foto secundaria de la actividad %s", item_id)
     return RedirectResponse("/admin/actividades?msg=Registro%20eliminado%20definitivamente.", 303)
 
 

@@ -445,6 +445,34 @@ def test_admin_permanently_deletes_agenda_records(agenda_app, tipo):
     assert client.get(f"/actividades/{slug}").status_code == 404
 
 
+def test_admin_activity_delete_removes_secondary_photo_file(agenda_app, tmp_path, monkeypatch):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    monkeypatch.setattr(main_module, "STORAGE_DIR", tmp_path)
+    photo_path = tmp_path / "actividades" / "actividad-con-foto" / "galeria-test.jpg"
+    photo_path.parent.mkdir(parents=True)
+    photo_path.write_bytes(b"secondary-photo")
+    with TestingSession() as db:
+        item = ActividadAgenda(
+            tipo="actividad", titulo="Actividad con foto", slug="actividad-con-foto",
+            categoria="otros", momento="dia", publicado=True,
+        )
+        item.fotos.append(ActividadAgendaFoto(
+            image_url="/media/actividades/actividad-con-foto/galeria-test.jpg", orden=0,
+        ))
+        db.add(item)
+        db.commit()
+        item_id, photo_id = item.id, item.fotos[0].id
+
+    response = client.post(f"/admin/actividades/{item_id}/eliminar", follow_redirects=False)
+
+    assert response.status_code == 303
+    with TestingSession() as db:
+        assert db.get(ActividadAgenda, item_id) is None
+        assert db.get(ActividadAgendaFoto, photo_id) is None
+    assert not photo_path.exists()
+
+
 def test_deleted_home_eligible_event_disappears_from_home(agenda_app, monkeypatch):
     client, TestingSession = agenda_app
     login_admin(client)
