@@ -77,7 +77,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
 def test_provider_stylesheet_uses_promo_lightbox_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260831-provider-promo-contrast-1" in template
+    assert "?v=20260831-provider-promo-cascade-fix-2" in template
     assert "?v=20260814-provider-promo-lightbox-1" not in template
     assert "?v=20260814-provider-opening-1" not in template
     assert "?v=20260810-commerce-services-1" not in template
@@ -358,11 +358,11 @@ def test_provider_promotion_uses_the_high_contrast_editorial_treatment():
         r"\.portal-body \.prestador-page \.promo-highlight \{([^}]*)\}", css
     ).group(1)
     title_rule = re.search(
-        r"\.portal-body \.prestador-page \.promo-highlight strong \{([^}]*)\}", css
+        r"\.portal-body \.prestador-page \.promo-highlight > div > strong \{([^}]*)\}", css
     ).group(1)
 
-    assert "linear-gradient(135deg, #604233 0%, #5a3b2e 58%, #56382c 100%)" in promo_rule
-    assert "color: #f5eee4" in title_rule
+    assert "linear-gradient(135deg, #5A392B 0%, #4A2F25 55%, #3F281F 100%)" in promo_rule
+    assert "color: #FFF7EE" in title_rule
 
 
 def test_public_gallery_has_accessible_lightbox_controls():
