@@ -592,6 +592,22 @@
   grid-template-columns: repeat(auto-fill, minmax(125px, 150px));
 }
 .admin-gallery-grid .admin-gallery-item { width: 100%; }
+.admin-gallery-item { position: relative; }
+.admin-gallery-item.is-dragging { opacity: .55; }
+.admin-gallery-item.is-drag-over { outline: 2px solid var(--admin-accent, #d8a85b); outline-offset: 3px; }
+.admin-gallery-drag-handle {
+  align-items: center; background: rgba(20, 25, 29, .78); border-radius: 5px; color: #fff;
+  cursor: grab; display: flex; font-size: 1rem; height: 25px; justify-content: center;
+  line-height: 1; position: absolute; right: 6px; top: 6px; width: 29px; z-index: 1;
+}
+.admin-gallery-item.is-dragging .admin-gallery-drag-handle { cursor: grabbing; }
+.admin-gallery-order-controls { display: flex; gap: 6px; justify-content: center; }
+.admin-gallery-order-controls button {
+  background: transparent; border: 1px solid rgba(255, 255, 255, .24); border-radius: 5px;
+  color: inherit; cursor: pointer; font-size: 1rem; line-height: 1; min-height: 28px; min-width: 36px;
+}
+.admin-gallery-order-controls button:hover, .admin-gallery-order-controls button:focus-visible { border-color: currentColor; }
+.admin-gallery-sort-status { font-size: .82rem; margin: 8px 0 0; min-height: 1.25em; opacity: .85; }
 .admin-gallery-grid .admin-gallery-thumb {
   aspect-ratio: 4 / 3;
   height: auto;
