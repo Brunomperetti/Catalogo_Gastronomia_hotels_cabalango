@@ -61,6 +61,14 @@ def delete_photo(client, company, index):
     return client.post(f"/empresa/{company.id}/galeria/eliminar", data={"foto_indice": index}, follow_redirects=False)
 
 
+def reorder_photos(client, company, order):
+    return client.post(
+        f"/empresa/{company.id}/galeria/reordenar",
+        data={"orden": order},
+        follow_redirects=False,
+    )
+
+
 def assert_server_rendered_panel(html, panel_id, expected_text):
     match = re.search(rf'<section\s+id="panel-{re.escape(panel_id)}"[^>]*>', html)
     assert match, f"panel-{panel_id} was not rendered"
@@ -222,6 +230,16 @@ def test_admin_gallery_uses_compact_grid():
     assert "aspect-ratio: 4 / 3" in stylesheet
 
 
+def test_admin_gallery_has_accessible_automatic_sort_controls():
+    template = Path("app/templates/upload.html").read_text()
+    script = Path("app/static/js/admin-gallery-sort.js").read_text()
+    assert "data-admin-gallery-sort" in template
+    assert "data-gallery-original-index" in template
+    assert 'data-gallery-move="left"' in template
+    assert 'aria-live="polite"' in template
+    assert "fetch(grid.dataset.reorderUrl" in script
+
+
 def test_provider_management_forms_are_closed_native_disclosures(admin_app):
     client, db, _ = admin_app
     add_company(db)
@@ -375,6 +393,73 @@ def test_delete_gallery_photo_keeps_remaining_and_removes_managed_file(admin_app
     assert response.status_code == 303
     assert json.loads(company.galeria_urls) == [urls[1]]
     assert not target.exists()
+
+
+def test_reorder_gallery_persists_and_public_gallery_uses_new_order(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db, activo=True)
+    urls = [gallery_url(company, f"photo-{index}.jpg") for index in range(1, 7)]
+    company.galeria_urls = json.dumps(urls)
+    db.commit()
+
+    response = reorder_photos(client, company, "5,0,1,2,3,4")
+
+    db.refresh(company)
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+    assert json.loads(company.galeria_urls) == [urls[5], *urls[:5]]
+    public_html = client.get(f"/prestador/{company.slug}").text
+    assert public_html.index(urls[5]) < public_html.index(urls[0])
+
+
+@pytest.mark.parametrize("order", [
+    "0,0,1,2,3,4",
+    "0,1,2,3,4,99",
+    "0,1,2",
+])
+def test_reorder_gallery_rejects_non_permutations(admin_app, order):
+    client, db, _ = admin_app
+    company = add_company(db)
+    urls = [gallery_url(company, f"photo-{index}.jpg") for index in range(6)]
+    company.galeria_urls = json.dumps(urls)
+    db.commit()
+
+    response = reorder_photos(client, company, order)
+
+    db.refresh(company)
+    assert response.status_code == 400
+    assert json.loads(company.galeria_urls) == urls
+
+
+def test_reorder_gallery_is_post_only_and_missing_provider_is_404(admin_app):
+    client, _, _ = admin_app
+    assert client.get("/empresa/12345/galeria/reordenar").status_code == 405
+    assert client.post(
+        "/empresa/12345/galeria/reordenar", data={"orden": "0"}, follow_redirects=False,
+    ).status_code == 404
+
+
+def test_reorder_gallery_requires_admin_session(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db)
+    client.get("/logout")
+    response = reorder_photos(client, company, "")
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/login?")
+
+
+def test_delete_uses_persisted_index_after_gallery_reorder(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db)
+    urls = [gallery_url(company, f"photo-{index}.jpg") for index in range(6)]
+    company.galeria_urls = json.dumps(urls)
+    db.commit()
+
+    assert reorder_photos(client, company, "5,0,1,2,3,4").status_code == 200
+    assert delete_photo(client, company, 0).status_code == 303
+
+    db.refresh(company)
+    assert json.loads(company.galeria_urls) == urls[:5]
 
 
 def test_delete_last_gallery_photo_leaves_empty_list(admin_app):

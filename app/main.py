@@ -4156,6 +4156,38 @@ def eliminar_foto_galeria_empresa_admin(
         path="/admin",
     )
 
+
+@app.post("/empresa/{empresa_id}/galeria/reordenar")
+def reordenar_galeria_empresa_admin(
+    empresa_id: int,
+    request: Request,
+    orden: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    empresa = db.query(models.Empresa).filter(models.Empresa.id == empresa_id).first()
+    if not empresa:
+        raise HTTPException(status_code=404, detail="Prestador no encontrado")
+
+    gallery = get_empresa_gallery_urls(empresa)
+    try:
+        indices = [int(value.strip()) for value in orden.split(",")]
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=400, detail="El orden de la galería no es válido")
+    if len(indices) != len(gallery) or sorted(indices) != list(range(len(gallery))):
+        raise HTTPException(status_code=400, detail="El orden de la galería no es válido")
+
+    empresa.galeria_urls = json.dumps([gallery[index] for index in indices], ensure_ascii=False)
+    try:
+        db.add(empresa)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return JSONResponse({"ok": True})
+
 @app.post("/cliente/empresa/galeria")
 async def cliente_actualizar_galeria_empresa(
     request: Request,
