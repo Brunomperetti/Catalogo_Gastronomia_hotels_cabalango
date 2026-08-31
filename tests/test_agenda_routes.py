@@ -644,6 +644,46 @@ def test_activity_gallery_upload_render_and_delete(agenda_app, tmp_path, monkeyp
     assert not (tmp_path / first_url.removeprefix("/media/")).exists()
 
 
+
+def test_activity_detail_normalizes_literal_breaks_and_keeps_html_escaped(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.descripcion = "Primera<br>Segunda<br/>Tercera<br />Cuarta<script>alert(1)</script>"
+        db.commit()
+
+    html = client.get("/actividades/yoga-permanente").text
+    description = html.split('<div class="agenda-description">', 1)[1].split("</div>", 1)[0]
+    assert description == "Primera<br>Segunda<br>Tercera<br>Cuarta&lt;script&gt;alert(1)&lt;/script&gt;"
+    assert "&lt;br&gt;" not in description
+    assert "<script>alert(1)</script>" not in html
+
+
+def test_activity_gallery_renders_counter_and_dynamic_update(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.imagen_url = "/hero.jpg"
+        item.fotos.extend([
+            ActividadAgendaFoto(image_url=f"/secondary-{index}.jpg", orden=index)
+            for index in range(3)
+        ])
+        db.commit()
+
+    html = client.get("/actividades/yoga-permanente").text
+    assert "data-gallery-counter" in html
+    assert ">1 / 4</span>" in html
+    assert "activity-gallery.js?v=20260831-2" in html
+
+    script = Path("app/static/js/activity-gallery.js").read_text(encoding="utf-8")
+    assert "counter.textContent = (current + 1) + ' / ' + images.length;" in script
+
+
+def test_activity_detail_uses_polish_cache_keys():
+    template = Path("app/templates/actividad_detalle.html").read_text(encoding="utf-8")
+    assert "portal.css') }}?v=20260831-activity-gallery-polish-2" in template
+    assert "activity-gallery.js') }}?v=20260831-2" in template
+
 def test_activity_gallery_is_isolated_validated_and_cascades(agenda_app, tmp_path, monkeypatch):
     client, TestingSession = agenda_app
     monkeypatch.setattr(main_module, "STORAGE_DIR", tmp_path)
@@ -673,6 +713,7 @@ def test_activity_without_gallery_keeps_original_media_markup(agenda_app):
     html = agenda_app[0].get("/actividades/yoga-permanente").text
     assert 'class="agenda-detail__image"' not in html  # Seed has no principal photo.
     assert "data-activity-gallery" not in html and "agenda-lightbox" not in html
+    assert "data-gallery-counter" not in html and "activity-gallery.js" not in html
 
 
 def test_activity_gallery_mobile_css_prevents_page_overflow():

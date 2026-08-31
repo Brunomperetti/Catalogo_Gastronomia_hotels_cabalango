@@ -6455,6 +6455,7 @@ body,
 .agenda-lightbox__nav { place-self: center; }
 .agenda-lightbox__prev { grid-column: 1; }
 .agenda-lightbox__next { grid-column: 3; }
+.agenda-lightbox__counter { background: rgba(0,0,0,.42); border-radius: 999px; bottom: 24px; color: white; font-size: .75rem; letter-spacing: .06em; padding: 6px 10px; position: absolute; right: 24px; }
 .has-agenda-lightbox { overflow: hidden; }
 @media (max-width: 700px) {
   .agenda-gallery { min-width: 0; overflow: hidden; }

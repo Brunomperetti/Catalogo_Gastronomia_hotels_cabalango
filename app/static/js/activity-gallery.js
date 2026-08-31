@@ -7,9 +7,11 @@
   var hero = gallery.querySelector('[data-gallery-hero]');
   var lightbox = gallery.querySelector('[data-gallery-lightbox]');
   var lightboxImage = gallery.querySelector('[data-gallery-lightbox-image]');
+  var counter = gallery.querySelector('[data-gallery-counter]');
   var current = 0;
   function select(index) {
     current = (index + images.length) % images.length;
+    counter.textContent = (current + 1) + ' / ' + images.length;
     hero.src = images[current];
     lightboxImage.src = images[current];
     thumbs.forEach(function (thumb, i) {
