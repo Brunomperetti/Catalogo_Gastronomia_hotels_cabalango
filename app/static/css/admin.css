@@ -1057,3 +1057,11 @@
 .destination-edit-checks { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
 .destination-edit-dialog__actions { border-top: 1px solid var(--admin-border); justify-content: flex-end; margin-top: 18px; padding-top: 16px; }
 @media (max-width: 600px) { .destination-edit-dialog { padding: 16px; } .destination-edit-dialog__actions > button { flex: 1; } }
+
+.activity-gallery-admin { margin-top: 8px; }
+.activity-gallery-admin__grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill,minmax(150px,1fr)); margin-top: 16px; }
+.activity-gallery-admin__item { border: 1px solid #d8d8d2; border-radius: 12px; overflow: hidden; }
+.activity-gallery-admin__item img { aspect-ratio: 4/3; display: block; object-fit: cover; width: 100%; }
+.activity-gallery-admin__item > div { align-items: center; display: flex; justify-content: space-between; padding: 9px; }
+.activity-gallery-admin__item span { font-size: .82rem; font-weight: 700; }
+.activity-gallery-admin__item .btn-danger-custom { padding: 7px 10px; }

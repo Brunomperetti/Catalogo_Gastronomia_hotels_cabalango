@@ -14,7 +14,7 @@ import app.agenda as agenda_domain
 import app.main as main_module
 from app.database import Base
 from app.main import app, get_db, hash_password
-from app.models import ActividadAgenda, Usuario
+from app.models import ActividadAgenda, ActividadAgendaFoto, Usuario
 
 
 NOW = datetime(2026, 8, 10, 20, 0, tzinfo=agenda_domain.CABALANGO_TZ)
@@ -40,6 +40,7 @@ def test_legacy_sqlite_agenda_bootstrap_is_additive_and_idempotent(tmp_path, mon
     monkeypatch.setattr(main_module, "engine", legacy_engine)
     main_module.ensure_actividad_agenda_table()
 
+    assert "actividades_agenda_fotos" in inspect(legacy_engine).get_table_names()
     expected_columns = {
         "oficial", "estado", "publicar_desde", "destacar_home_desde",
         "ocultar_desde", "mostrar_en_home", "prioridad_home",
@@ -580,3 +581,74 @@ def test_que_hacer_uses_dedicated_stylesheet_cache_key_only():
     assert "?v=20260818-agenda-official-1" in template
     assert "?v=20260810-commerce-services-1" not in template
     assert "?v=20260818-agenda-official-1" not in home
+
+
+
+def test_activity_gallery_upload_render_and_delete(agenda_app, tmp_path, monkeypatch):
+    client, TestingSession = agenda_app
+    monkeypatch.setattr(main_module, "STORAGE_DIR", tmp_path)
+    login_admin(client)
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.imagen_url = "/media/actividades/yoga-permanente/principal.jpg"
+        item_id = item.id
+        db.commit()
+
+    data = {"id": str(item_id), "tipo": "actividad", "titulo": "Yoga permanente",
+            "categoria": "bienestar", "momento": "dia", "publicado": "1"}
+    files = [("galeria", ("rio.jpg", b"first-photo", "image/jpeg")),
+             ("galeria", ("monte.webp", b"second-photo", "image/webp"))]
+    response = client.post("/admin/actividades/guardar", data=data, files=files, follow_redirects=False)
+    assert response.status_code == 303
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert [photo.orden for photo in item.fotos] == [0, 1]
+        first_id, first_url = item.fotos[0].id, item.fotos[0].image_url
+        assert all(photo.actividad_id == item_id for photo in item.fotos)
+    detail = client.get("/actividades/yoga-permanente").text
+    assert first_url in detail
+    assert "data-activity-gallery" in detail and "data-gallery-lightbox" in detail
+    assert client.get(f"/admin/actividades/{item_id}/fotos/{first_id}/eliminar").status_code == 405
+    assert client.post(f"/admin/actividades/{item_id}/fotos/{first_id}/eliminar", follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        assert db.get(ActividadAgenda, item_id) is not None
+        assert db.get(ActividadAgendaFoto, first_id) is None
+    assert not (tmp_path / first_url.removeprefix("/media/")).exists()
+
+
+def test_activity_gallery_is_isolated_validated_and_cascades(agenda_app, tmp_path, monkeypatch):
+    client, TestingSession = agenda_app
+    monkeypatch.setattr(main_module, "STORAGE_DIR", tmp_path)
+    login_admin(client)
+    with TestingSession() as db:
+        yoga = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        feria = db.query(ActividadAgenda).filter_by(slug="feria-hoy").one()
+        yoga.imagen_url = "/hero.jpg"
+        yoga.fotos.append(ActividadAgendaFoto(image_url="/yoga-only.jpg", orden=2))
+        feria.fotos.append(ActividadAgendaFoto(image_url="/feria-only.jpg", orden=0))
+        yoga_id = yoga.id
+        db.commit()
+        feria_photo_id = feria.fotos[0].id
+    html = client.get("/actividades/yoga-permanente").text
+    assert "/yoga-only.jpg" in html and "/feria-only.jpg" not in html
+    invalid = client.post("/admin/actividades/guardar", data={"id": yoga_id, "tipo": "actividad",
+        "titulo": "Yoga permanente", "categoria": "bienestar", "momento": "dia"},
+        files=[("galeria", ("attack.svg", b"bad", "image/svg+xml"))], follow_redirects=False)
+    assert "error=" in invalid.headers["location"]
+    with TestingSession() as db:
+        db.delete(db.get(ActividadAgenda, yoga_id)); db.commit()
+        assert db.query(ActividadAgendaFoto).filter_by(actividad_id=yoga_id).count() == 0
+        assert db.get(ActividadAgendaFoto, feria_photo_id) is not None
+
+
+def test_activity_without_gallery_keeps_original_media_markup(agenda_app):
+    html = agenda_app[0].get("/actividades/yoga-permanente").text
+    assert 'class="agenda-detail__image"' not in html  # Seed has no principal photo.
+    assert "data-activity-gallery" not in html and "agenda-lightbox" not in html
+
+
+def test_activity_gallery_mobile_css_prevents_page_overflow():
+    css = Path("app/static/css/portal.css").read_text()
+    assert "@media (max-width: 700px)" in css
+    assert ".agenda-gallery { min-width: 0; overflow: hidden; }" in css
+    assert ".agenda-gallery__thumbs { width: 100%; }" in css

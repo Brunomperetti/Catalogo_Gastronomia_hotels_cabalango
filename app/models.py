@@ -293,6 +293,18 @@ class ActividadAgenda(Base):
     orden = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    fotos = relationship("ActividadAgendaFoto", back_populates="actividad", cascade="all, delete-orphan", order_by="ActividadAgendaFoto.orden, ActividadAgendaFoto.id")
+
+
+class ActividadAgendaFoto(Base):
+    __tablename__ = "actividades_agenda_fotos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    actividad_id = Column(Integer, ForeignKey("actividades_agenda.id", ondelete="CASCADE"), nullable=False, index=True)
+    image_url = Column(String, nullable=False)
+    orden = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    actividad = relationship("ActividadAgenda", back_populates="fotos")
 
 
 class SolicitudPrestador(Base):

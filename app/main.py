@@ -383,6 +383,8 @@ def ensure_actividad_agenda_table():
                     conn.execute(text(f"ALTER TABLE actividades_agenda ADD COLUMN {name} {sql_type}"))
             for name in additions:
                 conn.execute(text(f"CREATE INDEX IF NOT EXISTS ix_actividades_agenda_{name} ON actividades_agenda({name})"))
+    # Gallery storage is additive: never rebuild or copy the activity table.
+    Base.metadata.create_all(bind=engine, tables=[models.ActividadAgendaFoto.__table__])
 
 
 def ensure_solicitud_prestador_table():
@@ -3011,17 +3013,33 @@ def unique_agenda_slug(db: Session, title: str, exclude_id=None):
     return slug
 
 
-async def save_agenda_image(upload: UploadFile, slug: str):
+async def save_agenda_image(upload: UploadFile, slug: str, prefix: str = "principal"):
     if Path(upload.filename or "").suffix.lower() not in ALLOWED_IMAGE_EXTENSIONS:
         raise ValueError("Formato de imagen inválido")
     target = STORAGE_DIR / "actividades" / slug
     target.mkdir(parents=True, exist_ok=True)
-    filename = safe_unique_filename(upload, prefix="principal")
+    filename = safe_unique_filename(upload, prefix=prefix)
     data = await upload.read()
     if len(data) > 8 * 1024 * 1024:
         raise ValueError("La imagen supera el máximo de 8 MB")
     (target / filename).write_bytes(data)
     return f"{MEDIA_URL_PREFIX}/actividades/{slug}/{filename}"
+
+
+def delete_agenda_gallery_file(image_url: str, principal_url: str | None = None):
+    """Delete only a managed secondary image, contained beneath activity storage."""
+    if not image_url or image_url == principal_url:
+        return
+    prefix = f"{MEDIA_URL_PREFIX}/"
+    if not image_url.startswith(prefix):
+        return
+    candidate = (STORAGE_DIR / image_url.removeprefix(prefix)).resolve()
+    activities_root = (STORAGE_DIR / "actividades").resolve()
+    try:
+        candidate.relative_to(activities_root)
+    except ValueError:
+        return
+    candidate.unlink(missing_ok=True)
 
 
 @app.get("/admin/actividades", response_class=HTMLResponse)
@@ -3033,7 +3051,7 @@ def admin_activities(request: Request, edit: int | None = None, error: str = "",
 
 
 @app.post("/admin/actividades/guardar")
-async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: str = Form(""), publicado: str | None = Form(None), destacado: str | None = Form(None), oficial: str | None = Form(None), estado: str | None = Form(None), publicar_desde: str = Form(""), destacar_home_desde: str = Form(""), ocultar_desde: str = Form(""), mostrar_en_home: str | None = Form(None), prioridad_home: int = Form(0), imagen: UploadFile | None = File(None), db: Session = Depends(get_db)):
+async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: str = Form(""), publicado: str | None = Form(None), destacado: str | None = Form(None), oficial: str | None = Form(None), estado: str | None = Form(None), publicar_desde: str = Form(""), destacar_home_desde: str = Form(""), ocultar_desde: str = Form(""), mostrar_en_home: str | None = Form(None), prioridad_home: int = Form(0), imagen: UploadFile | None = File(None), galeria: list[UploadFile] = File(default=[]), db: Session = Depends(get_db)):
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     try:
@@ -3066,6 +3084,15 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
     try:
         validate_activity(item)
         if has_uploaded_file(imagen): item.imagen_url = await save_agenda_image(imagen, item.slug)
+        uploads = [upload for upload in galeria if has_uploaded_file(upload)]
+        if uploads and not id:
+            raise ValueError("Guardá la actividad antes de agregar fotos a la galería")
+        if len(item.fotos) + len(uploads) > 8:
+            raise ValueError("La galería admite hasta 8 fotos adicionales")
+        next_order = max([foto.orden for foto in item.fotos] or [-1]) + 1
+        for upload in uploads:
+            db.add(models.ActividadAgendaFoto(actividad=item, image_url=await save_agenda_image(upload, item.slug, "galeria"), orden=next_order))
+            next_order += 1
     except ValueError as exc:
         # Editing mutates an ORM-managed object before validation. Explicitly
         # discard those changes and leave the request session reusable.
@@ -3073,6 +3100,20 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
         return RedirectResponse(f"/admin/actividades?edit={id or ''}&error={quote(str(exc))}", 303)
     db.add(item); db.commit()
     return RedirectResponse("/admin/actividades", 303)
+
+
+@app.post("/admin/actividades/{item_id}/fotos/{foto_id}/eliminar")
+def admin_activity_photo_delete(request: Request, item_id: int, foto_id: int, db: Session = Depends(get_db)):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse): return user
+    foto = db.query(models.ActividadAgendaFoto).filter_by(id=foto_id, actividad_id=item_id).first()
+    if not foto:
+        raise HTTPException(404, "Foto no encontrada")
+    image_url, principal_url = foto.image_url, foto.actividad.imagen_url
+    db.delete(foto)
+    db.commit()
+    delete_agenda_gallery_file(image_url, principal_url)
+    return RedirectResponse(f"/admin/actividades?edit={item_id}&msg=Foto%20eliminada.", 303)
 
 
 @app.post("/admin/actividades/{item_id}/duplicar")
