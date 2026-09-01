@@ -44,6 +44,8 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         fecha="",
         organizador="",
         lugar_encuentro="",
+        alojamiento_modalidad=None,
+        alojamiento_detalle_unidades=None,
     )
     identity_overrides = identity_overrides or {}
     for field, value in identity_overrides.items():
@@ -70,6 +72,15 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         has_real_photos=bool(galeria_urls),
         theme_display_label=lambda value: "Alojamientos" if value == "alojamiento" else "Gastronomía",
         service_card_kicker=lambda empresa: "Almacenes y kioscos · Almacén",
+        is_alojamiento_complejo=lambda empresa: (
+            empresa.theme == "alojamiento" and empresa.alojamiento_modalidad == "complejo"
+        ),
+        get_alojamiento_card_type=lambda empresa: "COMPLEJO" if empresa.alojamiento_modalidad == "complejo" else empresa.subtipo,
+        build_alojamiento_key_facts=lambda empresa: (
+            [empresa.alojamiento_detalle_unidades]
+            if empresa.alojamiento_detalle_unidades
+            else ([f"Hasta {re.search(r'\d+', empresa.capacidad).group()} personas por unidad"] if empresa.capacidad else [])
+        ),
         actividad_subgrupos={},
     )
 
@@ -206,6 +217,54 @@ def test_category_is_rendered_once_without_a_duplicate_chip():
     assert html.count("Alojamientos · Cabaña") == 2
     assert html.count('class="provider-category"') == 1
     assert "tourism-heading-meta" not in html
+
+
+def test_complex_accommodation_identifies_type_and_shows_stored_units_in_summary():
+    detail = "Cabañas hasta 6 personas · Monoambientes para 2–3 personas"
+    html = render_prestador(identity_overrides={
+        "alojamiento_modalidad": "complejo",
+        "alojamiento_detalle_unidades": detail,
+        "capacidad": "6",
+    })
+    summary = re.search(r'<aside class="provider-key-summary".*?</aside>', html, re.DOTALL).group(0)
+
+    assert html.count("Alojamientos · COMPLEJO") == 2
+    assert "Alojamientos · Cabaña" not in html
+    assert "Unidades" in summary
+    assert detail in summary
+    assert summary.index("Propuesta") < summary.index("Unidades") < summary.index("Horarios")
+    assert summary.index("Horarios") < summary.index("Ubicación") < summary.index("Contacto directo")
+
+
+def test_complex_accommodation_units_fall_back_to_capacity_per_unit():
+    html = render_prestador(identity_overrides={
+        "alojamiento_modalidad": "complejo",
+        "alojamiento_detalle_unidades": "",
+        "capacidad": "6",
+    })
+
+    assert "Unidades" in html
+    assert "Hasta 6 personas por unidad" in html
+
+
+def test_individual_accommodation_keeps_subtype_without_units_row():
+    html = render_prestador(identity_overrides={
+        "alojamiento_modalidad": "individual",
+        "capacidad": "4",
+    })
+
+    assert html.count("Alojamientos · Cabaña") == 2
+    assert "Unidades" not in html
+
+
+def test_non_accommodation_summary_does_not_gain_units_row():
+    html = render_prestador("servicios", identity_overrides={
+        "alojamiento_modalidad": "complejo",
+        "alojamiento_detalle_unidades": "Locales para 2 personas",
+    }, subtipo="Almacén")
+
+    assert html.count("Almacenes y kioscos · Almacén") == 2
+    assert "Unidades" not in html
 
 
 def test_service_category_does_not_append_subtype_twice():
@@ -395,6 +454,9 @@ def test_prestador_template_uses_normalized_external_contact_links():
         whatsapp_url="https://wa.me/5493510000000", empresa_logo_url="", empresa_banner_url="", galeria_urls=[],
         gallery_tiles=[], main_photo_url="/static/img/no-image.jpg", has_real_photos=False,
         theme_display_label=lambda value: "Alojamientos", actividad_subgrupos={},
+        is_alojamiento_complejo=lambda empresa: False,
+        get_alojamiento_card_type=lambda empresa: empresa.subtipo,
+        build_alojamiento_key_facts=lambda empresa: [],
     )
 
     assert 'href="https://facebook.com/golata007"' in html
