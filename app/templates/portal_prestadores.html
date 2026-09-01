@@ -39,7 +39,7 @@
             <div class="filter-heading">
                 <p class="portal-kicker">Búsqueda inteligente</p>
                 <h2>Encontrá tu alojamiento ideal</h2>
-                <p>Filtrá por capacidad, habitaciones, pileta, río y comodidades.</p>
+                <p>Filtrá por capacidad, habitaciones, pileta, río y comodidades. En complejos, la capacidad corresponde a una unidad reservable, no al total del predio.</p>
             </div>
             <form class="alojamientos-filters" method="get" action="/alojamientos">
                 {% set amenity_state = namespace(count=0) %}
@@ -51,7 +51,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="filter-control"><label for="filter-capacidad">Capacidad</label>
+                <div class="filter-control"><label for="filter-capacidad">Personas por unidad</label>
                     <select id="filter-capacidad" name="capacidad">
                         {% for value, label in [('', 'Cualquier capacidad'),('2','2+ personas'),('4','4+ personas'),('6','6+ personas'),('8','8+ personas')] %}
                         <option value="{{ value }}" {% if alojamiento_filters.get('capacidad') == value %}selected{% endif %}>{{ label }}</option>
@@ -64,6 +64,7 @@
                         <option value="{{ value }}" {% if alojamiento_filters.get('habitaciones') == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
+                    <small>Habitaciones aplica a unidades individuales.</small>
                 </div>
                 <div class="filter-control"><label for="filter-precio-max">Precio máximo</label>
                     <select id="filter-precio-max" name="precio_max">

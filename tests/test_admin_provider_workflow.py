@@ -90,6 +90,34 @@ def edit_company(client, company, **values):
     return client.post("/empresa/editar_panel", data=data, follow_redirects=False)
 
 
+def test_edit_accommodation_persists_normalized_multi_unit_fields(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db, theme="alojamiento")
+
+    response = edit_company(
+        client,
+        company,
+        alojamiento_modalidad=" COMPLEJO ",
+        alojamiento_detalle_unidades="  Cabañas para 4 o 6 personas  ",
+    )
+
+    assert response.status_code == 303
+    db.refresh(company)
+    assert company.alojamiento_modalidad == "complejo"
+    assert company.alojamiento_detalle_unidades == "Cabañas para 4 o 6 personas"
+
+
+def test_edit_accommodation_normalizes_invalid_modality_to_none(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db, slug="invalid-modality", theme="alojamiento", alojamiento_modalidad="individual")
+
+    response = edit_company(client, company, alojamiento_modalidad="hotel")
+
+    assert response.status_code == 303
+    db.refresh(company)
+    assert company.alojamiento_modalidad is None
+
+
 @pytest.mark.parametrize(("initial", "form_data", "expected"), [
     (True, {}, False),
     (False, {"activo": "1"}, True),
