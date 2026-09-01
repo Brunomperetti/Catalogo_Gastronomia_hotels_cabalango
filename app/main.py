@@ -3047,6 +3047,25 @@ def parse_local_form_datetime(value: str):
     return datetime.fromisoformat(value) if value else None
 
 
+AGENDA_DATE_ERROR_MESSAGES = {
+    "fecha_inicio": "Fecha y hora de inicio inválida.",
+    "fecha_fin": "Fecha y hora de finalización inválida.",
+    "publicar_desde": "Fecha de publicación en Agenda inválida.",
+    "destacar_home_desde": "Fecha para destacar en portada inválida.",
+    "ocultar_desde": "Fecha de finalización de publicación inválida.",
+}
+
+
+def parse_agenda_form_dates(**values):
+    parsed = {}
+    for field, value in values.items():
+        try:
+            parsed[field] = parse_local_form_datetime(value)
+        except ValueError:
+            raise ValueError(AGENDA_DATE_ERROR_MESSAGES[field]) from None
+    return parsed
+
+
 def unique_agenda_slug(db: Session, title: str, exclude_id=None):
     base = re.sub(r"[^a-z0-9]+", "-", title.lower().translate(str.maketrans("áéíóúñ", "aeioun"))).strip("-") or "actividad"
     slug, suffix = base, 2
@@ -3100,6 +3119,16 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
         orden_value = int(orden) if orden.strip() else None
     except ValueError:
         return RedirectResponse(f"/admin/actividades?edit={id or ''}&error={quote('Orden debe ser un número entero')}", 303)
+    try:
+        parsed_dates = parse_agenda_form_dates(
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin,
+            publicar_desde=publicar_desde,
+            destacar_home_desde=destacar_home_desde,
+            ocultar_desde=ocultar_desde,
+        )
+    except ValueError as exc:
+        return RedirectResponse(f"/admin/actividades?edit={id or ''}&error={quote(str(exc))}", 303)
     item = db.get(models.ActividadAgenda, id) if id else models.ActividadAgenda(created_at=utc_now())
     if id and not item: raise HTTPException(404)
     old_defaults = default_event_schedule(item.fecha_inicio, item.fecha_fin) if id and item.tipo == "evento" and item.fecha_inicio and item.fecha_fin else {}
@@ -3109,17 +3138,17 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
     for name, value in values.items():
         setattr(item, name, value if name in {"publicado", "destacado", "oficial", "mostrar_en_home", "prioridad_home", "orden", "estado"} else value or None)
     item.tipo, item.categoria, item.momento = tipo, categoria, momento
-    item.fecha_inicio, item.fecha_fin, item.updated_at = parse_local_form_datetime(fecha_inicio), parse_local_form_datetime(fecha_fin), utc_now()
+    item.fecha_inicio, item.fecha_fin, item.updated_at = parsed_dates["fecha_inicio"], parsed_dates["fecha_fin"], utc_now()
     submitted_windows = {"publicar_desde": publicar_desde, "destacar_home_desde": destacar_home_desde, "ocultar_desde": ocultar_desde}
-    for name, value in submitted_windows.items():
-        setattr(item, name, parse_local_form_datetime(value))
+    for name in submitted_windows:
+        setattr(item, name, parsed_dates[name])
     if tipo == "evento" and item.fecha_inicio and item.fecha_fin:
         suggestions = default_event_schedule(item.fecha_inicio, item.fecha_fin)
         for name, suggested in suggestions.items():
             if name == "publicar_desde":
                 continue
             was_automatic = id and old_windows[name] is not None and local_datetime(old_windows[name]) == old_defaults.get(name)
-            submitted = parse_local_form_datetime(submitted_windows[name])
+            submitted = parsed_dates[name]
             kept_old_automatic = submitted is not None and old_windows[name] is not None and local_datetime(submitted) == local_datetime(old_windows[name])
             should_default = not submitted_windows[name] and (
                 name == "ocultar_desde" or (name == "destacar_home_desde" and item.mostrar_en_home)

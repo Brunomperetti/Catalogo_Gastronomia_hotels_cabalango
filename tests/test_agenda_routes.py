@@ -2,7 +2,7 @@ from datetime import datetime
 from html import unescape
 from pathlib import Path
 import re
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import parse_qsl, quote, urlsplit
 
 import pytest
 from fastapi.testclient import TestClient
@@ -215,6 +215,81 @@ def test_invalid_range_rolls_back_without_persisting(agenda_app):
     with TestingSession() as db:
         assert db.query(ActividadAgenda).filter_by(titulo="Evento inválido").first() is None
         assert db.query(ActividadAgenda).count() == 9
+
+
+@pytest.mark.parametrize(
+    ("field", "invalid_value", "message"),
+    [
+        ("fecha_inicio", "202623-09-01T05:09", "Fecha y hora de inicio inválida."),
+        ("fecha_fin", "not-a-date", "Fecha y hora de finalización inválida."),
+        ("publicar_desde", "not-a-date", "Fecha de publicación en Agenda inválida."),
+        ("destacar_home_desde", "not-a-date", "Fecha para destacar en portada inválida."),
+        ("ocultar_desde", "not-a-date", "Fecha de finalización de publicación inválida."),
+    ],
+)
+def test_invalid_admin_date_redirects_without_creating_event(agenda_app, field, invalid_value, message):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    data = {
+        "tipo": "evento", "titulo": f"Evento con {field} inválida", "categoria": "cultura",
+        "momento": "dia", "fecha_inicio": "2026-09-01T05:09", "fecha_fin": "2026-09-01T07:09",
+    }
+    data[field] = invalid_value
+
+    response = client.post("/admin/actividades/guardar", data=data, follow_redirects=False)
+
+    assert response.status_code == 303
+    assert "error=" in response.headers["location"]
+    assert quote(message) in response.headers["location"]
+    with TestingSession() as db:
+        assert db.query(ActividadAgenda).filter_by(titulo=data["titulo"]).first() is None
+        assert db.query(ActividadAgenda).count() == 9
+
+
+def test_invalid_admin_date_does_not_mutate_existing_event(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="feria-hoy").one()
+        item_id = item.id
+        original = (item.titulo, item.fecha_inicio, item.fecha_fin, item.publicado)
+
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={
+            "id": item_id, "tipo": "evento", "titulo": "Título que no debe guardarse",
+            "categoria": "cultura", "momento": "dia", "fecha_inicio": "202623-09-01T05:09",
+            "fecha_fin": "2026-09-01T07:09",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert f"edit={item_id}" in response.headers["location"]
+    assert "Fecha%20y%20hora%20de%20inicio%20inv%C3%A1lida." in response.headers["location"]
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert (item.titulo, item.fecha_inicio, item.fecha_fin, item.publicado) == original
+
+
+def test_empty_optional_admin_dates_remain_valid(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={
+            "tipo": "actividad", "titulo": "Actividad sin ventanas", "categoria": "bienestar",
+            "momento": "dia", "publicar_desde": "", "destacar_home_desde": "", "ocultar_desde": "",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(titulo="Actividad sin ventanas").one()
+        assert item.publicar_desde is None
+        assert item.destacar_home_desde is None
+        assert item.ocultar_desde is None
 
 
 def test_seasonal_activity_detail_presents_schedule_before_validity(agenda_app):
