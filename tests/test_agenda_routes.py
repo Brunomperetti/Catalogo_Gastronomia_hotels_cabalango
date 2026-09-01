@@ -607,9 +607,26 @@ def test_que_hacer_uses_dedicated_stylesheet_cache_key_only():
     templates_dir = Path(main_module.__file__).parent / "templates"
     template = (templates_dir / "actividades.html").read_text()
     home = (templates_dir / "portal_home.html").read_text()
-    assert "?v=20260818-agenda-official-1" in template
+    assert "?v=20260901-agenda-card-media-1" in template
     assert "?v=20260810-commerce-services-1" not in template
-    assert "?v=20260818-agenda-official-1" not in home
+    assert "?v=20260901-agenda-card-media-1" not in home
+
+
+def test_public_agenda_event_cards_keep_editorial_media_and_grid_rules():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    image_rule = css.split(".public-agenda .official-event__image {", 1)[1].split("}", 1)[0]
+    one_event_rule = css.split('.public-agenda .official-agenda__grid[data-count="1"] {', 1)[1].split("}", 1)[0]
+    two_event_rule = css.split('.public-agenda .official-agenda__grid[data-count="2"] {', 1)[1].split("}", 1)[0]
+
+    assert "object-fit: contain" in image_rule
+    assert "object-fit: cover" not in image_rule
+    assert "aspect-ratio: 4 / 3" in image_rule
+    assert "32rem" in one_event_rule and "42rem" not in one_event_rule
+    assert "justify-content: start" in one_event_rule
+    assert "repeat(2, minmax(0, 1fr))" in two_event_rule
+    assert "max-width: 60rem" in two_event_rule
+    assert '@media (max-width: 600px)' in css
+    assert 'grid-template-columns: 1fr; max-width: none; width: 100%;' in css
 
 
 
