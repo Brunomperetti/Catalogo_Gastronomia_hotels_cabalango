@@ -59,11 +59,11 @@ def validate_activity(item: models.ActividadAgenda) -> None:
         raise ValueError("La actividad no puede ocultarse antes de comenzar")
 
 
-def publication_window_for_event(fecha_inicio: datetime, fecha_fin: datetime) -> dict[str, datetime]:
-    """Return Cabalango-local editorial suggestions; it does not mutate an event."""
+def default_event_schedule(fecha_inicio: datetime, fecha_fin: datetime) -> dict[str, datetime | None]:
+    """Return Cabalango-local editorial defaults; it does not mutate an event."""
     start, end = local_datetime(fecha_inicio), local_datetime(fecha_fin)
     return {
-        "publicar_desde": start - timedelta(days=14),
+        "publicar_desde": None,
         "destacar_home_desde": start - timedelta(days=7),
         "ocultar_desde": end,
     }
@@ -230,7 +230,7 @@ def prepare_home_agenda_events(items, now=None):
     return cards
 
 
-def prepare_public_agenda(items, now=None, limit=6):
+def prepare_public_agenda(items, now=None, limit=None):
     """Build display-only data for the public agenda without duplicating visibility rules."""
     now = local_datetime(now or now_cabalango())
     events = sorted(
@@ -241,10 +241,15 @@ def prepare_public_agenda(items, now=None, limit=6):
             item.titulo.casefold(),
         ),
     )
-    cards = [prepare_event_card(item, now) for item in events[:limit]]
+    selected_events = events if limit is None else events[:max(0, limit)]
+    cards = [prepare_event_card(item, now) for item in selected_events]
 
     activities = sorted(
         (item for item in items if item.tipo == "actividad"),
         key=lambda item: (not item.destacado, item.orden is None, item.orden or 0, item.titulo.casefold()),
     )
-    return {"events": cards, "activities": activities, "has_more_events": len(events) > limit}
+    return {
+        "events": cards,
+        "activities": activities,
+        "has_more_events": limit is not None and len(events) > max(0, limit),
+    }

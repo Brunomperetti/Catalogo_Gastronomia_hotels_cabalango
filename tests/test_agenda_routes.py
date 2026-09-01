@@ -313,7 +313,7 @@ def test_admin_saves_schedule_defaults_manual_override_and_new_flags(agenda_app)
         item = db.query(ActividadAgenda).filter_by(slug="festival-oficial").one()
         item_id = item.id
         assert (item.oficial, item.mostrar_en_home, item.prioridad_home) == (True, True, 75)
-        assert item.publicar_desde == datetime(2026, 11, 7, 18)
+        assert item.publicar_desde is None
         assert item.destacar_home_desde == datetime(2026, 11, 14, 18)
         assert item.ocultar_desde == datetime(2026, 11, 21, 22)
 
@@ -359,7 +359,7 @@ def test_admin_saves_undated_draft_then_schedules_it_with_defaults(agenda_app):
     with TestingSession() as db:
         item = db.get(ActividadAgenda, item_id)
         assert item.estado == "programado"
-        assert item.publicar_desde == datetime(2026, 11, 7, 18)
+        assert item.publicar_desde is None
         assert item.destacar_home_desde == datetime(2026, 11, 14, 18)
         assert item.ocultar_desde == datetime(2026, 11, 21, 22)
 
@@ -579,11 +579,11 @@ def test_public_agenda_excludes_invalid_states_windows_and_finished_events(agend
         assert title not in html
 
 
-def test_public_agenda_order_limit_and_empty_state(agenda_app):
+def test_public_agenda_order_without_default_limit_and_empty_state(agenda_app):
     client, TestingSession = agenda_app
     with TestingSession() as db:
         db.query(ActividadAgenda).filter(ActividadAgenda.tipo == "evento").delete()
-        for index in range(7):
+        for index in range(9):
             db.add(ActividadAgenda(
                 tipo="evento", titulo=f"Próximo {index}", slug=f"proximo-{index}",
                 categoria="otros", momento="dia", publicado=True,
@@ -591,8 +591,9 @@ def test_public_agenda_order_limit_and_empty_state(agenda_app):
             ))
         db.commit()
     html = client.get("/actividades").text
-    assert html.index("Próximo 0") < html.index("Próximo 5")
-    assert "Próximo 6" not in html and "Ver agenda completa" not in html
+    assert all(f"Próximo {index}" in html for index in range(9))
+    assert html.index("Próximo 0") < html.index("Próximo 8")
+    assert "Ver agenda completa" not in html
 
     with TestingSession() as db:
         db.query(ActividadAgenda).filter(ActividadAgenda.tipo == "evento").delete()
@@ -721,3 +722,35 @@ def test_activity_gallery_mobile_css_prevents_page_overflow():
     assert "@media (max-width: 700px)" in css
     assert ".agenda-gallery { min-width: 0; overflow: hidden; }" in css
     assert ".agenda-gallery__thumbs { width: 100%; }" in css
+
+
+def test_admin_clearing_existing_agenda_embargo_persists_null(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    with TestingSession() as db:
+        item = ActividadAgenda(
+            tipo="evento", titulo="Evento embargado", slug="evento-embargado",
+            categoria="cultura", momento="dia", publicado=True, estado="programado",
+            fecha_inicio=datetime(2026, 9, 19, 18), fecha_fin=datetime(2026, 9, 19, 22),
+            publicar_desde=datetime(2026, 9, 5, 18),
+        )
+        db.add(item)
+        db.commit()
+        item_id = item.id
+
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={
+            "id": item_id, "tipo": "evento", "titulo": "Evento embargado",
+            "categoria": "cultura", "momento": "dia", "publicado": "1",
+            "estado": "programado", "fecha_inicio": "2026-09-19T18:00",
+            "fecha_fin": "2026-09-19T22:00", "publicar_desde": "",
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert item.publicar_desde is None
+        assert item.ocultar_desde == datetime(2026, 9, 19, 22)
