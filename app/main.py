@@ -169,6 +169,8 @@ def ensure_empresa_media_columns():
             "horarios": "VARCHAR",
             "precio_desde": "VARCHAR",
             "capacidad": "VARCHAR",
+            "alojamiento_modalidad": "VARCHAR",
+            "alojamiento_detalle_unidades": "TEXT",
             "habitaciones": "VARCHAR",
             "banos": "VARCHAR",
             "video_url": "VARCHAR",
@@ -2130,6 +2132,8 @@ def editar_empresa_panel(
     horarios: str | None = Form(None),
     precio_desde: str | None = Form(None),
     capacidad: str | None = Form(None),
+    alojamiento_modalidad: str | None = Form(None),
+    alojamiento_detalle_unidades: str | None = Form(None),
     habitaciones: str | None = Form(None),
     banos: str | None = Form(None),
     video_url: str | None = Form(None),
@@ -2216,6 +2220,11 @@ def editar_empresa_panel(
     for attr, raw_value in optional_text_fields.items():
         if raw_value is not None:
             setattr(empresa, attr, clean_text(raw_value, default="") or None)
+    if normalize_theme(theme) == "alojamiento":
+        if alojamiento_modalidad is not None:
+            empresa.alojamiento_modalidad = normalize_alojamiento_modalidad(alojamiento_modalidad)
+        if alojamiento_detalle_unidades is not None:
+            empresa.alojamiento_detalle_unidades = clean_text(alojamiento_detalle_unidades, default="") or None
     if subgrupo is not None or normalize_theme(theme) == "servicios":
         effective_subtype = subtipo if subtipo is not None else empresa.subtipo
         empresa.subgrupo = normalize_service_group_subtype(subgrupo, effective_subtype, theme)
@@ -2615,7 +2624,31 @@ def alojamiento_fact_label(value, singular: str, plural: str) -> str:
     return clean_value if singular in clean_value.lower() or plural in clean_value.lower() else f"{clean_value} {label}"
 
 
+def normalize_alojamiento_modalidad(value) -> str | None:
+    normalized = clean_text(value, default="").lower()
+    return normalized if normalized in {"individual", "complejo"} else None
+
+
+def is_alojamiento_complejo(empresa: models.Empresa) -> bool:
+    return (
+        normalize_theme(getattr(empresa, "theme", None)) == "alojamiento"
+        and normalize_alojamiento_modalidad(getattr(empresa, "alojamiento_modalidad", None)) == "complejo"
+    )
+
+
+def get_alojamiento_card_type(empresa: models.Empresa) -> str:
+    if is_alojamiento_complejo(empresa):
+        return "COMPLEJO"
+    return clean_text(empresa.subtipo, default="") or theme_display_label(empresa.theme)
+
+
 def build_alojamiento_key_facts(empresa: models.Empresa) -> list[str]:
+    if is_alojamiento_complejo(empresa):
+        detail = clean_text(getattr(empresa, "alojamiento_detalle_unidades", None), default="")
+        if detail:
+            return [detail]
+        capacidad = parse_public_number(empresa.capacidad)
+        return [f"Hasta {capacidad} personas por unidad"] if capacidad else []
     facts = []
     for value, singular, plural in [
         (empresa.capacidad, "persona", "personas"),
@@ -2677,13 +2710,21 @@ def filter_alojamientos(empresas: list[models.Empresa], filters: dict) -> list[m
     results = list(empresas)
     tipo = clean_text(filters.get("tipo"), default="todos").lower()
     if tipo and tipo != "todos":
-        results = [e for e in results if tipo in clean_text(e.subtipo or e.theme, default="").lower()]
+        results = [
+            e for e in results
+            if tipo in clean_text(e.subtipo or e.theme, default="").lower()
+            or (tipo == "complejo" and is_alojamiento_complejo(e))
+        ]
     capacidad_min = parse_public_number(filters.get("capacidad"))
     if capacidad_min:
         results = [e for e in results if (parse_public_number(e.capacidad) or 0) >= capacidad_min]
     habitaciones_min = parse_public_number(filters.get("habitaciones"))
     if habitaciones_min:
-        results = [e for e in results if (parse_public_number(e.habitaciones) or 0) >= habitaciones_min]
+        results = [
+            e for e in results
+            if not is_alojamiento_complejo(e)
+            and (parse_public_number(e.habitaciones) or 0) >= habitaciones_min
+        ]
     precio_filter = clean_text(filters.get("precio_max"), default="")
     precio_max = parse_public_number(precio_filter)
     if precio_filter == "mas_100000":
@@ -2737,6 +2778,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "get_empresa_logo_url": get_empresa_logo_url,
             "build_public_card_chips": build_public_card_chips,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
+            "get_alojamiento_card_type": get_alojamiento_card_type,
             "alojamiento_initials": alojamiento_initials,
             "alojamiento_filters": alojamiento_filters,
             "alojamiento_amenities": ALOJAMIENTO_FILTER_AMENITIES,
@@ -4994,9 +5036,14 @@ def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict
     rows: list[dict] = []
     if kind == "alojamiento":
         _append_text_fact(rows, "Precio desde", empresa.precio_desde)
-        _append_text_fact(rows, "Capacidad", empresa.capacidad)
-        _append_text_fact(rows, "Habitaciones", empresa.habitaciones)
-        _append_text_fact(rows, "Baños", empresa.banos)
+        if is_alojamiento_complejo(empresa):
+            facts = build_alojamiento_key_facts(empresa)
+            if facts:
+                _append_text_fact(rows, "Unidades", facts[0])
+        else:
+            _append_text_fact(rows, "Capacidad", empresa.capacidad)
+            _append_text_fact(rows, "Habitaciones", empresa.habitaciones)
+            _append_text_fact(rows, "Baños", empresa.banos)
         for attr, label in [("pileta", "Pileta"), ("rio", "Frente al río / cerca del río"), ("mascotas", "Mascotas"), ("cochera", "Cochera"), ("wifi", "WiFi"), ("parrilla", "Parrilla")]:
             _append_bool_fact(rows, label, getattr(empresa, attr, None))
     elif kind == "gastronomia":

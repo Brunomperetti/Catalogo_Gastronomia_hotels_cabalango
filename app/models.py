@@ -31,6 +31,8 @@ class Empresa(Base):
     horarios = Column(String, nullable=True)
     precio_desde = Column(String, nullable=True)
     capacidad = Column(String, nullable=True)
+    alojamiento_modalidad = Column(String, nullable=True)
+    alojamiento_detalle_unidades = Column(Text, nullable=True)
     habitaciones = Column(String, nullable=True)
     banos = Column(String, nullable=True)
     video_url = Column(String, nullable=True)

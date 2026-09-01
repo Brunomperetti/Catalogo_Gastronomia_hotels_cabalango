@@ -1,4 +1,4 @@
-{% set accommodation_type = empresa.subtipo or theme_display_label(empresa.theme) %}
+{% set accommodation_type = get_alojamiento_card_type(empresa) %}
 {% set visible_chips = card_chips[:3] %}
 {% set remaining_chips = (card_chips|length) - (visible_chips|length) %}
 <article class="accommodation-card">
