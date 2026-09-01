@@ -82,5 +82,5 @@ def test_all_public_css_consumers_use_commerce_cache_key():
     ]
     for template in templates:
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
-        expected_version = "?v=20260826-weather-refresh-15" if template == "descubri_cabalango.html" else "?v=20260831-provider-promo-cascade-fix-2" if template == "prestador.html" else "?v=20260818-agenda-official-1" if template == "actividades.html" else "?v=20260831-activity-gallery-polish-2" if template == "actividad_detalle.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260826-weather-refresh-15" if template == "descubri_cabalango.html" else "?v=20260831-provider-promo-cascade-fix-2" if template == "prestador.html" else "?v=20260901-agenda-card-media-1" if template == "actividades.html" else "?v=20260831-activity-gallery-polish-2" if template == "actividad_detalle.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source

@@ -70,7 +70,7 @@ def test_public_templates_invalidate_cached_portal_styles():
     for template_path in Path("app/templates").glob("*.html"):
         template = template_path.read_text(encoding="utf-8")
         if "path='css/portal.css'" in template:
-            expected_version = "?v=20260826-weather-refresh-15" if template_path.name == "descubri_cabalango.html" else "?v=20260821-travel-guide-3" if template_path.name == "como_llegar.html" else "?v=20260831-provider-promo-cascade-fix-2" if template_path.name == "prestador.html" else "?v=20260818-agenda-official-1" if template_path.name == "actividades.html" else "?v=20260831-activity-gallery-polish-2" if template_path.name == "actividad_detalle.html" else default_version
+            expected_version = "?v=20260826-weather-refresh-15" if template_path.name == "descubri_cabalango.html" else "?v=20260821-travel-guide-3" if template_path.name == "como_llegar.html" else "?v=20260831-provider-promo-cascade-fix-2" if template_path.name == "prestador.html" else "?v=20260901-agenda-card-media-1" if template_path.name == "actividades.html" else "?v=20260831-activity-gallery-polish-2" if template_path.name == "actividad_detalle.html" else default_version
             assert expected_version in template
 
 
