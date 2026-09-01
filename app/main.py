@@ -35,7 +35,7 @@ from reportlab.lib.pagesizes import A4
 
 from app.database import SessionLocal, engine, Base
 from app import models
-from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, derived_status, get_home_agenda_events, get_public_activities, local_datetime, now_cabalango, prepare_home_agenda_events, prepare_public_agenda, publication_window_for_event, validate_activity
+from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, default_event_schedule, derived_status, get_home_agenda_events, get_public_activities, local_datetime, now_cabalango, prepare_home_agenda_events, prepare_public_agenda, validate_activity
 
 app = FastAPI()
 logger = logging.getLogger(__name__)
@@ -3102,7 +3102,7 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
         return RedirectResponse(f"/admin/actividades?edit={id or ''}&error={quote('Orden debe ser un número entero')}", 303)
     item = db.get(models.ActividadAgenda, id) if id else models.ActividadAgenda(created_at=utc_now())
     if id and not item: raise HTTPException(404)
-    old_defaults = publication_window_for_event(item.fecha_inicio, item.fecha_fin) if id and item.tipo == "evento" and item.fecha_inicio and item.fecha_fin else {}
+    old_defaults = default_event_schedule(item.fecha_inicio, item.fecha_fin) if id and item.tipo == "evento" and item.fecha_inicio and item.fecha_fin else {}
     old_windows = {name: getattr(item, name) for name in ("publicar_desde", "destacar_home_desde", "ocultar_desde")}
     resolved_estado = estado or ("borrador" if tipo == "evento" and (not fecha_inicio or not fecha_fin) else "programado")
     values = {"tipo": tipo, "titulo": titulo.strip(), "descripcion_corta": descripcion_corta.strip(), "descripcion": descripcion.strip(), "categoria": categoria, "momento": momento, "horarios": horarios.strip(), "lugar": lugar.strip(), "direccion": direccion.strip(), "maps_url": maps_url.strip(), "whatsapp": whatsapp.strip(), "instagram": instagram.strip(), "url_externa": url_externa.strip(), "orden": orden_value, "publicado": bool(publicado) and not (tipo == "evento" and resolved_estado == "borrador"), "destacado": bool(destacado), "oficial": bool(oficial), "estado": resolved_estado, "mostrar_en_home": bool(mostrar_en_home), "prioridad_home": prioridad_home}
@@ -3114,12 +3114,17 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
     for name, value in submitted_windows.items():
         setattr(item, name, parse_local_form_datetime(value))
     if tipo == "evento" and item.fecha_inicio and item.fecha_fin:
-        suggestions = publication_window_for_event(item.fecha_inicio, item.fecha_fin)
+        suggestions = default_event_schedule(item.fecha_inicio, item.fecha_fin)
         for name, suggested in suggestions.items():
+            if name == "publicar_desde":
+                continue
             was_automatic = id and old_windows[name] is not None and local_datetime(old_windows[name]) == old_defaults.get(name)
             submitted = parse_local_form_datetime(submitted_windows[name])
             kept_old_automatic = submitted is not None and old_windows[name] is not None and local_datetime(submitted) == local_datetime(old_windows[name])
-            if not submitted_windows[name] or (resolved_estado == "reprogramado" and was_automatic and kept_old_automatic):
+            should_default = not submitted_windows[name] and (
+                name == "ocultar_desde" or (name == "destacar_home_desde" and item.mostrar_en_home)
+            )
+            if should_default or (resolved_estado == "reprogramado" and was_automatic and kept_old_automatic):
                 setattr(item, name, suggested)
     # Keep published URLs stable when an editor changes a title.
     item.slug = item.slug if id else unique_agenda_slug(db, titulo)

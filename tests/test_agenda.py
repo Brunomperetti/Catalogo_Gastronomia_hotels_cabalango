@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_home_agenda_events, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, prepare_home_agenda_events, publication_window_for_event, validate_activity
+from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_home_agenda_events, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, prepare_home_agenda_events, prepare_public_agenda, default_event_schedule, validate_activity
 from app.database import Base
 from app.models import ActividadAgenda
 
@@ -152,11 +152,11 @@ def test_model_defaults_constraints_and_timezone_fields(db):
         db.commit()
 
 
-def test_publication_window_uses_cabalango_time():
+def test_default_event_schedule_uses_cabalango_time():
     start = datetime(2026, 11, 21, 18, tzinfo=CABALANGO_TZ)
     end = datetime(2026, 11, 21, 22, tzinfo=CABALANGO_TZ)
-    assert publication_window_for_event(start, end) == {
-        "publicar_desde": datetime(2026, 11, 7, 18, tzinfo=CABALANGO_TZ),
+    assert default_event_schedule(start, end) == {
+        "publicar_desde": None,
         "destacar_home_desde": datetime(2026, 11, 14, 18, tzinfo=CABALANGO_TZ),
         "ocultar_desde": end,
     }
@@ -253,3 +253,47 @@ def test_home_ranking_prioritizes_urgency_then_priority_and_limits_to_three(db):
     assert [item.slug for item in selected] == expected
     assert [card["item"].slug for card in cards] == expected
     assert len(selected) == 3
+
+
+def test_distant_event_without_embargo_is_public_and_prepared(db):
+    now = datetime(2026, 9, 1, 12, tzinfo=CABALANGO_TZ)
+    distant = make_item(
+        db, "diciembre", start=datetime(2026, 12, 12, 18),
+        end=datetime(2026, 12, 12, 22), publicar_desde=None,
+    )
+
+    assert is_publicly_visible(distant, now)
+    public = get_public_activities(db, now=now)
+    assert distant in public
+    assert [card["item"] for card in prepare_public_agenda(public, now=now)["events"]] == [distant]
+
+
+def test_manual_agenda_embargo_starts_at_explicit_datetime():
+    item = scheduled_event(
+        fecha_inicio=datetime(2026, 12, 12, 18),
+        fecha_fin=datetime(2026, 12, 12, 22),
+        publicar_desde=datetime(2026, 12, 1, 0),
+        ocultar_desde=datetime(2026, 12, 12, 22),
+    )
+
+    assert not is_publicly_visible(item, datetime(2026, 9, 1, tzinfo=CABALANGO_TZ))
+    assert is_publicly_visible(item, datetime(2026, 12, 1, tzinfo=CABALANGO_TZ))
+
+
+def test_public_agenda_has_no_default_limit_and_keeps_chronological_order():
+    events = [
+        scheduled_event(
+            titulo=f"Evento {index}", slug=f"evento-{index}",
+            fecha_inicio=datetime(2026, 12, 1 + index, 18),
+            fecha_fin=datetime(2026, 12, 1 + index, 22),
+        )
+        for index in reversed(range(9))
+    ]
+
+    agenda = prepare_public_agenda(events, now=datetime(2026, 9, 1, tzinfo=CABALANGO_TZ))
+
+    assert [card["item"].slug for card in agenda["events"]] == [f"evento-{index}" for index in range(9)]
+    assert agenda["has_more_events"] is False
+    limited = prepare_public_agenda(events, now=datetime(2026, 9, 1, tzinfo=CABALANGO_TZ), limit=3)
+    assert len(limited["events"]) == 3
+    assert limited["has_more_events"] is True
