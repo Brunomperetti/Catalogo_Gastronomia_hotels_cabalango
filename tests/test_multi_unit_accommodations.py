@@ -100,3 +100,19 @@ def test_capacity_order_uses_numeric_capacity_not_detail():
     ]
     result = main.filter_alojamientos(companies, {"tipo": "todos", "orden": "capacidad_desc"})
     assert [company.capacidad for company in result] == ["8", "6", "5"]
+
+
+def test_complex_query_normalizes_stale_room_filter():
+    from starlette.requests import Request
+
+    request = Request({"type": "http", "query_string": b"tipo=complejo&habitaciones=3"})
+    filters = main.get_alojamiento_filters(request)
+    company = accommodation(capacidad="6", habitaciones="9", alojamiento_modalidad="complejo")
+
+    assert filters["habitaciones"] == ""
+    assert main.filter_alojamientos([company], filters) == [company]
+
+
+def test_individual_type_room_filter_still_applies():
+    house = accommodation(subtipo="Casa", habitaciones="2", alojamiento_modalidad="individual")
+    assert main.filter_alojamientos([house], {"tipo": "casa", "habitaciones": "2"}) == [house]

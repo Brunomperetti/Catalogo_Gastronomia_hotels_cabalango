@@ -2703,6 +2703,8 @@ def get_alojamiento_filters(request: Request) -> dict:
     }
     for key, _label in ALOJAMIENTO_FILTER_AMENITIES:
         filters[key] = params.get(key, "")
+    if clean_text(filters["tipo"], default="").lower() == "complejo":
+        filters["habitaciones"] = ""
     return filters
 
 

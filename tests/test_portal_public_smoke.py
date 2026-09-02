@@ -516,3 +516,39 @@ def test_accommodation_card_template_limits_visible_amenities():
 
     assert "card_chips[:3]" in template
     assert "accommodation-more-amenities" in template
+
+
+def test_accommodation_filter_structure_and_advanced_count():
+    response = TestClient(app).get("/alojamientos?tipo=casa&habitaciones=2&pileta=1&wifi=1")
+    main_form = re.search(r'<form class="alojamientos-filters".*?</form>', response.text, re.S).group()
+    primary_grid = main_form.split('<div class="accommodation-filter-toolbar">', 1)[0]
+    more_filters = re.search(r'<details class="accommodation-more-filters".*?</details>', main_form, re.S).group()
+    results_header = re.search(r'<header class="accommodation-results-header".*?</header>', response.text, re.S).group()
+
+    assert all(f'name="{name}"' in primary_grid for name in ("tipo", "capacidad", "precio_max"))
+    assert 'name="habitaciones"' not in primary_grid
+    assert 'name="orden"' not in primary_grid
+    assert 'name="habitaciones"' in more_filters
+    assert "Más filtros (3)" in more_filters and " open" in more_filters
+    assert 'class="accommodation-results-order"' in results_header
+    assert 'name="orden"' in results_header
+    for name in ("tipo", "habitaciones", "pileta", "wifi"):
+        assert f'name="{name}"' in results_header
+
+
+def test_complex_advanced_filters_ignore_rooms_in_ui_and_counter():
+    response = TestClient(app).get("/alojamientos?tipo=complejo&habitaciones=2&pileta=1&wifi=1")
+
+    assert "Más filtros (2)" in response.text
+    assert "Las habitaciones no se filtran en complejos" in response.text
+    assert 'name="habitaciones"' not in response.text
+
+
+def test_accommodation_filter_css_protects_responsive_layout():
+    css = __import__("pathlib").Path("app/static/css/portal.css").read_text(encoding="utf-8")
+
+    assert "grid-template-columns: repeat(3, minmax(0, 1fr))" in css
+    assert "@media (max-width: 679px)" in css
+    assert ".alojamientos-filter-panel .alojamientos-filters { grid-template-columns: 1fr; }" in css
+    assert ".accommodation-more-filters .filter-amenities { display: flex; flex-wrap: wrap" in css
+    assert ".amenity-pill:has(input:checked)" not in css
