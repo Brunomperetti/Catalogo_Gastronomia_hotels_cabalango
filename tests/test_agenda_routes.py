@@ -708,11 +708,13 @@ def test_public_agenda_event_card_metadata_rows_align_without_fixed_content_heig
     css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
     facts_rule = css.split(".public-agenda .official-event__facts {", 1)[1].split("}", 1)[0]
     actions_rule = css.split(".public-agenda .official-event__actions {", 1)[1].split("}", 1)[0]
+    actions_without_facts_rule = css.split(".public-agenda .official-event__content + .official-event__actions {", 1)[1].split("}", 1)[0]
     title_rule = css.split(".public-agenda .official-event h3 {", 1)[1].split("}", 1)[0]
     description_rule = css.split(".public-agenda .official-event__description {", 1)[1].split("}", 1)[0]
 
     assert "margin: auto 0 0" in facts_rule
     assert "margin-top: auto" not in actions_rule
+    assert "margin-top: auto" in actions_without_facts_rule
     assert "min-height" not in title_rule
     assert "min-height" not in description_rule
 
