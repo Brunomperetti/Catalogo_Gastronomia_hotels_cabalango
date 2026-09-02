@@ -6287,6 +6287,11 @@ body,
 .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event--with-image { display: grid; grid-template-columns: minmax(0, 46fr) minmax(0, 54fr); }
 .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image { aspect-ratio: auto; border-radius: 0; height: 100%; min-height: 290px; }
 .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__body { padding: clamp(1.4rem, 3vw, 2.25rem); }
+@media (min-width: 769px) {
+  .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__facts { margin-top: auto; }
+  .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__link { margin-top: 0; }
+  .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__content + .home-agenda-event__link { margin-top: auto; }
+}
 
 /* The final invitation is a quiet typographic full stop, without another hero image. */
 .destination-guide .destination-cta { background: color-mix(in srgb, var(--portal-leaf) 9%, var(--portal-surface)); border-block: 1px solid var(--portal-border); display: block; min-height: 0; overflow: hidden; position: relative; }
