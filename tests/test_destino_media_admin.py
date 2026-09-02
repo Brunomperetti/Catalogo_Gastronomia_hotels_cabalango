@@ -655,5 +655,36 @@ def test_hero_rotator_css_keeps_slides_absolutely_layered():
 def test_destination_page_busts_only_hero_stylesheet_cache():
     template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
 
-    assert "portal.css') }}?v=20260826-weather-refresh-15" in template
+    assert "portal.css') }}?v=20260902-home-single-event-balance-1" in template
     assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" in template
+
+
+def test_single_home_event_balances_facts_and_cta_only_on_horizontal_layout():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    feature_css = css.split("/* A single event is an intentional feature;", 1)[1]
+    desktop = feature_css.split("@media (min-width: 769px) {", 1)[1].split("}", 3)
+
+    assert (
+        '.destination-guide .home-agenda__grid[data-count="1"] '
+        ".home-agenda-event__facts { margin-top: auto; "
+        in desktop[0]
+    )
+    assert (
+        '.destination-guide .home-agenda__grid[data-count="1"] '
+        ".home-agenda-event__link { margin-top: 0; "
+        in desktop[1]
+    )
+    assert (
+        '.destination-guide .home-agenda__grid[data-count="1"] '
+        ".home-agenda-event__content + .home-agenda-event__link { margin-top: auto; "
+        in desktop[2]
+    )
+
+    global_facts = css.split(".home-agenda-event__facts {", 1)[1].split("}", 1)[0]
+    assert "border-top: 1px solid var(--portal-border)" in global_facts
+    assert "margin: 1rem 0 0" in global_facts
+    assert "margin-top: auto" not in global_facts
+    assert ".home-agenda-event__link { align-self: flex-start; margin-top: auto; min-height: 2.75rem; padding-top: 1rem; }" in css
+    assert "grid-template-columns: minmax(0, 46fr) minmax(0, 54fr)" in css
+    assert '@media (max-width: 768px)' in css
+    assert '.home-agenda-event--with-image { display: flex; }' in css
