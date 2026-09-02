@@ -682,9 +682,9 @@ def test_que_hacer_uses_dedicated_stylesheet_cache_key_only():
     templates_dir = Path(main_module.__file__).parent / "templates"
     template = (templates_dir / "actividades.html").read_text()
     home = (templates_dir / "portal_home.html").read_text()
-    assert "?v=20260901-agenda-card-media-1" in template
+    assert "?v=20260901-agenda-card-alignment-2" in template
     assert "?v=20260810-commerce-services-1" not in template
-    assert "?v=20260901-agenda-card-media-1" not in home
+    assert "?v=20260901-agenda-card-alignment-2" not in home
 
 
 def test_public_agenda_event_cards_keep_editorial_media_and_grid_rules():
@@ -702,6 +702,21 @@ def test_public_agenda_event_cards_keep_editorial_media_and_grid_rules():
     assert "max-width: 60rem" in two_event_rule
     assert '@media (max-width: 600px)' in css
     assert 'grid-template-columns: 1fr; max-width: none; width: 100%;' in css
+
+
+def test_public_agenda_event_card_metadata_rows_align_without_fixed_content_heights():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    facts_rule = css.split(".public-agenda .official-event__facts {", 1)[1].split("}", 1)[0]
+    actions_rule = css.split(".public-agenda .official-event__actions {", 1)[1].split("}", 1)[0]
+    actions_without_facts_rule = css.split(".public-agenda .official-event__content + .official-event__actions {", 1)[1].split("}", 1)[0]
+    title_rule = css.split(".public-agenda .official-event h3 {", 1)[1].split("}", 1)[0]
+    description_rule = css.split(".public-agenda .official-event__description {", 1)[1].split("}", 1)[0]
+
+    assert "margin: auto 0 0" in facts_rule
+    assert "margin-top: auto" not in actions_rule
+    assert "margin-top: auto" in actions_without_facts_rule
+    assert "min-height" not in title_rule
+    assert "min-height" not in description_rule
 
 
 
