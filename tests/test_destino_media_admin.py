@@ -655,7 +655,7 @@ def test_hero_rotator_css_keeps_slides_absolutely_layered():
 def test_destination_page_busts_only_hero_stylesheet_cache():
     template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
 
-    assert "portal.css') }}?v=20260902-home-single-event-balance-1" in template
+    assert "portal.css') }}?v=20260903-home-quick-links-balance-1" in template
     assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" in template
 
 
