@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260903-home-quick-links-balance-1" in response.text
+    assert "?v=20260903-home-quick-links-balance-2" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -422,8 +422,23 @@ def test_home_hero_and_quick_links_navigation(monkeypatch):
     desktop_rule = re.search(
         r"\.destination-quick-links > div \{([^}]*)\}", css
     ).group(1)
+    tablet_block = re.search(
+        r"@media \(max-width: 1024px\) \{(.*?)\n\}", css, re.S
+    ).group(1)
+    mobile_block = re.search(
+        r"@media \(max-width: 520px\) \{(.*?)\n\}", css, re.S
+    ).group(1)
     assert "grid-template-columns: repeat(6, minmax(0, 1fr))" in desktop_rule
-    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in css
+    assert re.search(
+        r"\.destination-quick-links > div \{[^}]*"
+        r"grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)",
+        tablet_block,
+    )
+    assert re.search(
+        r"\.destination-quick-links > div \{[^}]*"
+        r"grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)",
+        mobile_block,
+    )
 
 
 def test_home_planning_preserves_editable_tip_and_cta_has_no_image(monkeypatch):
