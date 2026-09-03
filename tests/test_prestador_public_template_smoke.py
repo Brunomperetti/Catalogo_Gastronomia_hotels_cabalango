@@ -4,6 +4,8 @@ import re
 
 from jinja2 import Environment, FileSystemLoader
 
+from app.main import build_provider_amenities
+
 
 class UrlForStub:
     def __call__(self, endpoint, **kwargs):
@@ -46,6 +48,17 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         lugar_encuentro="",
         alojamiento_modalidad=None,
         alojamiento_detalle_unidades=None,
+        pileta=False,
+        rio=False,
+        wifi=False,
+        parrilla=False,
+        aire_acondicionado=False,
+        calefaccion=False,
+        cochera=False,
+        mascotas=False,
+        comer_en_lugar=False,
+        delivery=False,
+        take_away=False,
     )
     identity_overrides = identity_overrides or {}
     for field, value in identity_overrides.items():
@@ -81,14 +94,16 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
             if empresa.alojamiento_detalle_unidades
             else ([f"Hasta {re.search(r'\d+', empresa.capacidad).group()} personas por unidad"] if empresa.capacidad else [])
         ),
+        build_provider_amenities=build_provider_amenities,
         actividad_subgrupos={},
     )
 
 
-def test_provider_stylesheet_uses_promo_lightbox_cache_key():
+def test_provider_stylesheet_uses_amenities_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260831-provider-promo-cascade-fix-2" in template
+    assert "?v=20260902-provider-amenities-1" in template
+    assert "?v=20260831-provider-promo-cascade-fix-2" not in template
     assert "?v=20260814-provider-promo-lightbox-1" not in template
     assert "?v=20260814-provider-opening-1" not in template
     assert "?v=20260810-commerce-services-1" not in template
@@ -112,6 +127,75 @@ def test_prestador_template_empty_gallery_does_not_break():
     assert "Todavía no hay fotos disponibles." in html
     assert "Compatibilidad catálogo viejo" not in html
     assert "Abrir catálogo heredado" not in html
+
+
+def amenities_section(html):
+    match = re.search(r'<section class="portal-card provider-amenities".*?</section>', html, re.DOTALL)
+    return match.group(0) if match else ""
+
+
+def test_accommodation_profile_shows_only_true_amenities():
+    html = render_prestador(identity_overrides={
+        "pileta": True,
+        "wifi": True,
+        "parrilla": True,
+        "aire_acondicionado": True,
+        "calefaccion": True,
+    })
+    section = amenities_section(html)
+
+    assert "SERVICIOS Y COMODIDADES" in section
+    for label in ["Pileta", "WiFi", "Parrilla", "Aire acondicionado", "Calefacción"]:
+        assert label in section
+    assert "Cochera" not in section
+    assert "Acepta mascotas" not in section
+
+
+def test_accommodation_profile_lists_every_amenity_once_in_editorial_order():
+    labels = [
+        "Pileta", "Frente / cerca del río", "WiFi", "Parrilla",
+        "Aire acondicionado", "Calefacción", "Cochera", "Acepta mascotas",
+    ]
+    html = render_prestador(identity_overrides={
+        key: True for key in [
+            "pileta", "rio", "wifi", "parrilla", "aire_acondicionado",
+            "calefaccion", "cochera", "mascotas",
+        ]
+    })
+    section = amenities_section(html)
+
+    assert all(section.count(label) == 1 for label in labels)
+    assert [section.index(label) for label in labels] == sorted(section.index(label) for label in labels)
+
+
+def test_profile_without_amenities_omits_the_entire_section():
+    html = render_prestador()
+
+    assert 'class="portal-card provider-amenities"' not in html
+    assert "SERVICIOS Y COMODIDADES" not in html
+
+
+def test_gastronomy_profile_lists_only_persisted_service_options():
+    html = render_prestador("gastronomia", identity_overrides={
+        "comer_en_lugar": True,
+        "delivery": True,
+        "take_away": True,
+        "pileta": True,
+    })
+    section = amenities_section(html)
+
+    for label in ["Comer en el lugar", "Delivery", "Take away"]:
+        assert section.count(label) == 1
+    assert "Pileta" not in section
+
+
+def test_provider_amenities_grid_has_responsive_column_protection():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+
+    assert "grid-template-columns: repeat(4, minmax(0, 1fr))" in css
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in css
+    mobile = css.split("@media (max-width: 480px)", 1)[1]
+    assert ".provider-amenities__grid { grid-template-columns: 1fr; }" in mobile
 
 
 def test_public_gallery_renders_one_photo_without_mutating_empresa():
@@ -457,6 +541,7 @@ def test_prestador_template_uses_normalized_external_contact_links():
         is_alojamiento_complejo=lambda empresa: False,
         get_alojamiento_card_type=lambda empresa: empresa.subtipo,
         build_alojamiento_key_facts=lambda empresa: [],
+        build_provider_amenities=build_provider_amenities,
     )
 
     assert 'href="https://facebook.com/golata007"' in html

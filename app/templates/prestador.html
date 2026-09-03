@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260831-provider-promo-cascade-fix-2">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260902-provider-amenities-1">
 </head>
 {% macro provider_icon(name) -%}
 <svg class="provider-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -17,6 +17,16 @@
 {% elif name == 'pin' %}<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/>
 {% elif name == 'phone' %}<path d="M8.5 4H6a2 2 0 0 0-2 2c0 7.7 6.3 14 14 14a2 2 0 0 0 2-2v-2.5l-4-1-1.2 2.2a12 12 0 0 1-7.5-7.5L9.5 8l-1-4Z"/>
 {% elif name == 'spark' %}<path d="M12 3c.5 4.5 2.5 6.5 7 7-4.5.5-6.5 2.5-7 7-.5-4.5-2.5-6.5-7-7 4.5-.5 6.5-2.5 7-7Z"/><path d="M19 16c.2 1.7 1.3 2.8 3 3-1.7.2-2.8 1.3-3 3-.2-1.7-1.3-2.8-3-3 1.7-.2 2.8-1.3 3-3Z"/>
+{% elif name == 'water' %}<path d="M3 9c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 2 2M3 15c2 0 2 2 4 2s2-2 4-2 2 2 4 2 2-2 4-2 2 2 2 2"/>
+{% elif name == 'wifi' %}<path d="M4 9a12 12 0 0 1 16 0M7 13a7.5 7.5 0 0 1 10 0M10 17a3 3 0 0 1 4 0"/><circle cx="12" cy="20" r=".6" fill="currentColor" stroke="none"/>
+{% elif name == 'grill' %}<path d="M5 10h14a7 7 0 0 1-14 0ZM8 16l-2 5m10-5 2 5M8 6c0-1 1-1 1-2m3 2c0-1 1-1 1-2m3 2c0-1 1-1 1-2"/>
+{% elif name == 'air' %}<path d="M3 8h11c3 0 3-4 0-4-1.2 0-2 .6-2.4 1.4M3 12h16c3 0 3 4 0 4-1.2 0-2-.6-2.4-1.4M3 16h7"/>
+{% elif name == 'heat' %}<path d="M7 20c-2-2-2-4 0-6s2-4 0-6M12 20c-2-2-2-4 0-6s2-4 0-6M17 20c-2-2-2-4 0-6s2-4 0-6"/>
+{% elif name == 'car' %}<path d="m5 16-1-2v-3l2-5h12l2 5v3l-1 2M6 16v2m12-2v2M4 12h16M7 13h.01M17 13h.01"/>
+{% elif name == 'paw' %}<circle cx="7" cy="8" r="2"/><circle cx="17" cy="8" r="2"/><circle cx="12" cy="5" r="2"/><path d="M7 17c0-3 2.2-6 5-6s5 3 5 6c0 2-2 3-5 1.5C9 20 7 19 7 17Z"/>
+{% elif name == 'cutlery' %}<path d="M7 3v7m-3-7v4a3 3 0 0 0 6 0V3M7 10v11M16 3v18m0-18c3 2 4 5 4 8h-4"/>
+{% elif name == 'delivery' %}<path d="M3 15h2l2-7h8l3 4h3v3h-2M9 15h6M5 18a2 2 0 1 0 4 0 2 2 0 0 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 0 0-4 0Z"/>
+{% elif name == 'bag' %}<path d="M5 8h14l-1 13H6L5 8Zm4 0V6a3 3 0 0 1 6 0v2"/>
 {% endif %}</svg>
 {%- endmacro %}
 <body class="catalog-theme-{{ empresa.theme or 'default' }} portal-body">
@@ -27,6 +37,7 @@
     {% set review_avg = review_avg|default(none) %}
     {% set review_count = review_count|default(0) %}
     {% set review_submitted = review_submitted|default(false) %}
+    {% set provider_amenities = build_provider_amenities(empresa, kind) %}
     <main class="portal-shell prestador-page">
         {% set active_section = 'alojamientos' if kind == 'alojamiento' else kind if kind in ['gastronomia', 'servicios', 'actividades'] else '' %}
         {% include "partials/portal_nav.html" %}
@@ -104,6 +115,18 @@
                 {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Contactar</a>{% endif %}
             </article>
         </section>
+
+        {% if provider_amenities %}
+        <section class="portal-card provider-amenities" aria-labelledby="provider-amenities-title">
+            <p class="portal-card-label">SERVICIOS Y COMODIDADES</p>
+            <h2 id="provider-amenities-title">Todo lo que encontrás en {{ empresa.nombre }}</h2>
+            <ul class="provider-amenities__grid">
+                {% for amenity in provider_amenities %}
+                <li class="provider-amenities__item"><span class="provider-amenities__icon">{{ provider_icon(amenity.icon) }}</span><span>{{ amenity.label }}</span></li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
 
         {% if show_menu_section %}
         <section class="portal-card menu-card" id="menu-carta">

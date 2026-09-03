@@ -2682,6 +2682,34 @@ def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
     return chips[:6]
 
 
+PROVIDER_AMENITIES = {
+    "alojamiento": [
+        ("pileta", "Pileta", "water"),
+        ("rio", "Frente / cerca del río", "water"),
+        ("wifi", "WiFi", "wifi"),
+        ("parrilla", "Parrilla", "grill"),
+        ("aire_acondicionado", "Aire acondicionado", "air"),
+        ("calefaccion", "Calefacción", "heat"),
+        ("cochera", "Cochera", "car"),
+        ("mascotas", "Acepta mascotas", "paw"),
+    ],
+    "gastronomia": [
+        ("comer_en_lugar", "Comer en el lugar", "cutlery"),
+        ("delivery", "Delivery", "delivery"),
+        ("take_away", "Take away", "bag"),
+    ],
+}
+
+
+def build_provider_amenities(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
+    """Return persisted public amenities in their editorial display order."""
+    return [
+        {"key": key, "label": label, "icon": icon}
+        for key, label, icon in PROVIDER_AMENITIES.get(kind, [])
+        if getattr(empresa, key, None) is True
+    ]
+
+
 ALOJAMIENTO_FILTER_AMENITIES = [
     ("pileta", "Pileta"),
     ("rio", "Frente/cerca del río"),
@@ -5193,6 +5221,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "is_alojamiento_complejo": is_alojamiento_complejo,
             "get_alojamiento_card_type": get_alojamiento_card_type,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
+            "build_provider_amenities": build_provider_amenities,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
             "service_card_kicker": service_card_kicker,
         },
