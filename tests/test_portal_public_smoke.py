@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260903-home-quick-links-balance-2" in response.text
+    assert "?v=20260903-home-quick-links-kicker-spacing-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -437,6 +437,10 @@ def test_home_hero_and_quick_links_navigation(monkeypatch):
     assert re.search(
         r"\.destination-quick-links > div \{[^}]*"
         r"grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)",
+        mobile_block,
+    )
+    assert re.search(
+        r"\.destination-quick-links > p \{[^}]*padding-inline: 20px",
         mobile_block,
     )
 
