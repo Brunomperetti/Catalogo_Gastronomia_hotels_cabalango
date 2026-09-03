@@ -33,6 +33,7 @@ class Empresa(Base):
     capacidad = Column(String, nullable=True)
     alojamiento_modalidad = Column(String, nullable=True)
     alojamiento_detalle_unidades = Column(Text, nullable=True)
+    alojamiento_habitaciones_unidades = Column(Text, nullable=True)
     habitaciones = Column(String, nullable=True)
     banos = Column(String, nullable=True)
     video_url = Column(String, nullable=True)

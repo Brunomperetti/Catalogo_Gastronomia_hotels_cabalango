@@ -51,6 +51,7 @@
                     {% set provider_category = provider_category ~ ' · ' ~ get_alojamiento_card_type(empresa) %}
                     {% set alojamiento_facts = build_alojamiento_key_facts(empresa) %}
                     {% set alojamiento_unidades = alojamiento_facts[0] if alojamiento_facts else '' %}
+                    {% set alojamiento_rooms_summary = build_alojamiento_rooms_summary(empresa) %}
                 {% elif empresa.subtipo and empresa.subtipo != provider_category %}{% set provider_category = provider_category ~ ' · ' ~ empresa.subtipo %}{% endif %}
                 {% if empresa.subgrupo and actividad_subgrupos %}
                     {% set provider_subgroup = actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) %}
@@ -82,6 +83,7 @@
                     <dl>
                       <div>{{ provider_icon('type') }}<span><dt>Propuesta</dt><dd>{{ provider_category }}</dd></span></div>
                       {% if alojamiento_complejo and alojamiento_unidades %}<div>{{ provider_icon('type') }}<span><dt>Unidades</dt><dd>{{ alojamiento_unidades }}</dd></span></div>{% endif %}
+                      {% if alojamiento_complejo and alojamiento_rooms_summary %}<div>{{ provider_icon('type') }}<span><dt>Habitaciones</dt><dd>{{ alojamiento_rooms_summary }}</dd></span></div>{% endif %}
                       {% if empresa.horarios %}<div>{{ provider_icon('clock') }}<span><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{% set clean_part = part.replace('Días: ', '').replace('Horarios: ', '') %}{% if 'lunes a domingo' in clean_part|lower or 'lunes, martes, miércoles, jueves, viernes, sábado, domingo' in clean_part|lower %}Todos los días{% else %}{{ clean_part.replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}{% endif %}</span>{% endfor %}</dd></span></div>{% endif %}
                       {% if empresa.direccion %}<div>{{ provider_icon('pin') }}<span><dt>Ubicación</dt><dd>{{ empresa.direccion }}</dd></span></div>{% endif %}
                       {% if empresa.telefono or empresa.whatsapp %}<div>{{ provider_icon('phone') }}<span><dt>Contacto directo</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></span></div>{% endif %}

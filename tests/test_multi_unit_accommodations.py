@@ -15,6 +15,7 @@ def accommodation(**values):
         "banos": None,
         "alojamiento_modalidad": None,
         "alojamiento_detalle_unidades": None,
+        "alojamiento_habitaciones_unidades": None,
         "precio_desde": None,
         "destacado": False,
     }
@@ -33,10 +34,18 @@ def test_bootstrap_adds_multi_unit_columns_idempotently(monkeypatch):
     main.ensure_empresa_media_columns()
 
     columns = {column["name"] for column in inspect(engine).get_columns("empresas")}
-    assert {"alojamiento_modalidad", "alojamiento_detalle_unidades"} <= columns
+    assert {"alojamiento_modalidad", "alojamiento_detalle_unidades", "alojamiento_habitaciones_unidades"} <= columns
     with engine.connect() as connection:
-        row = connection.execute(text("SELECT nombre, alojamiento_modalidad, alojamiento_detalle_unidades FROM empresas")).one()
-    assert row == ("Legacy", None, None)
+        row = connection.execute(text("SELECT nombre, alojamiento_modalidad, alojamiento_detalle_unidades, alojamiento_habitaciones_unidades FROM empresas")).one()
+    assert row == ("Legacy", None, None, None)
+
+
+def test_room_options_are_normalized_and_invalid_data_is_safe():
+    assert main.parse_alojamiento_room_options("[2,1,2]") == [1, 2]
+    assert main.parse_alojamiento_room_options("[0,1,4]") == [0, 1, 4]
+    assert main.parse_alojamiento_room_options("[1,99,null,\"text\"]") == [1]
+    assert main.parse_alojamiento_room_options("invalid-json") == []
+    assert main.parse_alojamiento_room_options(None) == []
 
 
 def test_legacy_and_individual_facts_are_unchanged():
@@ -57,11 +66,11 @@ def test_invalid_modalities_are_safe_and_only_explicit_complex_is_recognized():
 def test_complex_card_uses_detail_and_hides_aggregate_room_counts():
     company = accommodation(
         capacidad="6", habitaciones="9", banos="9", alojamiento_modalidad="complejo",
-        alojamiento_detalle_unidades="Cabañas para 4 o 6 personas",
+        alojamiento_detalle_unidades="Cabañas para 4 o 6 personas", alojamiento_habitaciones_unidades="[1,2]",
     )
     facts = main.build_alojamiento_key_facts(company)
     assert main.get_alojamiento_card_type(company) == "COMPLEJO"
-    assert facts == ["Cabañas para 4 o 6 personas"]
+    assert facts == ["Cabañas para 4 o 6 personas", "1 y 2 habitaciones según unidad"]
     assert "9 habitaciones" not in facts and "9 baños" not in facts
 
 
@@ -102,15 +111,40 @@ def test_capacity_order_uses_numeric_capacity_not_detail():
     assert [company.capacidad for company in result] == ["8", "6", "5"]
 
 
-def test_complex_query_normalizes_stale_room_filter():
+def test_complex_query_preserves_room_filter_and_ignores_legacy_aggregate():
     from starlette.requests import Request
 
     request = Request({"type": "http", "query_string": b"tipo=complejo&habitaciones=3"})
     filters = main.get_alojamiento_filters(request)
     company = accommodation(capacidad="6", habitaciones="9", alojamiento_modalidad="complejo")
 
-    assert filters["habitaciones"] == ""
-    assert main.filter_alojamientos([company], filters) == [company]
+    assert filters["habitaciones"] == "3"
+    assert main.filter_alojamientos([company], filters) == []
+
+
+def test_complex_room_filter_matches_only_available_configurations():
+    company = accommodation(alojamiento_modalidad="complejo", alojamiento_habitaciones_unidades="[1,2]")
+    assert main.filter_alojamientos([company], {"tipo": "todos", "habitaciones": "1"}) == [company]
+    assert main.filter_alojamientos([company], {"tipo": "complejo", "habitaciones": "2"}) == [company]
+    assert main.filter_alojamientos([company], {"tipo": "todos", "habitaciones": "3"}) == []
+    company.alojamiento_habitaciones_unidades = "[1,4]"
+    assert main.filter_alojamientos([company], {"tipo": "todos", "habitaciones": "3"}) == [company]
+
+
+def test_studio_is_displayable_but_does_not_match_public_room_filters():
+    studio = accommodation(alojamiento_modalidad="complejo", alojamiento_habitaciones_unidades="[0]")
+    assert main.build_alojamiento_rooms_summary(studio) == "Monoambientes"
+    assert main.filter_alojamientos([studio], {"tipo": "todos"}) == [studio]
+    for rooms in ("1", "2", "3"):
+        assert main.filter_alojamientos([studio], {"tipo": "todos", "habitaciones": rooms}) == []
+
+
+def test_all_type_room_filter_combines_individuals_and_complexes():
+    house = accommodation(nombre="Casa", habitaciones="2", alojamiento_modalidad="individual")
+    matching = accommodation(nombre="Complejo A", alojamiento_modalidad="complejo", alojamiento_habitaciones_unidades="[1,2]")
+    excluded = accommodation(nombre="Complejo B", alojamiento_modalidad="complejo", alojamiento_habitaciones_unidades="[1]")
+    result = main.filter_alojamientos([house, matching, excluded], {"tipo": "todos", "habitaciones": "2"})
+    assert {company.nombre for company in result} == {"Casa", "Complejo A"}
 
 
 def test_individual_type_room_filter_still_applies():
