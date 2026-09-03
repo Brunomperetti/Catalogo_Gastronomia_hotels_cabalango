@@ -45,8 +45,7 @@
             <form class="alojamientos-filters" method="get" action="/alojamientos">
                 {% set amenity_state = namespace(count=0) %}
                 {% for key, label in alojamiento_amenities %}{% if alojamiento_filters.get(key) == '1' %}{% set amenity_state.count = amenity_state.count + 1 %}{% endif %}{% endfor %}
-                {% set habitaciones_applies = alojamiento_filters.get('tipo') != 'complejo' %}
-                {% set advanced_count = amenity_state.count + (1 if habitaciones_applies and alojamiento_filters.get('habitaciones') else 0) %}
+                {% set advanced_count = amenity_state.count + (1 if alojamiento_filters.get('habitaciones') else 0) %}
                 <div class="filter-control"><label for="filter-tipo">Tipo</label>
                     <select id="filter-tipo" name="tipo">
                         {% for value, label in [('todos','Todos'),('cabaña','Cabaña'),('casa','Casa'),('hotel','Hotel'),('departamento','Departamento'),('complejo','Complejo'),('hospedaje','Hospedaje')] %}
@@ -73,18 +72,14 @@
                         <summary>Más filtros{% if advanced_count %} ({{ advanced_count }}){% endif %}</summary>
                         <div class="accommodation-more-filters-content">
                             <div class="accommodation-rooms-filter">
-                                <h3>Habitaciones</h3>
-                                {% if habitaciones_applies %}
+                                <h3>Habitaciones por unidad</h3>
                                 <label class="sr-only" for="filter-habitaciones">Cantidad de habitaciones</label>
                                 <select id="filter-habitaciones" name="habitaciones">
-                                    {% for value, label in [('', 'Cualquier cantidad'),('1','1 habitación'),('2','2 habitaciones'),('3','3+ habitaciones')] %}
+                                    {% for value, label in [('', 'Cualquier cantidad'),('1','1+ habitación'),('2','2+ habitaciones'),('3','3+ habitaciones')] %}
                                     <option value="{{ value }}" {% if alojamiento_filters.get('habitaciones') == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
-                                <small>Solo para alojamientos individuales.</small>
-                                {% else %}
-                                <p>Las habitaciones no se filtran en complejos porque las unidades pueden tener configuraciones diferentes.</p>
-                                {% endif %}
+                                <small>En complejos, buscamos entre las unidades disponibles; nunca sumamos las habitaciones de todo el predio.</small>
                             </div>
                             <h3 class="accommodation-amenities-title">Comodidades</h3>
                         <div class="filter-amenities" role="group" aria-label="Comodidades">
@@ -118,7 +113,7 @@
             </div>
             <form class="accommodation-results-order" method="get" action="/alojamientos">
                 {% for key in ['tipo', 'capacidad', 'precio_max'] %}{% if alojamiento_filters.get(key) %}<input type="hidden" name="{{ key }}" value="{{ alojamiento_filters.get(key) }}">{% endif %}{% endfor %}
-                {% if alojamiento_filters.get('tipo') != 'complejo' and alojamiento_filters.get('habitaciones') %}<input type="hidden" name="habitaciones" value="{{ alojamiento_filters.get('habitaciones') }}">{% endif %}
+                {% if alojamiento_filters.get('habitaciones') %}<input type="hidden" name="habitaciones" value="{{ alojamiento_filters.get('habitaciones') }}">{% endif %}
                 {% for key, label in alojamiento_amenities %}{% if alojamiento_filters.get(key) == '1' %}<input type="hidden" name="{{ key }}" value="1">{% endif %}{% endfor %}
                 <label for="results-order">Ordenar por</label>
                 <select id="results-order" name="orden">

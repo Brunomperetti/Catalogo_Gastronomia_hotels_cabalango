@@ -4,7 +4,11 @@ import re
 
 from jinja2 import Environment, FileSystemLoader
 
-from app.main import build_provider_amenities
+from app.main import (
+    build_alojamiento_key_facts,
+    build_alojamiento_rooms_summary,
+    build_provider_amenities,
+)
 
 
 class UrlForStub:
@@ -48,6 +52,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         lugar_encuentro="",
         alojamiento_modalidad=None,
         alojamiento_detalle_unidades=None,
+        alojamiento_habitaciones_unidades=None,
         pileta=False,
         rio=False,
         wifi=False,
@@ -89,11 +94,8 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
             empresa.theme == "alojamiento" and empresa.alojamiento_modalidad == "complejo"
         ),
         get_alojamiento_card_type=lambda empresa: "COMPLEJO" if empresa.alojamiento_modalidad == "complejo" else empresa.subtipo,
-        build_alojamiento_key_facts=lambda empresa: (
-            [empresa.alojamiento_detalle_unidades]
-            if empresa.alojamiento_detalle_unidades
-            else ([f"Hasta {re.search(r'\d+', empresa.capacidad).group()} personas por unidad"] if empresa.capacidad else [])
-        ),
+        build_alojamiento_key_facts=build_alojamiento_key_facts,
+        build_alojamiento_rooms_summary=build_alojamiento_rooms_summary,
         build_provider_amenities=build_provider_amenities,
         actividad_subgrupos={},
     )
@@ -329,6 +331,38 @@ def test_complex_accommodation_units_fall_back_to_capacity_per_unit():
 
     assert "Unidades" in html
     assert "Hasta 6 personas por unidad" in html
+
+
+def test_complex_accommodation_rooms_follow_units_in_summary_without_legacy_total():
+    html = render_prestador(identity_overrides={
+        "alojamiento_modalidad": "complejo",
+        "alojamiento_detalle_unidades": "Cabañas para 4 o 6 personas",
+        "alojamiento_habitaciones_unidades": "[1,2]",
+        "habitaciones": "9",
+    })
+    summary = re.search(
+        r'<aside class="provider-key-summary".*?</aside>', html, re.DOTALL
+    ).group(0)
+
+    assert "1 y 2 habitaciones según unidad" in summary
+    assert summary.index("Unidades") < summary.index("Habitaciones")
+    assert "9 habitaciones" not in html
+
+
+def test_complex_accommodation_without_structured_rooms_has_no_rooms_row():
+    html = render_prestador(identity_overrides={
+        "alojamiento_modalidad": "complejo",
+        "alojamiento_detalle_unidades": "Cabañas para 4 o 6 personas",
+        "alojamiento_habitaciones_unidades": None,
+        "habitaciones": "9",
+    })
+    summary = re.search(
+        r'<aside class="provider-key-summary".*?</aside>', html, re.DOTALL
+    ).group(0)
+
+    assert "Unidades" in summary
+    assert "Habitaciones" not in summary
+    assert "9 habitaciones" not in html
 
 
 def test_individual_accommodation_keeps_subtype_without_units_row():

@@ -171,6 +171,7 @@ def ensure_empresa_media_columns():
             "capacidad": "VARCHAR",
             "alojamiento_modalidad": "VARCHAR",
             "alojamiento_detalle_unidades": "TEXT",
+            "alojamiento_habitaciones_unidades": "TEXT",
             "habitaciones": "VARCHAR",
             "banos": "VARCHAR",
             "video_url": "VARCHAR",
@@ -2134,6 +2135,8 @@ def editar_empresa_panel(
     capacidad: str | None = Form(None),
     alojamiento_modalidad: str | None = Form(None),
     alojamiento_detalle_unidades: str | None = Form(None),
+    alojamiento_habitaciones_unidades: list[str] | None = Form(None),
+    alojamiento_habitaciones_unidades_present: str | None = Form(None),
     habitaciones: str | None = Form(None),
     banos: str | None = Form(None),
     video_url: str | None = Form(None),
@@ -2225,6 +2228,14 @@ def editar_empresa_panel(
             empresa.alojamiento_modalidad = normalize_alojamiento_modalidad(alojamiento_modalidad)
         if alojamiento_detalle_unidades is not None:
             empresa.alojamiento_detalle_unidades = clean_text(alojamiento_detalle_unidades, default="") or None
+        if (
+            empresa.alojamiento_modalidad == "complejo"
+            and alojamiento_habitaciones_unidades_present == "1"
+        ):
+            room_options = normalize_alojamiento_room_options(alojamiento_habitaciones_unidades)
+            empresa.alojamiento_habitaciones_unidades = (
+                json.dumps(room_options, separators=(",", ":")) if room_options else None
+            )
     if subgrupo is not None or normalize_theme(theme) == "servicios":
         effective_subtype = subtipo if subtipo is not None else empresa.subtipo
         empresa.subgrupo = normalize_service_group_subtype(subgrupo, effective_subtype, theme)
@@ -2629,6 +2640,56 @@ def normalize_alojamiento_modalidad(value) -> str | None:
     return normalized if normalized in {"individual", "complejo"} else None
 
 
+ALOJAMIENTO_ROOM_OPTIONS = {0, 1, 2, 3, 4}
+
+
+def normalize_alojamiento_room_options(values) -> list[int]:
+    """Return the canonical, safe room configurations from submitted values."""
+    if not isinstance(values, (list, tuple, set)):
+        return []
+    normalized = set()
+    for value in values:
+        if isinstance(value, bool):
+            continue
+        try:
+            number = int(value)
+        except (TypeError, ValueError):
+            continue
+        if str(value).strip() == str(number) and number in ALOJAMIENTO_ROOM_OPTIONS:
+            normalized.add(number)
+    return sorted(normalized)
+
+
+def parse_alojamiento_room_options(value) -> list[int]:
+    if not value:
+        return []
+    try:
+        decoded = json.loads(value) if isinstance(value, str) else value
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    return normalize_alojamiento_room_options(decoded)
+
+
+def build_alojamiento_rooms_summary(empresa: models.Empresa) -> str:
+    if not is_alojamiento_complejo(empresa):
+        return ""
+    options = parse_alojamiento_room_options(
+        getattr(empresa, "alojamiento_habitaciones_unidades", None)
+    )
+    has_studios = 0 in options
+    rooms = [number for number in options if number]
+    room_summary = ""
+    if rooms:
+        labels = ["4+" if number == 4 else str(number) for number in rooms]
+        joined = labels[0] if len(labels) == 1 else f"{', '.join(labels[:-1])} y {labels[-1]}"
+        room_summary = f"{joined} {'habitación' if len(rooms) == 1 and rooms[0] == 1 else 'habitaciones'} según unidad"
+    if has_studios and room_summary:
+        return f"Monoambientes · {room_summary}"
+    if has_studios:
+        return "Monoambientes"
+    return room_summary
+
+
 def is_alojamiento_complejo(empresa: models.Empresa) -> bool:
     return (
         normalize_theme(getattr(empresa, "theme", None)) == "alojamiento"
@@ -2644,11 +2705,18 @@ def get_alojamiento_card_type(empresa: models.Empresa) -> str:
 
 def build_alojamiento_key_facts(empresa: models.Empresa) -> list[str]:
     if is_alojamiento_complejo(empresa):
+        facts = []
         detail = clean_text(getattr(empresa, "alojamiento_detalle_unidades", None), default="")
         if detail:
-            return [detail]
-        capacidad = parse_public_number(empresa.capacidad)
-        return [f"Hasta {capacidad} personas por unidad"] if capacidad else []
+            facts.append(detail)
+        else:
+            capacidad = parse_public_number(empresa.capacidad)
+            if capacidad:
+                facts.append(f"Hasta {capacidad} personas por unidad")
+        rooms_summary = build_alojamiento_rooms_summary(empresa)
+        if rooms_summary:
+            facts.append(rooms_summary)
+        return facts
     facts = []
     for value, singular, plural in [
         (empresa.capacidad, "persona", "personas"),
@@ -2731,8 +2799,6 @@ def get_alojamiento_filters(request: Request) -> dict:
     }
     for key, _label in ALOJAMIENTO_FILTER_AMENITIES:
         filters[key] = params.get(key, "")
-    if clean_text(filters["tipo"], default="").lower() == "complejo":
-        filters["habitaciones"] = ""
     return filters
 
 
@@ -2750,11 +2816,17 @@ def filter_alojamientos(empresas: list[models.Empresa], filters: dict) -> list[m
         results = [e for e in results if (parse_public_number(e.capacidad) or 0) >= capacidad_min]
     habitaciones_min = parse_public_number(filters.get("habitaciones"))
     if habitaciones_min:
-        results = [
-            e for e in results
-            if not is_alojamiento_complejo(e)
-            and (parse_public_number(e.habitaciones) or 0) >= habitaciones_min
-        ]
+        def matches_rooms(empresa):
+            if is_alojamiento_complejo(empresa):
+                options = parse_alojamiento_room_options(
+                    getattr(empresa, "alojamiento_habitaciones_unidades", None)
+                )
+                return any(
+                    option > 0 and option >= habitaciones_min for option in options
+                )
+            return (parse_public_number(empresa.habitaciones) or 0) >= habitaciones_min
+
+        results = [empresa for empresa in results if matches_rooms(empresa)]
     precio_filter = clean_text(filters.get("precio_max"), default="")
     precio_max = parse_public_number(precio_filter)
     if precio_filter == "mas_100000":
@@ -2808,6 +2880,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "get_empresa_logo_url": get_empresa_logo_url,
             "build_public_card_chips": build_public_card_chips,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
+            "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "get_alojamiento_card_type": get_alojamiento_card_type,
             "alojamiento_initials": alojamiento_initials,
             "alojamiento_filters": alojamiento_filters,
@@ -3801,6 +3874,7 @@ def admin_panel(
             "empresa_query": empresa_activa.slug if empresa_activa else "",
             "empresa_logo_url": get_empresa_logo_url(empresa_activa),
             "empresa_banner_url": get_empresa_banner_url(empresa_activa),
+            "parse_alojamiento_room_options": parse_alojamiento_room_options,
             "galeria_urls": get_empresa_gallery_urls(empresa_activa) if empresa_activa else [],
             "menu_fotos_urls": get_empresa_menu_photo_urls(empresa_activa) if empresa_activa else [],
             "pending_reviews": db.query(models.Review).filter(models.Review.estado == "pendiente").order_by(models.Review.created_at.desc()).limit(30).all(),
@@ -5221,6 +5295,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "is_alojamiento_complejo": is_alojamiento_complejo,
             "get_alojamiento_card_type": get_alojamiento_card_type,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
+            "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "build_provider_amenities": build_provider_amenities,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
             "service_card_kicker": service_card_kicker,

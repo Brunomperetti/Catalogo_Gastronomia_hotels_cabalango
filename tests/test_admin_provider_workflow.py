@@ -118,6 +118,31 @@ def test_edit_accommodation_normalizes_invalid_modality_to_none(admin_app):
     assert company.alojamiento_modalidad is None
 
 
+def test_edit_complex_room_options_saves_canonical_json_and_can_clear(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db, slug="room-options", theme="alojamiento", alojamiento_modalidad="complejo")
+
+    response = edit_company(client, company, alojamiento_modalidad="complejo",
+                            alojamiento_habitaciones_unidades_present="1",
+                            alojamiento_habitaciones_unidades=["2", "0", "1", "2"])
+    assert response.status_code == 303
+    db.refresh(company)
+    assert company.alojamiento_habitaciones_unidades == "[0,1,2]"
+    panel = client.get(f"/admin?area=prestador&tab=rubro&empresa={company.slug}")
+    assert panel.status_code == 200
+    for value in ("0", "1", "2"):
+        assert re.search(
+            rf'<input[^>]*name="alojamiento_habitaciones_unidades"[^>]*value="{value}"[^>]*checked',
+            panel.text,
+        )
+
+    response = edit_company(client, company, alojamiento_modalidad="complejo",
+                            alojamiento_habitaciones_unidades_present="1")
+    assert response.status_code == 303
+    db.refresh(company)
+    assert company.alojamiento_habitaciones_unidades is None
+
+
 @pytest.mark.parametrize(("initial", "form_data", "expected"), [
     (True, {}, False),
     (False, {"activo": "1"}, True),
