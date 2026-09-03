@@ -787,10 +787,76 @@ def test_activity_gallery_renders_counter_and_dynamic_update(agenda_app):
     assert "counter.textContent = (current + 1) + ' / ' + images.length;" in script
 
 
-def test_activity_detail_uses_polish_cache_keys():
+def test_activity_detail_uses_flyer_cache_key_without_changing_gallery_key():
     template = Path("app/templates/actividad_detalle.html").read_text(encoding="utf-8")
-    assert "portal.css') }}?v=20260831-activity-gallery-polish-2" in template
+    assert "portal.css') }}?v=20260903-event-detail-flyer-contain-1" in template
     assert "activity-gallery.js') }}?v=20260831-2" in template
+
+
+def test_event_detail_without_gallery_uses_uncropped_flyer_markup(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        event = db.query(ActividadAgenda).filter_by(slug="feria-hoy").one()
+        event.imagen_url = "/event-flyer.jpg"
+        db.commit()
+
+    html = client.get("/actividades/feria-hoy").text
+    assert 'class="agenda-detail__image agenda-detail__image--event"' in html
+    assert "data-activity-gallery" not in html
+    assert "data-gallery-hero" not in html
+
+
+def test_event_detail_gallery_modifies_only_the_hero_image(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        event = db.query(ActividadAgenda).filter_by(slug="feria-hoy").one()
+        event.imagen_url = "/event-flyer.jpg"
+        event.fotos.append(ActividadAgendaFoto(image_url="/event-secondary.jpg", orden=0))
+        db.commit()
+
+    html = client.get("/actividades/feria-hoy").text
+    hero = re.search(r'<img class="([^"]+)"[^>]+data-gallery-hero>', html)
+    assert hero is not None
+    assert hero.group(1).split() == ["agenda-detail__image", "agenda-detail__image--event"]
+    thumbs = html.split('<div class="agenda-gallery__thumbs"', 1)[1].split("</div>", 1)[0]
+    assert "agenda-detail__image--event" not in thumbs
+    assert "data-activity-gallery" in html and "data-gallery-lightbox" in html
+
+
+def test_permanent_activity_detail_keeps_photographic_image_markup(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        activity = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        activity.imagen_url = "/activity-photo.jpg"
+        db.commit()
+
+    html = client.get("/actividades/yoga-permanente").text
+    assert 'class="agenda-detail__image"' in html
+    assert "agenda-detail__image--event" not in html
+
+
+def test_event_detail_css_preserves_photo_crop_and_uses_natural_flyer_ratio():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    photo_rule = css.split(".agenda-detail__image {", 1)[1].split("}", 1)[0]
+    event_rules = re.findall(
+        r"\.agenda-detail__image\.agenda-detail__image--event\s*\{([^}]+)\}", css
+    )
+
+    assert "aspect-ratio: 4/5" in photo_rule
+    assert "max-height: 650px" in photo_rule
+    assert "object-fit: cover" in photo_rule
+    assert len(event_rules) == 2
+    for rule in event_rules:
+        assert "aspect-ratio: auto" in rule
+        assert "height: auto" in rule
+        assert "max-height: none" in rule
+        assert "object-fit: contain" in rule
+
+    detail_css = css.split(".agenda-detail__image {", 1)[1]
+    responsive = detail_css.split("@media (max-width: 900px) {", 1)[1].split("\n}", 1)[0]
+    responsive_photo_rule = responsive.split(".agenda-detail__image {", 1)[1].split("}", 1)[0]
+    assert "aspect-ratio: 16/10" in responsive_photo_rule
+    assert "max-height: 520px" in responsive_photo_rule
 
 def test_activity_gallery_is_isolated_validated_and_cascades(agenda_app, tmp_path, monkeypatch):
     client, TestingSession = agenda_app

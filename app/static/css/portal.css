@@ -4188,6 +4188,7 @@ button:disabled {
 .agenda-card .portal-button { display: flex; margin-top: auto; text-align: center; width: 100%; }
 .agenda-detail { align-items: start; display: grid; gap: clamp(2rem, 4.5vw, 4.5rem); grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr); margin: clamp(2.25rem, 5vw, 4.5rem) 0; }
 .agenda-detail__image { aspect-ratio: 4/5; border-radius: 28px; max-height: 650px; object-fit: cover; width: 100%; }
+.agenda-detail__image.agenda-detail__image--event { aspect-ratio: auto; height: auto; max-height: none; object-fit: contain; width: 100%; }
 .agenda-detail__content > .portal-kicker { margin-bottom: .75rem; }
 .agenda-detail__content > h1 { font-family: var(--portal-font-display); font-size: clamp(2.7rem, 5vw, 4.5rem); font-weight: 600; line-height: .98; margin: 0 0 1rem; }
 .agenda-detail__content > .portal-subtitle { margin-bottom: 1.3rem; }
@@ -4201,6 +4202,7 @@ button:disabled {
   .agenda-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .agenda-detail { grid-template-columns: 1fr; }
   .agenda-detail__image { aspect-ratio: 16/10; max-height: 520px; }
+  .agenda-detail__image.agenda-detail__image--event { aspect-ratio: auto; height: auto; max-height: none; object-fit: contain; }
 }
 @media (max-width: 760px) {
   .agenda-hero { margin-top: 18px; padding-block: 26px; }
