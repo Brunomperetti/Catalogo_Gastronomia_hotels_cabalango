@@ -6329,7 +6329,7 @@ body,
   .destination-guide .destination-planning .weather-summary strong,
   .destination-guide .destination-planning .weather-advice strong { overflow-wrap: anywhere; white-space: normal; }
   .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event--with-image { display: flex; }
-  .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image { aspect-ratio: 16 / 8; min-height: 0; }
+  .destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image { aspect-ratio: auto; height: auto; min-height: 0; object-fit: contain; width: 100%; }
 }
 @media (min-width: 769px) and (max-width: 1024px) {
   .destination-guide .destination-planning .season-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
