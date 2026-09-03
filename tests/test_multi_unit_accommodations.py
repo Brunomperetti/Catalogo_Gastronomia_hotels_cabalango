@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import pytest
 from sqlalchemy import create_engine, inspect, text
 
 from app import main
@@ -131,6 +132,28 @@ def test_complex_room_filter_matches_only_available_configurations():
     assert main.filter_alojamientos([company], {"tipo": "todos", "habitaciones": "3"}) == [company]
 
 
+@pytest.mark.parametrize(("options", "minimum", "matches"), [
+    ("[3]", "2", True),
+    ("[2]", "3", False),
+    ("[4]", "2", True),
+    ("[4]", "3", True),
+    ("[0,2]", "1", True),
+    ("[0,2]", "2", True),
+    ("[0,2]", "3", False),
+])
+def test_complex_room_filter_uses_minimum_semantics(options, minimum, matches):
+    company = accommodation(
+        alojamiento_modalidad="complejo",
+        alojamiento_habitaciones_unidades=options,
+    )
+
+    result = main.filter_alojamientos(
+        [company], {"tipo": "todos", "habitaciones": minimum}
+    )
+
+    assert bool(result) is matches
+
+
 def test_studio_is_displayable_but_does_not_match_public_room_filters():
     studio = accommodation(alojamiento_modalidad="complejo", alojamiento_habitaciones_unidades="[0]")
     assert main.build_alojamiento_rooms_summary(studio) == "Monoambientes"
@@ -150,3 +173,10 @@ def test_all_type_room_filter_combines_individuals_and_complexes():
 def test_individual_type_room_filter_still_applies():
     house = accommodation(subtipo="Casa", habitaciones="2", alojamiento_modalidad="individual")
     assert main.filter_alojamientos([house], {"tipo": "casa", "habitaciones": "2"}) == [house]
+
+
+def test_individual_room_filter_uses_the_same_minimum_semantics():
+    house = accommodation(habitaciones="3", alojamiento_modalidad="individual")
+    assert main.filter_alojamientos(
+        [house], {"tipo": "todos", "habitaciones": "2"}
+    ) == [house]

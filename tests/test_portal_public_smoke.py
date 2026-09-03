@@ -536,12 +536,26 @@ def test_accommodation_filter_structure_and_advanced_count():
         assert f'name="{name}"' in results_header
 
 
-def test_complex_advanced_filters_ignore_rooms_in_ui_and_counter():
+def test_complex_advanced_filters_render_rooms_count_and_preserve_order_inputs():
     response = TestClient(app).get("/alojamientos?tipo=complejo&habitaciones=2&pileta=1&wifi=1")
+    more_filters = re.search(
+        r'<details class="accommodation-more-filters".*?</details>', response.text, re.S
+    ).group()
+    order_form = re.search(
+        r'<form class="accommodation-results-order".*?</form>', response.text, re.S
+    ).group()
 
-    assert "Más filtros (2)" in response.text
-    assert "Las habitaciones no se filtran en complejos" in response.text
-    assert 'name="habitaciones"' not in response.text
+    assert "Más filtros (3)" in more_filters
+    assert re.search(r'<details class="accommodation-more-filters"[^>]*\bopen\b', more_filters)
+    assert "Habitaciones por unidad" in more_filters
+    for label in ("1+ habitación", "2+ habitaciones", "3+ habitaciones"):
+        assert label in more_filters
+    for name, value in (
+        ("tipo", "complejo"), ("habitaciones", "2"), ("pileta", "1"), ("wifi", "1")
+    ):
+        assert re.search(
+            rf'<input type="hidden" name="{name}" value="{value}">', order_form
+        )
 
 
 def test_accommodation_filter_css_protects_responsive_layout():

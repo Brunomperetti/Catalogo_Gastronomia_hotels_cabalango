@@ -2821,9 +2821,8 @@ def filter_alojamientos(empresas: list[models.Empresa], filters: dict) -> list[m
                 options = parse_alojamiento_room_options(
                     getattr(empresa, "alojamiento_habitaciones_unidades", None)
                 )
-                return (
-                    habitaciones_min in options if habitaciones_min < 3
-                    else any(option >= 3 for option in options)
+                return any(
+                    option > 0 and option >= habitaciones_min for option in options
                 )
             return (parse_public_number(empresa.habitaciones) or 0) >= habitaciones_min
 

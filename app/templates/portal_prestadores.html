@@ -75,7 +75,7 @@
                                 <h3>Habitaciones por unidad</h3>
                                 <label class="sr-only" for="filter-habitaciones">Cantidad de habitaciones</label>
                                 <select id="filter-habitaciones" name="habitaciones">
-                                    {% for value, label in [('', 'Cualquier cantidad'),('1','1 habitación'),('2','2 habitaciones'),('3','3+ habitaciones')] %}
+                                    {% for value, label in [('', 'Cualquier cantidad'),('1','1+ habitación'),('2','2+ habitaciones'),('3','3+ habitaciones')] %}
                                     <option value="{{ value }}" {% if alojamiento_filters.get('habitaciones') == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
