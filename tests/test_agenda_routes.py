@@ -300,6 +300,43 @@ def test_seasonal_activity_detail_presents_schedule_before_validity(agenda_app):
     assert response.text.index("Horarios / disponibilidad") < response.text.index("Disponible del")
 
 
+def test_all_day_event_detail_hides_redundant_hour(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.add(ActividadAgenda(
+            tipo="evento", titulo="Festival todo el día", slug="festival-todo-el-dia",
+            categoria="cultura", momento="todo_el_dia", publicado=True,
+            fecha_inicio=datetime(2026, 9, 19, 0, 0),
+            fecha_fin=datetime(2026, 9, 19, 23, 59),
+        ))
+        db.commit()
+
+    response = client.get("/actividades/festival-todo-el-dia")
+    assert response.status_code == 200
+    assert "<dt>Fecha</dt><dd>19/09/2026</dd>" in response.text
+    assert "<dt>Momento</dt><dd>Todo el día</dd>" in response.text
+    assert "<dt>Hora</dt>" not in response.text
+    assert "00:00 a 23:59" not in response.text
+
+
+def test_scheduled_event_detail_keeps_hour(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.add(ActividadAgenda(
+            tipo="evento", titulo="Festival nocturno", slug="festival-nocturno",
+            categoria="cultura", momento="noche", publicado=True,
+            fecha_inicio=datetime(2026, 9, 19, 18, 30),
+            fecha_fin=datetime(2026, 9, 19, 21, 0),
+        ))
+        db.commit()
+
+    response = client.get("/actividades/festival-nocturno")
+    assert response.status_code == 200
+    assert "<dt>Fecha</dt><dd>19/09/2026</dd>" in response.text
+    assert "<dt>Hora</dt><dd>18:30 a 21:00</dd>" in response.text
+    assert "<dt>Momento</dt><dd>Noche</dd>" in response.text
+
+
 def test_duplicate_is_draft_without_dates_and_preserves_content(agenda_app):
     client, TestingSession = agenda_app
     login_admin(client)
