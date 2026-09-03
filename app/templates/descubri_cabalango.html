@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260902-home-single-event-balance-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260903-home-quick-links-balance-2">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
     {% if hero_photos|length > 1 %}<script src="{{ url_for('static', path='js/portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" defer></script>{% endif %}
 </head>
@@ -58,7 +58,7 @@
                 <li><svg aria-hidden="true"><use href="#icon-compass"/></svg>Escapadas tranquilas</li>
                 <li><svg aria-hidden="true"><use href="#icon-people"/></svg>Vida local</li>
             </ul>
-            <div class="hero-actions" aria-label="Empezar a explorar"><a class="portal-button" href="/actividades">Explorar Cabalango</a><a class="destination-hero-link" href="/alojamientos">Dónde dormir</a><a class="destination-hero-link" href="/gastronomia">Dónde comer</a><a class="destination-hero-link" href="/lugares">Ver lugares</a></div>
+            <div class="hero-actions" aria-label="Empezar a explorar"><a class="portal-button" href="/actividades">Explorar Cabalango</a></div>
         </div>
         <figure class="destination-hero-image{% if hero_photos|length > 1 %} has-rotator{% endif %}" data-hero-rotator>
             {% if hero_photos %}{% for photo in hero_photos %}<img class="destination-hero-slide{% if loop.first %} is-active{% endif %}" src="{{ photo.image_path }}" alt="{{ photo.titulo or 'Río y paisaje serrano de Cabalango' }}" data-caption-category="{{ categories.get(photo.categoria, categories.get('rio_naturaleza')) }}" data-caption-title="{{ photo.titulo or 'Balnearios de Cabalango' }}" aria-hidden="{{ 'false' if loop.first else 'true' }}">{% endfor %}<figcaption><span data-hero-caption-category>{{ categories.get(hero_photos[0].categoria, categories.get('rio_naturaleza')) }}</span><strong data-hero-caption-title>{{ hero_photos[0].titulo or 'Balnearios de Cabalango' }}</strong></figcaption>{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Postal cálida de Cabalango"></div>{% endif %}
@@ -73,6 +73,7 @@
             <a href="/actividades"><svg aria-hidden="true"><use href="#icon-compass"/></svg><span>Qué hacer</span></a>
             <a href="/servicios?grupo=compras"><svg aria-hidden="true"><use href="#icon-shop"/></svg><span>Almacenes y kioscos</span></a>
             <a href="/como-llegar"><svg aria-hidden="true"><use href="#icon-pin"/></svg><span>Cómo llegar y moverse</span></a>
+            <a href="#lugares"><svg aria-hidden="true"><use href="#icon-water"/></svg><span>Balnearios y río</span></a>
         </div>
     </nav>
 

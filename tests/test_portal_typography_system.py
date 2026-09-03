@@ -29,7 +29,7 @@ def test_public_templates_load_the_approved_font_families_once():
         assert "Cormorant+Garamond" not in template
         assert 'rel="preconnect" href="https://fonts.googleapis.com"' in template
         assert 'rel="preconnect" href="https://fonts.gstatic.com" crossorigin' in template
-        expected_version = "?v=20260902-home-single-event-balance-1" if name == "descubri_cabalango.html" else "?v=20260902-provider-amenities-1" if name == "prestador.html" else "?v=20260903-accommodation-mobile-filter-basis-1" if name == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260903-home-quick-links-balance-2" if name == "descubri_cabalango.html" else "?v=20260902-provider-amenities-1" if name == "prestador.html" else "?v=20260903-accommodation-mobile-filter-basis-1" if name == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
         assert expected_version in template
 
 

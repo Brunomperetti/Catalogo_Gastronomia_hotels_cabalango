@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260902-home-single-event-balance-1" in response.text
+    assert "?v=20260903-home-quick-links-balance-2" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -139,8 +139,9 @@ def test_travel_information_does_not_expand_home():
 
     for travel_only_copy in ["En avión", "En colectivo", "Remis Cabalango", "Horarios de Fono Bus"]:
         assert travel_only_copy not in html
-    for existing_link in ["/alojamientos", "/gastronomia", "/actividades", "/servicios?grupo=compras", "/lugares"]:
+    for existing_link in ["/alojamientos", "/gastronomia", "/actividades", "/servicios?grupo=compras"]:
         assert f'href="{existing_link}"' in html
+    assert 'href="#lugares"' in html
     assert "aproximadamente 6 km" not in html
 
 
@@ -385,6 +386,59 @@ def test_home_editorial_order_and_redundancy(monkeypatch):
     assert [html.index(marker) for marker in ordered] == sorted(html.index(marker) for marker in ordered)
     assert "Balnearios, monte y caminatas tranquilas" not in html
     assert 'id="clima"' in html and 'id="fotos"' not in html and 'id="como-llegar"' in html
+
+
+def test_home_hero_and_quick_links_navigation(monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "build_home_agenda", lambda db: [])
+    html = TestClient(app).get("/").text
+    hero_actions = re.search(r'<div class="hero-actions".*?</div>', html, re.S).group()
+    quick_links = re.search(
+        r'<nav class="destination-quick-links".*?</nav>', html, re.S
+    ).group()
+
+    assert "Explorar Cabalango" in hero_actions
+    for duplicate in ("Dónde dormir", "Dónde comer", "Ver lugares"):
+        assert duplicate not in hero_actions
+
+    for label in (
+        "Dónde dormir", "Dónde comer", "Qué hacer", "Almacenes y kioscos",
+        "Cómo llegar y moverse", "Balnearios y río",
+    ):
+        assert label in quick_links
+    assert quick_links.count("<a ") == 6
+    assert re.search(
+        r'<a href="#lugares"><svg aria-hidden="true"><use href="#icon-water"/></svg>'
+        r'<span>Balnearios y río</span></a>',
+        quick_links,
+    )
+    template = __import__("pathlib").Path(
+        "app/templates/descubri_cabalango.html"
+    ).read_text(encoding="utf-8")
+    assert 'id="lugares"' in template
+
+    css = __import__("pathlib").Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    desktop_rule = re.search(
+        r"\.destination-quick-links > div \{([^}]*)\}", css
+    ).group(1)
+    tablet_block = re.search(
+        r"@media \(max-width: 1024px\) \{(.*?)\n\}", css, re.S
+    ).group(1)
+    mobile_block = re.search(
+        r"@media \(max-width: 520px\) \{(.*?)\n\}", css, re.S
+    ).group(1)
+    assert "grid-template-columns: repeat(6, minmax(0, 1fr))" in desktop_rule
+    assert re.search(
+        r"\.destination-quick-links > div \{[^}]*"
+        r"grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)",
+        tablet_block,
+    )
+    assert re.search(
+        r"\.destination-quick-links > div \{[^}]*"
+        r"grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)",
+        mobile_block,
+    )
 
 
 def test_home_planning_preserves_editable_tip_and_cta_has_no_image(monkeypatch):
