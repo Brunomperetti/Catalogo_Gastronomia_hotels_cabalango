@@ -655,7 +655,7 @@ def test_hero_rotator_css_keeps_slides_absolutely_layered():
 def test_destination_page_busts_only_hero_stylesheet_cache():
     template = open("app/templates/descubri_cabalango.html", encoding="utf-8").read()
 
-    assert "portal.css') }}?v=20260903-home-quick-links-kicker-spacing-1" in template
+    assert "portal.css') }}?v=20260903-home-event-flyer-mobile-contain-1" in template
     assert "portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" in template
 
 
@@ -688,3 +688,37 @@ def test_single_home_event_balances_facts_and_cta_only_on_horizontal_layout():
     assert "grid-template-columns: minmax(0, 46fr) minmax(0, 54fr)" in css
     assert '@media (max-width: 768px)' in css
     assert '.home-agenda-event--with-image { display: flex; }' in css
+
+
+def test_single_home_event_mobile_shows_the_full_flyer_without_changing_desktop_geometry():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+
+    base_image = css.split(".home-agenda-event__image {", 1)[1].split("}", 1)[0]
+    assert "aspect-ratio: 16 / 8" in base_image
+    assert "object-fit: cover" in base_image
+
+    feature_css = css.split("/* A single event is an intentional feature;", 1)[1]
+    desktop_image = feature_css.split(
+        '.destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image {',
+        1,
+    )[1].split("}", 1)[0]
+    assert "aspect-ratio: auto" in desktop_image
+    assert "height: 100%" in desktop_image
+    assert "min-height: 290px" in desktop_image
+
+    mobile = feature_css.split("@media (max-width: 768px) {", 1)[1].split("\n}", 1)[0]
+    mobile_image = mobile.split(
+        '.destination-guide .home-agenda__grid[data-count="1"] .home-agenda-event__image {',
+        1,
+    )[1].split("}", 1)[0]
+    for declaration in (
+        "aspect-ratio: auto",
+        "height: auto",
+        "min-height: 0",
+        "object-fit: contain",
+        "width: 100%",
+    ):
+        assert declaration in mobile_image
+    assert "object-fit: cover" not in mobile_image
+    assert "max-height:" not in mobile_image
+    assert "!important" not in mobile_image
