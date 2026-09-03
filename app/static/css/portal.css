@@ -4313,7 +4313,8 @@ button:disabled {
   .accommodation-filter-toolbar .filter-actions { margin-left: 0; }
   .accommodation-filter-toolbar .filter-actions { width: 100%; }
   .accommodation-filter-toolbar .filter-actions .portal-button { flex: 1; }
-  .accommodation-more-filters, .accommodation-more-filters summary { box-sizing: border-box; width: 100%; }
+  .accommodation-filter-toolbar .accommodation-more-filters { box-sizing: border-box; flex: 0 0 auto; width: 100%; }
+  .accommodation-more-filters summary { box-sizing: border-box; width: 100%; }
   .accommodation-grid { grid-template-columns: minmax(0, 1fr); }
   .accommodation-results-order { align-items: stretch; flex-direction: column; margin-top: 0; width: 100%; }
   .accommodation-results-order select { box-sizing: border-box; min-width: 0; width: 100%; }

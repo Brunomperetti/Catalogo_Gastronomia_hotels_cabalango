@@ -566,3 +566,16 @@ def test_accommodation_filter_css_protects_responsive_layout():
     assert ".alojamientos-filter-panel .alojamientos-filters { grid-template-columns: 1fr; }" in css
     assert ".accommodation-more-filters .filter-amenities { display: flex; flex-wrap: wrap" in css
     assert ".amenity-pill:has(input:checked)" not in css
+
+    desktop_rule = re.search(r"\.accommodation-more-filters \{([^}]*)\}", css).group(1)
+    mobile_block = re.search(r"@media \(max-width: 679px\) \{(.*?)\n\}", css, re.S).group(1)
+    mobile_rule = re.search(
+        r"\.accommodation-filter-toolbar \.accommodation-more-filters \{([^}]*)\}",
+        mobile_block,
+    ).group(1)
+
+    assert "flex: 1 1 620px" in desktop_rule
+    assert "flex: 0 0 auto" in mobile_rule
+    assert "width: 100%" in mobile_rule
+    assert not re.search(r"(?:^|;)\s*(?:height|min-height|max-height|position)\s*:", mobile_rule)
+    assert "!important" not in mobile_rule
