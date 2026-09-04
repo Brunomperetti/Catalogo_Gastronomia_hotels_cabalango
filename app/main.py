@@ -3210,12 +3210,17 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
 
 
 @app.get("/actividades", response_class=HTMLResponse)
-def portal_actividades(request: Request, momento: str = "", categoria: str = "", cuando: str = "", db: Session = Depends(get_db)):
-    agenda_items = get_public_activities(db, cuando=cuando)
+def portal_actividades(request: Request, momento: str = "", categoria: str = "", db: Session = Depends(get_db)):
     experience_items = get_public_activities(db, categoria=categoria, momento=momento)
-    items = ([item for item in agenda_items if item.tipo == "evento"]
-             + [item for item in experience_items if item.tipo == "actividad"])
-    return templates.TemplateResponse("actividades.html", {"request": request, "agenda": prepare_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"momento": momento, "categoria": categoria, "cuando": cuando}, "active_section": "actividades"})
+    items = [item for item in experience_items if item.tipo == "actividad"]
+    return templates.TemplateResponse("actividades.html", {"request": request, "agenda": prepare_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"momento": momento, "categoria": categoria}, "active_section": "actividades"})
+
+
+@app.get("/agenda", response_class=HTMLResponse)
+def portal_agenda(request: Request, cuando: str = "", db: Session = Depends(get_db)):
+    agenda_items = get_public_activities(db, cuando=cuando)
+    items = [item for item in agenda_items if item.tipo == "evento"]
+    return templates.TemplateResponse("agenda.html", {"request": request, "agenda": prepare_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"cuando": cuando}, "active_section": ""})
 
 
 @app.get("/actividades/{slug}", response_class=HTMLResponse)
