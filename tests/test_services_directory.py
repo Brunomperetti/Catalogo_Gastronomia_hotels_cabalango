@@ -82,5 +82,5 @@ def test_all_public_css_consumers_use_commerce_cache_key():
     ]
     for template in templates:
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
-        expected_version = "?v=20260903-home-event-flyer-mobile-contain-1" if template == "descubri_cabalango.html" else "?v=20260902-provider-amenities-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260903-accommodation-mobile-filter-basis-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260903-home-event-flyer-mobile-contain-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-lightbox-mobile-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260903-accommodation-mobile-filter-basis-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source
