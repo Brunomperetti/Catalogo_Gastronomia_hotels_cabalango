@@ -2779,6 +2779,43 @@ def build_provider_amenities(empresa: models.Empresa, kind: str) -> list[dict[st
     ]
 
 
+PROVIDER_PRODUCT_CATEGORIES = [
+    ("alimentos", "Alimentos"),
+    ("bebidas", "Bebidas"),
+    ("bebidas frias", "Bebidas frías"),
+    ("panificados", "Panificados"),
+    ("fiambres", "Fiambres"),
+    ("frutas y verduras", "Frutas y verduras"),
+    ("articulos de limpieza", "Artículos de limpieza"),
+    ("higiene personal", "Higiene personal"),
+    ("hielo", "Hielo"),
+    ("carbon / lena", "Carbón / leña"),
+    ("golosinas", "Golosinas"),
+    ("productos regionales", "Productos regionales"),
+]
+
+
+def build_provider_products(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
+    """Return active, categorized commerce products in editorial order.
+
+    Product categories come from the existing ``Producto.categoria`` field. Unknown
+    and empty values are intentionally ignored rather than inferred from free text.
+    """
+    if kind != "servicios" or service_group_key(empresa) != "compras":
+        return []
+
+    active_categories = {
+        re.sub(r"\s*/\s*", " / ", normalize_taxonomy_key(product.categoria))
+        for product in (getattr(empresa, "productos", None) or [])
+        if getattr(product, "activo", None) is True and clean_text(getattr(product, "categoria", None), default="")
+    }
+    return [
+        {"key": key, "label": label, "icon": "bag"}
+        for key, label in PROVIDER_PRODUCT_CATEGORIES
+        if key in active_categories
+    ]
+
+
 ALOJAMIENTO_FILTER_AMENITIES = [
     ("pileta", "Pileta"),
     ("rio", "Frente/cerca del río"),
@@ -5305,6 +5342,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "build_provider_amenities": build_provider_amenities,
+            "build_provider_products": build_provider_products,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
             "service_card_kicker": service_card_kicker,
         },

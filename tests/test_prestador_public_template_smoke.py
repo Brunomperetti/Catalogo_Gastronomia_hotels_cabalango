@@ -8,6 +8,7 @@ from app.main import (
     build_alojamiento_key_facts,
     build_alojamiento_rooms_summary,
     build_provider_amenities,
+    build_provider_products,
 )
 
 
@@ -64,6 +65,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         comer_en_lugar=False,
         delivery=False,
         take_away=False,
+        productos=[],
     )
     identity_overrides = identity_overrides or {}
     for field, value in identity_overrides.items():
@@ -97,6 +99,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         build_alojamiento_key_facts=build_alojamiento_key_facts,
         build_alojamiento_rooms_summary=build_alojamiento_rooms_summary,
         build_provider_amenities=build_provider_amenities,
+        build_provider_products=build_provider_products,
         actividad_subgrupos={},
     )
 
@@ -134,6 +137,75 @@ def test_prestador_template_empty_gallery_does_not_break():
 def amenities_section(html):
     match = re.search(r'<section class="portal-card provider-amenities".*?</section>', html, re.DOTALL)
     return match.group(0) if match else ""
+
+
+def products_section(html):
+    match = re.search(r'<section class="portal-card provider-amenities provider-products".*?</section>', html, re.DOTALL)
+    return match.group(0) if match else ""
+
+
+def stored_product(category, active=True):
+    return SimpleNamespace(categoria=category, activo=active)
+
+
+def test_commerce_profile_shows_active_persisted_product_categories_in_editorial_order():
+    categories = [
+        "Alimentos", "Bebidas", "Bebidas frías", "Panificados", "Fiambres",
+        "Frutas y verduras", "Artículos de limpieza", "Higiene personal", "Hielo",
+        "Carbón/leña", "Golosinas", "Productos regionales",
+    ]
+    html = render_prestador("servicios", identity_overrides={
+        "subgrupo": "compras",
+        "subtipo": "Almacén",
+        "productos": [stored_product(category) for category in reversed(categories)],
+    })
+    section = products_section(html)
+
+    assert "PRODUCTOS DISPONIBLES" in section
+    expected_labels = [*categories[:9], "Carbón / leña", *categories[10:]]
+    rendered_labels = [f">{label}</span>" for label in expected_labels]
+    assert all(section.count(label) == 1 for label in rendered_labels)
+    assert [section.index(label) for label in rendered_labels] == sorted(section.index(label) for label in rendered_labels)
+    assert html.index("provider-content-grid") < html.index("provider-products") < html.index('id="fotos"')
+    assert 'aria-labelledby="provider-products-title"' in section
+    assert section.count("<li") == len(categories)
+
+
+def test_commerce_products_ignore_duplicates_inactive_empty_and_unknown_categories():
+    products = [
+        stored_product("Bebidas frías"),
+        stored_product("bebidas frias"),
+        stored_product("Alimentos", active=False),
+        stored_product(""),
+        stored_product(None),
+        stored_product("Categoría libre no publicada"),
+    ]
+    html = render_prestador("servicios", identity_overrides={"subgrupo": "compras", "productos": products})
+    section = products_section(html)
+
+    assert section.count("Bebidas frías") == 1
+    assert "Alimentos" not in section
+    assert "Categoría libre no publicada" not in section
+    assert section.count("<li") == 1
+
+
+def test_commerce_profile_without_valid_products_omits_the_entire_section():
+    html = render_prestador("servicios", identity_overrides={
+        "subgrupo": "compras", "productos": [stored_product("Bebidas", active=False)]
+    })
+
+    assert "provider-products" not in html
+    assert "PRODUCTOS DISPONIBLES" not in html
+
+
+def test_products_do_not_contaminate_accommodation_gastronomy_or_other_services():
+    product = [stored_product("Alimentos")]
+
+    assert "provider-products" not in render_prestador("alojamiento", identity_overrides={"productos": product})
+    assert "provider-products" not in render_prestador("gastronomia", identity_overrides={"productos": product})
+    assert "provider-products" not in render_prestador(
+        "servicios", identity_overrides={"subgrupo": "transporte", "productos": product}
+    )
 
 
 def test_accommodation_profile_shows_only_true_amenities():
@@ -600,6 +672,7 @@ def test_prestador_template_uses_normalized_external_contact_links():
         get_alojamiento_card_type=lambda empresa: empresa.subtipo,
         build_alojamiento_key_facts=lambda empresa: [],
         build_provider_amenities=build_provider_amenities,
+        build_provider_products=build_provider_products,
     )
 
     assert 'href="https://facebook.com/golata007"' in html
