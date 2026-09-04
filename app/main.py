@@ -35,7 +35,7 @@ from reportlab.lib.pagesizes import A4
 
 from app.database import SessionLocal, engine, Base
 from app import models
-from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, default_event_schedule, derived_status, get_home_agenda_events, get_public_activities, local_datetime, now_cabalango, prepare_home_agenda_events, prepare_public_agenda, validate_activity
+from app.agenda import CATEGORIES, MOMENTS, PERSISTED_STATES, TYPES, default_event_schedule, derived_status, get_home_agenda_events, get_public_activities, local_datetime, normalize_activity_additional_categories, now_cabalango, parse_activity_additional_categories, prepare_home_agenda_events, prepare_public_agenda, validate_activity
 
 app = FastAPI()
 logger = logging.getLogger(__name__)
@@ -374,6 +374,7 @@ def ensure_actividad_agenda_table():
     else:
         columns = {column["name"] for column in inspect(engine).get_columns("actividades_agenda")}
         additions = {
+            "categorias_adicionales": "TEXT",
             "oficial": "BOOLEAN NOT NULL DEFAULT FALSE",
             "estado": "VARCHAR NOT NULL DEFAULT 'programado'",
             "publicar_desde": "TIMESTAMP", "destacar_home_desde": "TIMESTAMP",
@@ -3211,11 +3212,13 @@ def admin_activities(request: Request, edit: int | None = None, error: str = "",
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     items = db.query(models.ActividadAgenda).order_by(models.ActividadAgenda.fecha_inicio.desc(), models.ActividadAgenda.titulo).all()
-    return templates.TemplateResponse("admin_actividades.html", {"request": request, "items": items, "editing": db.get(models.ActividadAgenda, edit) if edit else None, "categories": CATEGORIES, "moments": MOMENTS, "types": TYPES, "states": PERSISTED_STATES, "status": derived_status, "error": error, "msg": msg})
+    editing = db.get(models.ActividadAgenda, edit) if edit else None
+    additional_categories = parse_activity_additional_categories(editing.categorias_adicionales) if editing else []
+    return templates.TemplateResponse("admin_actividades.html", {"request": request, "items": items, "editing": editing, "additional_categories": additional_categories, "categories": CATEGORIES, "moments": MOMENTS, "types": TYPES, "states": PERSISTED_STATES, "status": derived_status, "error": error, "msg": msg})
 
 
 @app.post("/admin/actividades/guardar")
-async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: str = Form(""), publicado: str | None = Form(None), destacado: str | None = Form(None), oficial: str | None = Form(None), estado: str | None = Form(None), publicar_desde: str = Form(""), destacar_home_desde: str = Form(""), ocultar_desde: str = Form(""), mostrar_en_home: str | None = Form(None), prioridad_home: int = Form(0), imagen: UploadFile | None = File(None), galeria: list[UploadFile] = File(default=[]), db: Session = Depends(get_db)):
+async def admin_activity_save(request: Request, id: int | None = Form(None), tipo: str = Form(...), titulo: str = Form(...), descripcion_corta: str = Form(""), descripcion: str = Form(""), categoria: str = Form(...), categorias_adicionales: list[str] = Form(default=[]), momento: str = Form(...), fecha_inicio: str = Form(""), fecha_fin: str = Form(""), horarios: str = Form(""), lugar: str = Form(""), direccion: str = Form(""), maps_url: str = Form(""), whatsapp: str = Form(""), instagram: str = Form(""), url_externa: str = Form(""), orden: str = Form(""), publicado: str | None = Form(None), destacado: str | None = Form(None), oficial: str | None = Form(None), estado: str | None = Form(None), publicar_desde: str = Form(""), destacar_home_desde: str = Form(""), ocultar_desde: str = Form(""), mostrar_en_home: str | None = Form(None), prioridad_home: int = Form(0), imagen: UploadFile | None = File(None), galeria: list[UploadFile] = File(default=[]), db: Session = Depends(get_db)):
     user = require_admin(request, db)
     if isinstance(user, RedirectResponse): return user
     try:
@@ -3241,6 +3244,9 @@ async def admin_activity_save(request: Request, id: int | None = Form(None), tip
     for name, value in values.items():
         setattr(item, name, value if name in {"publicado", "destacado", "oficial", "mostrar_en_home", "prioridad_home", "orden", "estado"} else value or None)
     item.tipo, item.categoria, item.momento = tipo, categoria, momento
+    item.categorias_adicionales = normalize_activity_additional_categories(
+        categorias_adicionales, categoria
+    ) if tipo == "actividad" else None
     item.fecha_inicio, item.fecha_fin, item.updated_at = parsed_dates["fecha_inicio"], parsed_dates["fecha_fin"], utc_now()
     submitted_windows = {"publicar_desde": publicar_desde, "destacar_home_desde": destacar_home_desde, "ocultar_desde": ocultar_desde}
     for name in submitted_windows:
@@ -3302,6 +3308,8 @@ def admin_activity_duplicate(request: Request, item_id: int, db: Session = Depen
     source = db.get(models.ActividadAgenda, item_id)
     if not source: raise HTTPException(404)
     copied = {c.name: getattr(source, c.name) for c in models.ActividadAgenda.__table__.columns if c.name not in {"id", "slug", "fecha_inicio", "fecha_fin", "publicado", "estado", "publicar_desde", "destacar_home_desde", "ocultar_desde", "created_at", "updated_at"}}
+    if source.tipo != "actividad":
+        copied["categorias_adicionales"] = None
     duplicate = models.ActividadAgenda(**copied, slug=unique_agenda_slug(db, f"{source.titulo}-copia"), fecha_inicio=None, fecha_fin=None, publicado=False, estado="borrador", publicar_desde=None, destacar_home_desde=None, ocultar_desde=None, created_at=utc_now(), updated_at=utc_now())
     db.add(duplicate); db.commit()
     return RedirectResponse(f"/admin/actividades?edit={duplicate.id}", 303)
