@@ -35,10 +35,16 @@ def test_bootstrap_adds_multi_unit_columns_idempotently(monkeypatch):
     main.ensure_empresa_media_columns()
 
     columns = {column["name"] for column in inspect(engine).get_columns("empresas")}
-    assert {"alojamiento_modalidad", "alojamiento_detalle_unidades", "alojamiento_habitaciones_unidades"} <= columns
+    assert {
+        "alojamiento_modalidad", "alojamiento_detalle_unidades",
+        "alojamiento_habitaciones_unidades", "compras_productos_disponibles",
+    } <= columns
     with engine.connect() as connection:
-        row = connection.execute(text("SELECT nombre, alojamiento_modalidad, alojamiento_detalle_unidades, alojamiento_habitaciones_unidades FROM empresas")).one()
-    assert row == ("Legacy", None, None, None)
+        row = connection.execute(text(
+            "SELECT nombre, alojamiento_modalidad, alojamiento_detalle_unidades, "
+            "alojamiento_habitaciones_unidades, compras_productos_disponibles FROM empresas"
+        )).one()
+    assert row == ("Legacy", None, None, None, None)
 
 
 def test_room_options_are_normalized_and_invalid_data_is_safe():

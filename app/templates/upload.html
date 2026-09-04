@@ -393,6 +393,9 @@
                         <div class="full-width"><label class="field-label">Descripción funcional</label><textarea class="input-custom" name="descripcion" rows="4">{{ empresa_activa.descripcion or '' }}</textarea></div>
                         <div><label class="field-label">Promoción opcional</label><input class="input-custom" name="promocion" value="{{ empresa_activa.promocion or '' }}"></div>
                     </div>
+                    {% if servicio_grupo_activo == 'compras' %}
+                    <fieldset class="full-width"><legend class="field-label">PRODUCTOS DISPONIBLES</legend><p class="form-help">Marcá qué tipos de productos se pueden encontrar en este comercio.</p><input type="hidden" name="compras_productos_disponibles_present" value="1"><div class="feature-list">{% for value, label in provider_product_categories %}<label class="form-check"><input class="form-check-input" type="checkbox" name="compras_productos_disponibles" value="{{ value }}" {% if value in commerce_product_categories_selected %}checked{% endif %}> {{ label }}</label>{% endfor %}</div></fieldset>
+                    {% endif %}
                     <div class="feature-list"><label class="form-check"><input class="form-check-input" type="checkbox" name="rio" value="1" {% if empresa_activa.rio %}checked{% endif %}> Atención 24 hs</label></div>
 
                     {% elif empresa_activa.theme == 'actividades' %}

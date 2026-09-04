@@ -90,6 +90,23 @@ def edit_company(client, company, **values):
     return client.post("/empresa/editar_panel", data=data, follow_redirects=False)
 
 
+def test_admin_edits_and_clears_commerce_product_metadata(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db, theme="servicios", subgrupo="compras", subtipo="Almacén")
+    response = edit_company(client, company, compras_productos_disponibles_present="1",
+                            compras_productos_disponibles=["golosinas", "alimentos", "bebidas frias", "alimentos"])
+    assert response.status_code == 303
+    db.refresh(company)
+    assert json.loads(company.compras_productos_disponibles) == ["alimentos", "bebidas frias", "golosinas"]
+
+    page = client.get(f"/admin?area=prestador&empresa={company.slug}&tab=rubro")
+    assert 'value="alimentos" checked' in page.text
+    assert 'value="golosinas" checked' in page.text
+    edit_company(client, company, compras_productos_disponibles_present="1")
+    db.refresh(company)
+    assert company.compras_productos_disponibles is None
+
+
 def test_edit_accommodation_persists_normalized_multi_unit_fields(admin_app):
     client, db, _ = admin_app
     company = add_company(db, theme="alojamiento")

@@ -92,6 +92,7 @@ def run_startup_db_maintenance():
         ensure_lugares_tables()
         ensure_actividad_agenda_table()
         ensure_solicitud_prestador_table()
+        backfill_commerce_product_categories_from_intake()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
     except Exception as exc:
@@ -172,6 +173,7 @@ def ensure_empresa_media_columns():
             "alojamiento_modalidad": "VARCHAR",
             "alojamiento_detalle_unidades": "TEXT",
             "alojamiento_habitaciones_unidades": "TEXT",
+            "compras_productos_disponibles": "TEXT",
             "habitaciones": "VARCHAR",
             "banos": "VARCHAR",
             "video_url": "VARCHAR",
@@ -2138,6 +2140,8 @@ def editar_empresa_panel(
     alojamiento_detalle_unidades: str | None = Form(None),
     alojamiento_habitaciones_unidades: list[str] | None = Form(None),
     alojamiento_habitaciones_unidades_present: str | None = Form(None),
+    compras_productos_disponibles: list[str] | None = Form(None),
+    compras_productos_disponibles_present: str | None = Form(None),
     habitaciones: str | None = Form(None),
     banos: str | None = Form(None),
     video_url: str | None = Form(None),
@@ -2252,6 +2256,14 @@ def editar_empresa_panel(
         if raw_value is not None:
             setattr(empresa, attr, str(raw_value) == "1")
     empresa.theme = normalize_theme(theme)
+    if (
+        empresa.theme == "servicios"
+        and service_group_key(empresa) == "compras"
+        and compras_productos_disponibles_present == "1"
+    ):
+        empresa.compras_productos_disponibles = serialize_commerce_product_categories(
+            compras_productos_disponibles
+        )
 
     if slug_final != slug_original:
         old_static_dir = Path("app/static/empresas") / slug_original
@@ -2768,6 +2780,79 @@ PROVIDER_AMENITIES = {
         ("take_away", "Take away", "bag"),
     ],
 }
+
+PROVIDER_PRODUCT_CATEGORIES = [
+    ("alimentos", "Alimentos"),
+    ("bebidas", "Bebidas"),
+    ("bebidas frias", "Bebidas frías"),
+    ("panificados", "Panificados"),
+    ("fiambres", "Fiambres"),
+    ("frutas y verduras", "Frutas y verduras"),
+    ("articulos de limpieza", "Artículos de limpieza"),
+    ("higiene personal", "Higiene personal"),
+    ("hielo", "Hielo"),
+    ("carbon / lena", "Carbón / leña"),
+    ("golosinas", "Golosinas"),
+    ("productos regionales", "Productos regionales"),
+]
+
+
+def _commerce_product_key(value: Any) -> str:
+    normalized = "".join(
+        char for char in unicodedata.normalize("NFKD", clean_text(value, default="").lower())
+        if not unicodedata.combining(char)
+    )
+    normalized = re.sub(r"\s*/\s*", " / ", normalized)
+    return re.sub(r"\s+", " ", normalized).strip()
+
+
+def normalize_commerce_product_categories(values) -> list[str]:
+    """Normalize submitted/intake labels to the one canonical editorial taxonomy."""
+    if isinstance(values, str):
+        values = re.split(r"[,;\n]+", values)
+    if not isinstance(values, (list, tuple, set)):
+        return []
+    known = {
+        _commerce_product_key(key): key for key, _label in PROVIDER_PRODUCT_CATEGORIES
+    }
+    known.update({
+        _commerce_product_key(label): key for key, label in PROVIDER_PRODUCT_CATEGORIES
+    })
+    selected = {known[key] for value in values if (key := _commerce_product_key(value)) in known}
+    return [key for key, _label in PROVIDER_PRODUCT_CATEGORIES if key in selected]
+
+
+def parse_commerce_product_categories(raw) -> list[str]:
+    if raw is None or raw == "":
+        return []
+    if isinstance(raw, str):
+        stripped = raw.strip()
+        if not stripped:
+            return []
+        if stripped.startswith(("[", "{")):
+            try:
+                raw = json.loads(stripped)
+            except (TypeError, json.JSONDecodeError):
+                return []
+    return normalize_commerce_product_categories(raw)
+
+
+def serialize_commerce_product_categories(values) -> str | None:
+    normalized = normalize_commerce_product_categories(values)
+    return json.dumps(normalized, ensure_ascii=False, separators=(",", ":")) if normalized else None
+
+
+def build_provider_products(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
+    """Build commerce metadata; the real product catalog is intentionally unrelated."""
+    if kind != "servicios" or service_group_key(empresa) != "compras":
+        return []
+    selected = set(parse_commerce_product_categories(
+        getattr(empresa, "compras_productos_disponibles", None)
+    ))
+    return [
+        {"key": key, "label": label, "icon": "bag"}
+        for key, label in PROVIDER_PRODUCT_CATEGORIES if key in selected
+    ]
 
 
 def build_provider_amenities(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
@@ -3390,6 +3475,63 @@ def get_intake_specific_value(payload: dict, *names: str):
     return None
 
 
+COMMERCE_PRODUCT_INTAKE_FIELDS = (
+    "¿Qué productos se pueden encontrar?",
+    "Qué productos se pueden encontrar",
+    "Productos disponibles",
+    "productos_disponibles",
+    "productos",
+)
+
+
+def commerce_products_from_intake(payload: dict) -> str | None:
+    value = get_intake_specific_value(payload, *COMMERCE_PRODUCT_INTAKE_FIELDS)
+    return serialize_commerce_product_categories(parse_commerce_product_categories(value))
+
+
+def backfill_commerce_product_categories_from_intake() -> int:
+    """Recover linked commerce metadata without changing processed intake state."""
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if not {"empresas", "solicitudes_prestadores"}.issubset(tables):
+        return 0
+    if "compras_productos_disponibles" not in {
+        column["name"] for column in inspector.get_columns("empresas")
+    }:
+        return 0
+    db = SessionLocal()
+    changed = 0
+    try:
+        solicitudes = db.query(models.SolicitudPrestador).filter(
+            models.SolicitudPrestador.source == "google_form",
+            models.SolicitudPrestador.converted_entity_type == "empresa",
+            models.SolicitudPrestador.converted_entity_id.isnot(None),
+        ).all()
+        for solicitud in solicitudes:
+            empresa = db.get(models.Empresa, solicitud.converted_entity_id)
+            if (
+                not empresa
+                or empresa.compras_productos_disponibles is not None
+                or normalize_theme(empresa.theme) != "servicios"
+                or service_group_key(empresa) != "compras"
+            ):
+                continue
+            serialized = commerce_products_from_intake(
+                parse_intake_json(solicitud.raw_payload, {})
+            )
+            if serialized:
+                empresa.compras_productos_disponibles = serialized
+                changed += 1
+        if changed:
+            db.commit()
+        return changed
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 def intake_yes(value: Any) -> bool:
     return intake_key(value) in {"si", "si autorizo", "si confirmo"}
 
@@ -3463,6 +3605,8 @@ def build_empresa_from_intake(item: models.SolicitudPrestador, payload: dict, db
         horarios=clean_text(item.opening_hours, default="") or None,
         activo=False, destacado=False,
     )
+    if mapping["theme"] == "servicios" and group == "compras":
+        empresa.compras_productos_disponibles = commerce_products_from_intake(payload)
     direct_values = {
         "capacidad": ("Capacidad",), "habitaciones": ("Habitaciones",),
         "banos": ("Baños", "Banos"), "precio_desde": ("Precio desde", "Tarifa desde", "Precio/tarifa desde"),
@@ -3883,6 +4027,10 @@ def admin_panel(
             "empresa_logo_url": get_empresa_logo_url(empresa_activa),
             "empresa_banner_url": get_empresa_banner_url(empresa_activa),
             "parse_alojamiento_room_options": parse_alojamiento_room_options,
+            "provider_product_categories": PROVIDER_PRODUCT_CATEGORIES,
+            "commerce_product_categories_selected": set(parse_commerce_product_categories(
+                empresa_activa.compras_productos_disponibles
+            )) if empresa_activa else set(),
             "galeria_urls": get_empresa_gallery_urls(empresa_activa) if empresa_activa else [],
             "menu_fotos_urls": get_empresa_menu_photo_urls(empresa_activa) if empresa_activa else [],
             "pending_reviews": db.query(models.Review).filter(models.Review.estado == "pendiente").order_by(models.Review.created_at.desc()).limit(30).all(),
@@ -5305,6 +5453,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "build_provider_amenities": build_provider_amenities,
+            "build_provider_products": build_provider_products,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
             "service_card_kicker": service_card_kicker,
         },
