@@ -121,21 +121,17 @@ def test_public_listing_and_detail_visibility(agenda_app):
         assert client.get(f"/actividades/{slug}").status_code == 404
 
 
-@pytest.mark.parametrize(
-    ("query", "visible", "hidden"),
-    [
-        ("cuando=hoy", ("Feria de hoy", "Música esta noche", "Yoga permanente", "Feria de temporada"), ("Evento de mañana",)),
-        ("momento=noche", ("Feria de hoy", "Música esta noche", "Evento de mañana", "Feria de temporada"), ("Yoga permanente",)),
-        ("categoria=bienestar", ("Yoga permanente", "Feria de hoy", "Música esta noche", "Evento de mañana"), ("Feria de temporada",)),
-    ],
-)
-def test_public_filters(agenda_app, query, visible, hidden):
+@pytest.mark.parametrize(("query", "visible", "hidden"), [
+    ("momento=noche", ("Feria de temporada",), ("Yoga permanente", "Música esta noche")),
+    ("categoria=bienestar", ("Yoga permanente",), ("Feria de temporada", "Evento de mañana")),
+])
+def test_experience_filters_only_render_permanent_activities(agenda_app, query, visible, hidden):
     html = agenda_app[0].get(f"/actividades?{query}").text
     assert all(title in html for title in visible)
     assert all(title not in html for title in hidden)
 
 
-def test_experience_filters_do_not_change_official_agenda(agenda_app):
+def test_experience_and_agenda_routes_are_isolated(agenda_app):
     client, TestingSession = agenda_app
     with TestingSession() as db:
         db.add_all([
@@ -146,31 +142,19 @@ def test_experience_filters_do_not_change_official_agenda(agenda_app):
         ])
         db.commit()
 
-    def sections(query):
-        html = client.get(f"/actividades?{query}").text
-        official = html.split('class="official-agenda agenda-section"', 1)[1].split('class="experiences agenda-section"', 1)[0]
-        experiences = html.split('class="experiences agenda-section"', 1)[1]
-        return official, experiences
+    nature = client.get("/actividades?categoria=naturaleza").text
+    assert "Sendero naturaleza" in nature and "Taller cultura" not in nature
+    assert "Festival cultura" not in nature and "Encuentro naturaleza" not in nature
+    culture = client.get("/actividades?categoria=cultura").text
+    assert "Taller cultura" in culture and "Sendero naturaleza" not in culture
+    assert "Festival cultura" not in culture and "Encuentro naturaleza" not in culture
 
-    official, experiences = sections("categoria=naturaleza")
-    assert "Festival cultura" in official
-    assert "Sendero naturaleza" in experiences and "Taller cultura" not in experiences
-
-    official, experiences = sections("categoria=cultura")
-    assert "Encuentro naturaleza" in official
-    assert "Taller cultura" in experiences and "Sendero naturaleza" not in experiences
-
-    official, experiences = sections("momento=noche")
-    assert "Festival cultura" in official and "Encuentro naturaleza" in official
-    assert "Taller cultura" in experiences and "Sendero naturaleza" not in experiences
-
-    official, experiences = sections("cuando=hoy")
-    assert "Feria de hoy" in official and "Música esta noche" in official
-    assert "Festival cultura" not in official and "Encuentro naturaleza" not in official
-    assert "Sendero naturaleza" in experiences and "Taller cultura" in experiences
-    assert 'aria-label="Filtros de Agenda Oficial"' in official
-    assert ">Hoy</a>" in official
-    assert ">Hoy</a>" not in experiences
+    agenda = client.get("/agenda").text
+    assert "Festival cultura" in agenda and "Encuentro naturaleza" in agenda
+    assert "Sendero naturaleza" not in agenda and "Taller cultura" not in agenda
+    today = client.get("/agenda?cuando=hoy").text
+    assert "Feria de hoy" in today and "Música esta noche" in today
+    assert "Festival cultura" not in today and "Encuentro naturaleza" not in today
 
 
 def test_daytime_experiences_include_all_day_and_sunset_activities(agenda_app):
@@ -198,8 +182,7 @@ def test_daytime_experiences_include_all_day_and_sunset_activities(agenda_app):
     assert "Mirador al atardecer" in daytime
     assert "Mirador al atardecer" not in nighttime
 
-    # Experience filters must not alter the independently queried official agenda.
-    assert "Feria de hoy" in daytime and "Evento de mañana" in daytime
+    assert "Feria de hoy" not in daytime and "Evento de mañana" not in daytime
 
 
 def test_permanent_activity_matches_additional_categories_without_duplicates(agenda_app):
@@ -229,31 +212,20 @@ def test_event_ignores_accidentally_persisted_additional_categories(agenda_app):
         db.commit()
 
     assert "Feria de hoy" not in client.get("/actividades?categoria=naturaleza").text.split('class="experiences agenda-section"', 1)[1]
-    assert "Feria de hoy" in client.get("/actividades?categoria=cultura").text
+    assert "Feria de hoy" not in client.get("/actividades?categoria=cultura").text
+    assert "Feria de hoy" in client.get("/agenda").text
 
 
-def test_filter_links_preserve_independent_query_state(agenda_app):
+def test_filter_links_do_not_cross_contaminate_routes(agenda_app):
     client, _ = agenda_app
 
-    today_html = client.get("/actividades?cuando=hoy").text
-    assert 'href="/actividades?categoria=naturaleza&amp;cuando=hoy"' in today_html
-
-    culture_html = client.get("/actividades?categoria=cultura").text
-    assert 'href="/actividades?cuando=hoy&amp;categoria=cultura"' in culture_html
-
-    combined_html = client.get("/actividades?cuando=hoy&categoria=cultura").text
-    assert 'href="/actividades?momento=noche&amp;cuando=hoy"' in combined_html
-    assert 'href="/actividades?cuando=hoy" class="' in combined_html  # Todo clears experience filters.
-
-    all_filters_html = client.get("/actividades?cuando=hoy&categoria=cultura&momento=noche").text
-    assert 'href="/actividades?categoria=cultura&amp;momento=noche" class="' in all_filters_html  # Próximos clears only cuando.
-
-    for html in (today_html, culture_html, combined_html, all_filters_html):
-        hrefs = [unescape(href) for href in re.findall(r'href="([^"]+)"', html) if href.startswith("/actividades")]
-        assert all(marker not in href for href in hrefs for marker in ("??", "&&", "?&"))
-        for href in hrefs:
-            keys = [key for key, _ in parse_qsl(urlsplit(href).query, keep_blank_values=True)]
-            assert len(keys) == len(set(keys))
+    experiences = client.get("/actividades?categoria=cultura&cuando=hoy").text
+    agenda = client.get("/agenda?cuando=hoy&categoria=cultura&momento=noche").text
+    experience_hrefs = [unescape(href) for href in re.findall(r'href="([^"]+)"', experiences) if href.startswith("/actividades")]
+    agenda_hrefs = [unescape(href) for href in re.findall(r'href="([^"]+)"', agenda) if href.startswith("/agenda")]
+    assert all("cuando=" not in href for href in experience_hrefs)
+    assert all("categoria=" not in href and "momento=" not in href for href in agenda_hrefs)
+    assert 'href="/agenda?cuando=hoy" class="is-active"' in agenda
 
 
 def test_authenticated_admin_keeps_expired_event_as_finalizado(agenda_app):
@@ -679,7 +651,8 @@ def test_admin_permanently_deletes_agenda_records(agenda_app, tipo):
         db.add(item)
         db.commit()
         item_id, slug = item.id, item.slug
-    assert slug in client.get("/actividades").text
+    listing_path = "/agenda" if tipo == "evento" else "/actividades"
+    assert slug in client.get(listing_path).text
 
     response = client.post(f"/admin/actividades/{item_id}/eliminar", follow_redirects=False)
 
@@ -687,7 +660,7 @@ def test_admin_permanently_deletes_agenda_records(agenda_app, tipo):
     assert response.headers["location"].startswith("/admin/actividades?msg=")
     with TestingSession() as db:
         assert db.get(ActividadAgenda, item_id) is None
-    assert slug not in client.get("/actividades").text
+    assert slug not in client.get(listing_path).text
     assert client.get(f"/actividades/{slug}").status_code == 404
 
 
@@ -768,7 +741,7 @@ def test_agenda_danger_zone_only_appears_while_editing(agenda_app):
     assert "onsubmit=\"return confirm" not in edit_html
 
 
-def test_public_agenda_is_editorial_separated_and_accessible(agenda_app):
+def test_public_agenda_is_editorial_and_accessible(agenda_app):
     client, TestingSession = agenda_app
     with TestingSession() as db:
         db.add_all([
@@ -787,15 +760,13 @@ def test_public_agenda_is_editorial_separated_and_accessible(agenda_app):
         ])
         db.commit()
 
-    response = client.get("/actividades")
+    response = client.get("/agenda")
     assert response.status_code == 200
     html = response.text
-    official = html.split('class="official-agenda agenda-section"', 1)[1].split('class="experiences agenda-section"', 1)[0]
-    experiences = html.split('class="experiences agenda-section"', 1)[1]
+    official = html.split('class="official-agenda agenda-section"', 1)[1]
     assert "AGENDA OFICIAL" in official and "Lo próximo en Cabalango" in official
     assert "Taller nueva fecha" in official and "Encuentro sin foto" in official
-    assert "Yoga permanente" not in official
-    assert "Yoga permanente" in experiences and "Taller nueva fecha" not in experiences
+    assert "Yoga permanente" not in official and "Viví Cabalango" not in official
     assert "NUEVA FECHA" in official and "MAÑANA" in official and "Evento oficial" in official
     assert '<time class="official-event__date" datetime="2026-08-11T17:00:00-03:00">11 AGO</time>' in official
     assert 'src="/media/taller.jpg" alt="Taller nueva fecha" loading="lazy"' in official
@@ -820,7 +791,7 @@ def test_public_agenda_excludes_invalid_states_windows_and_finished_events(agend
             ActividadAgenda(titulo="Oculto finalizado", slug="oculto-finalizado", **(common | {"fecha_inicio": datetime(2026, 8, 9, 10), "fecha_fin": datetime(2026, 8, 9, 12)})),
         ])
         db.commit()
-    html = client.get("/actividades").text
+    html = client.get("/agenda").text
     for title in ("Oculto borrador", "Oculto cancelado", "Oculto realizado", "Oculto no publicado", "Oculto fuera de ventana", "Oculto finalizado"):
         assert title not in html
 
@@ -836,7 +807,7 @@ def test_public_agenda_order_without_default_limit_and_empty_state(agenda_app):
                 fecha_inicio=datetime(2026, 8, 11 + index, 10), fecha_fin=datetime(2026, 8, 11 + index, 12),
             ))
         db.commit()
-    html = client.get("/actividades").text
+    html = client.get("/agenda").text
     assert all(f"Próximo {index}" in html for index in range(9))
     assert html.index("Próximo 0") < html.index("Próximo 8")
     assert "Ver agenda completa" not in html
@@ -844,9 +815,9 @@ def test_public_agenda_order_without_default_limit_and_empty_state(agenda_app):
     with TestingSession() as db:
         db.query(ActividadAgenda).filter(ActividadAgenda.tipo == "evento").delete()
         db.commit()
-    html = client.get("/actividades").text
+    html = client.get("/agenda").text
     assert "Por ahora no hay próximos eventos publicados." in html
-    assert "Yoga permanente" in html
+    assert "Yoga permanente" not in html
 
 
 def test_que_hacer_uses_dedicated_stylesheet_cache_key_only():
