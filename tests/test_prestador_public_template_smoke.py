@@ -104,7 +104,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
 def test_provider_stylesheet_uses_mobile_lightbox_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260904-provider-lightbox-mobile-1" in template
+    assert "?v=20260904-provider-lightbox-mobile-row-2" in template
     assert "?v=20260831-provider-promo-cascade-fix-2" not in template
     assert "?v=20260814-provider-promo-lightbox-1" not in template
     assert "?v=20260814-provider-opening-1" not in template
@@ -542,6 +542,8 @@ def test_public_gallery_mobile_lightbox_uses_full_width_without_cropping():
     ).group(1)
 
     assert "grid-template-columns: minmax(0, 1fr)" in stage_rule
+    assert "grid-column: 1" in image_rule
+    assert "grid-row: 1" in image_rule
     assert "width: 100%" in image_rule and "height: auto" in image_rule
     assert "max-height: calc(100dvh - 82px)" in image_rule
     assert "object-fit: contain" in image_rule

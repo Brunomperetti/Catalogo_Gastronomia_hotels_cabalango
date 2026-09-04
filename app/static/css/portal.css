@@ -6141,7 +6141,7 @@ body,
   .portal-body .prestador-page .public-gallery-lightbox__panel { border: 0; border-radius: 0; height: 100dvh; max-height: none; }
   .portal-body .prestador-page .gallery-lightbox-header { padding: 13px 15px; }
   .portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 0; grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 8px; }
-  .portal-body .prestador-page .public-gallery-lightbox__image { grid-column: 1; height: auto; max-height: calc(100dvh - 82px); object-fit: contain; width: 100%; }
+  .portal-body .prestador-page .public-gallery-lightbox__image { grid-column: 1; grid-row: 1; height: auto; max-height: calc(100dvh - 82px); object-fit: contain; width: 100%; }
   .portal-body .prestador-page .public-gallery-lightbox .gallery-lightbox-prev,
   .portal-body .prestador-page .public-gallery-lightbox .gallery-lightbox-next { grid-column: 1; grid-row: 1; z-index: 1; }
   .portal-body .prestador-page .public-gallery-lightbox .gallery-lightbox-prev { justify-self: start; }
