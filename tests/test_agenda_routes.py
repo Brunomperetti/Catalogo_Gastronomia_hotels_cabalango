@@ -172,6 +172,35 @@ def test_experience_filters_do_not_change_official_agenda(agenda_app):
     assert ">Hoy</a>" not in experiences
 
 
+def test_daytime_experiences_include_all_day_and_sunset_activities(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.add_all([
+            ActividadAgenda(
+                tipo="actividad", titulo="Complejo Flyrock", slug="complejo-flyrock",
+                categoria="entretenimiento", momento="todo_el_dia", publicado=True,
+            ),
+            ActividadAgenda(
+                tipo="actividad", titulo="Mirador al atardecer", slug="mirador-atardecer",
+                categoria="naturaleza", momento="atardecer", publicado=True,
+            ),
+        ])
+        db.commit()
+
+    unfiltered = client.get("/actividades").text
+    daytime = client.get("/actividades?momento=dia").text
+    nighttime = client.get("/actividades?momento=noche").text
+
+    assert "Complejo Flyrock" in unfiltered
+    assert "Complejo Flyrock" in daytime
+    assert "Complejo Flyrock" not in nighttime
+    assert "Mirador al atardecer" in daytime
+    assert "Mirador al atardecer" not in nighttime
+
+    # Experience filters must not alter the independently queried official agenda.
+    assert "Feria de hoy" in daytime and "Evento de mañana" in daytime
+
+
 def test_filter_links_preserve_independent_query_state(agenda_app):
     client, _ = agenda_app
 

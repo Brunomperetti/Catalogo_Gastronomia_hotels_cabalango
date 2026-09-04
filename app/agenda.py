@@ -177,7 +177,18 @@ def get_public_activities(db: Session, *, categoria="", momento="", cuando="", n
     if categoria in CATEGORIES:
         items = [i for i in items if i.categoria == categoria]
     if momento in MOMENTS:
-        items = [i for i in items if i.momento == momento]
+        if momento == "dia":
+            daytime_activity_moments = {"dia", "atardecer", "todo_el_dia"}
+            items = [
+                i for i in items
+                if (
+                    i.tipo == "actividad" and i.momento in daytime_activity_moments
+                ) or (
+                    i.tipo != "actividad" and i.momento == momento
+                )
+            ]
+        else:
+            items = [i for i in items if i.momento == momento]
     if cuando == "hoy":
         start, end = datetime.combine(now.date(), time.min, CABALANGO_TZ), datetime.combine(now.date(), time.max, CABALANGO_TZ)
         items = [i for i in items if i.tipo == "evento" and local_datetime(i.fecha_inicio) <= end and local_datetime(i.fecha_fin) >= start]

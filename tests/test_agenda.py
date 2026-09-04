@@ -102,6 +102,35 @@ def test_today_filter_intersects_full_day(db):
     assert spanning in get_public_activities(db, cuando="hoy", now=now)
 
 
+def test_public_moment_filters_expand_day_only_for_permanent_activities(db):
+    now = datetime(2026, 8, 10, 12, tzinfo=CABALANGO_TZ)
+    activities = {
+        moment: make_item(
+            db, f"actividad-{moment}", tipo="actividad", start=None, end=None,
+            momento=moment,
+        )
+        for moment in ("dia", "atardecer", "todo_el_dia", "noche")
+    }
+    events = {
+        moment: make_item(
+            db, f"evento-{moment}", momento=moment,
+            start=datetime(2026, 8, 11, 10), end=datetime(2026, 8, 11, 12),
+        )
+        for moment in ("dia", "atardecer", "todo_el_dia")
+    }
+
+    daytime = set(get_public_activities(db, momento="dia", now=now))
+    assert {activities[moment] for moment in ("dia", "atardecer", "todo_el_dia")} <= daytime
+    assert activities["noche"] not in daytime
+    assert events["dia"] in daytime
+    assert events["atardecer"] not in daytime
+    assert events["todo_el_dia"] not in daytime
+
+    nighttime = set(get_public_activities(db, momento="noche", now=now))
+    assert activities["noche"] in nighttime
+    assert all(activities[moment] not in nighttime for moment in ("dia", "atardecer", "todo_el_dia"))
+
+
 def test_seasonal_activity_visibility_status_and_grouping(db):
     now = datetime(2026, 8, 10, 20, 0, tzinfo=CABALANGO_TZ)
     permanent = make_item(db, "permanente", tipo="actividad", start=None, end=None)
