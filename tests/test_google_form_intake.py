@@ -478,6 +478,120 @@ def test_commerce_conversion_persists_intake_categories_without_catalog_products
     assert company.productos == []
 
 
+def historical_intake(company, external_id, products_marker=...):
+    specific_data = {}
+    if products_marker is not ...:
+        specific_data["¿Qué productos se pueden encontrar?"] = products_marker
+    return SolicitudPrestador(
+        external_id=external_id,
+        source="google_form",
+        status="procesada",
+        business_type="Almacén / kiosco / proveeduría",
+        business_name=company.nombre,
+        raw_payload=json.dumps({"specific_data": specific_data}, ensure_ascii=False),
+        converted_entity_type="empresa",
+        converted_entity_id=company.id,
+    )
+
+
+def configure_backfill_database(monkeypatch, engine, Session):
+    monkeypatch.setattr(main, "engine", engine)
+    monkeypatch.setattr(main, "SessionLocal", Session)
+
+
+def test_commerce_product_backfill_recovers_historical_intake_idempotently(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Session = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = Session()
+    company = Empresa(nombre="Comercio histórico", slug="comercio-historico", theme="servicios",
+                      subgrupo="compras", compras_productos_disponibles=None)
+    db.add(company)
+    db.flush()
+    db.add(historical_intake(company, "historical-products", [
+        "Alimentos", "Bebidas", "Carbón / leña", "Golosinas",
+    ]))
+    db.commit()
+    configure_backfill_database(monkeypatch, engine, Session)
+
+    assert main.backfill_commerce_product_categories_from_intake() == 1
+    db.refresh(company)
+    expected = ["alimentos", "bebidas", "carbon / lena", "golosinas"]
+    assert json.loads(company.compras_productos_disponibles) == expected
+    persisted = company.compras_productos_disponibles
+
+    assert main.backfill_commerce_product_categories_from_intake() == 0
+    db.refresh(company)
+    assert company.compras_productos_disponibles == persisted
+    db.close()
+    engine.dispose()
+
+
+def test_commerce_product_backfill_never_overwrites_admin_value(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Session = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = Session()
+    company = Empresa(nombre="Comercio administrado", slug="comercio-administrado", theme="servicios",
+                      subgrupo="compras", compras_productos_disponibles='["hielo"]')
+    db.add(company)
+    db.flush()
+    db.add(historical_intake(company, "admin-wins", ["Alimentos", "Bebidas"]))
+    db.commit()
+    configure_backfill_database(monkeypatch, engine, Session)
+
+    assert main.backfill_commerce_product_categories_from_intake() == 0
+    db.refresh(company)
+    assert json.loads(company.compras_productos_disponibles) == ["hielo"]
+    db.close()
+    engine.dispose()
+
+
+@pytest.mark.parametrize("theme,subgrupo", [
+    ("alojamiento", None),
+    ("gastronomia", None),
+    ("servicios", "transporte"),
+])
+def test_commerce_product_backfill_is_isolated_from_other_rubrics(monkeypatch, theme, subgrupo):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Session = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = Session()
+    company = Empresa(nombre=f"Otro {theme} {subgrupo}", slug=f"otro-{theme}-{subgrupo}",
+                      theme=theme, subgrupo=subgrupo, compras_productos_disponibles=None)
+    db.add(company)
+    db.flush()
+    db.add(historical_intake(company, f"isolated-{theme}-{subgrupo}", ["Alimentos"]))
+    db.commit()
+    configure_backfill_database(monkeypatch, engine, Session)
+
+    assert main.backfill_commerce_product_categories_from_intake() == 0
+    db.refresh(company)
+    assert company.compras_productos_disponibles is None
+    db.close()
+    engine.dispose()
+
+
+def test_commerce_product_backfill_ignores_payload_without_product_field(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Session = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = Session()
+    company = Empresa(nombre="Comercio sin respuesta", slug="comercio-sin-respuesta",
+                      theme="servicios", subgrupo="compras", compras_productos_disponibles=None)
+    db.add(company)
+    db.flush()
+    db.add(historical_intake(company, "missing-products"))
+    db.commit()
+    configure_backfill_database(monkeypatch, engine, Session)
+
+    assert main.backfill_commerce_product_categories_from_intake() == 0
+    db.refresh(company)
+    assert company.compras_productos_disponibles is None
+    db.close()
+    engine.dispose()
+
+
 def test_slug_collision_and_double_post_are_idempotent(intake_app, payload):
     client, db = intake_app
     db.add(Empresa(nombre="Existente", slug="posada-del-rio", activo=True)); db.commit()
