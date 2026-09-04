@@ -43,17 +43,18 @@ def test_legacy_sqlite_agenda_bootstrap_is_additive_and_idempotent(tmp_path, mon
     assert "actividades_agenda_fotos" in inspect(legacy_engine).get_table_names()
     expected_columns = {
         "oficial", "estado", "publicar_desde", "destacar_home_desde",
-        "ocultar_desde", "mostrar_en_home", "prioridad_home",
+        "ocultar_desde", "mostrar_en_home", "prioridad_home", "categorias_adicionales",
     }
     assert expected_columns <= {column["name"] for column in inspect(legacy_engine).get_columns("actividades_agenda")}
     with legacy_engine.connect() as connection:
         row = connection.execute(text("""
-            SELECT titulo, oficial, estado, publicar_desde,
+            SELECT titulo, oficial, estado, categorias_adicionales, publicar_desde,
                    destacar_home_desde, ocultar_desde, mostrar_en_home, prioridad_home
             FROM actividades_agenda WHERE id = 1
         """)).mappings().one()
     assert row == {
         "titulo": "Evento existente", "oficial": 0, "estado": "programado",
+        "categorias_adicionales": None,
         "publicar_desde": None, "destacar_home_desde": None, "ocultar_desde": None,
         "mostrar_en_home": 0, "prioridad_home": 0,
     }
@@ -199,6 +200,36 @@ def test_daytime_experiences_include_all_day_and_sunset_activities(agenda_app):
 
     # Experience filters must not alter the independently queried official agenda.
     assert "Feria de hoy" in daytime and "Evento de mañana" in daytime
+
+
+def test_permanent_activity_matches_additional_categories_without_duplicates(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        db.add(ActividadAgenda(
+            tipo="actividad", titulo="Complejo Flyrock", slug="complejo-flyrock-multicategoria",
+            categoria="entretenimiento", categorias_adicionales='["naturaleza","familiar"]',
+            momento="todo_el_dia", publicado=True,
+        ))
+        db.commit()
+
+    assert client.get("/actividades").text.count("Complejo Flyrock") == 1
+    assert "Complejo Flyrock" in client.get("/actividades?categoria=naturaleza").text
+    assert "Complejo Flyrock" in client.get("/actividades?categoria=familiar").text
+    assert "Complejo Flyrock" not in client.get("/actividades?categoria=bienestar").text
+    assert "Complejo Flyrock" in client.get("/actividades?momento=dia").text
+    assert "Complejo Flyrock" in client.get("/actividades?momento=dia&categoria=naturaleza").text
+    assert "Complejo Flyrock" not in client.get("/actividades?momento=noche&categoria=naturaleza").text
+
+
+def test_event_ignores_accidentally_persisted_additional_categories(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        event = db.query(ActividadAgenda).filter_by(slug="feria-hoy").one()
+        event.categorias_adicionales = '["naturaleza"]'
+        db.commit()
+
+    assert "Feria de hoy" not in client.get("/actividades?categoria=naturaleza").text.split('class="experiences agenda-section"', 1)[1]
+    assert "Feria de hoy" in client.get("/actividades?categoria=cultura").text
 
 
 def test_filter_links_preserve_independent_query_state(agenda_app):
@@ -383,6 +414,24 @@ def test_duplicate_is_draft_without_dates_and_preserves_content(agenda_app):
         assert copy.fecha_inicio is None and copy.fecha_fin is None
         assert copy.descripcion_corta == "Artesanos locales"
         assert copy.categoria == "cultura" and copy.momento == "dia"
+        assert copy.categorias_adicionales is None
+
+
+def test_duplicate_activity_preserves_additional_categories(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    with TestingSession() as db:
+        source = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        source.categorias_adicionales = '["naturaleza","familiar"]'
+        source_id = source.id
+        db.commit()
+
+    assert client.post(f"/admin/actividades/{source_id}/duplicar", follow_redirects=False).status_code == 303
+    with TestingSession() as db:
+        copy = db.query(ActividadAgenda).filter(
+            ActividadAgenda.id != source_id, ActividadAgenda.titulo == "Yoga permanente"
+        ).one()
+        assert copy.categorias_adicionales == '["naturaleza","familiar"]'
 
 
 def test_edit_keeps_slug_stable_and_accepts_zero_order(agenda_app):
@@ -397,6 +446,62 @@ def test_edit_keeps_slug_stable_and_accepts_zero_order(agenda_app):
         item = db.get(ActividadAgenda, item_id)
         assert item.slug == "yoga-permanente"
         assert item.orden == 0
+
+
+def test_admin_saves_preselects_and_clears_additional_categories(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={
+            "tipo": "actividad", "titulo": "Actividad multicategoría",
+            "categoria": "entretenimiento", "momento": "todo_el_dia",
+            "categorias_adicionales": ["familiar", "naturaleza", "naturaleza", "XXX"],
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(titulo="Actividad multicategoría").one()
+        item_id = item.id
+        assert item.categoria == "entretenimiento"
+        assert item.categorias_adicionales == '["naturaleza","familiar"]'
+
+    edit_html = client.get(f"/admin/actividades?edit={item_id}").text
+    assert 'value="naturaleza" checked' in edit_html
+    assert 'value="familiar" checked' in edit_html
+
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={
+            "id": item_id, "tipo": "actividad", "titulo": "Actividad multicategoría",
+            "categoria": "entretenimiento", "momento": "todo_el_dia",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert item.categoria == "entretenimiento"
+        assert item.categorias_adicionales is None
+
+
+def test_admin_never_persists_additional_categories_for_events(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={
+            "tipo": "evento", "titulo": "Evento categoría única", "categoria": "cultura",
+            "categorias_adicionales": ["naturaleza", "familiar"], "momento": "dia",
+            "fecha_inicio": "2026-08-11T10:00", "fecha_fin": "2026-08-11T12:00",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(titulo="Evento categoría única").one()
+        assert item.categorias_adicionales is None
 
 
 @pytest.mark.parametrize(

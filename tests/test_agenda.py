@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import sessionmaker
 
-from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_home_agenda_events, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, prepare_home_agenda_events, prepare_public_agenda, default_event_schedule, validate_activity
+from app.agenda import CABALANGO_TZ, derive_promotion_label, derived_status, get_home_agenda_events, get_public_activities, group_public_agenda, is_home_eligible, is_publicly_visible, local_datetime, normalize_activity_additional_categories, parse_activity_additional_categories, prepare_home_agenda_events, prepare_public_agenda, default_event_schedule, validate_activity
 from app.database import Base
 from app.models import ActividadAgenda
 
@@ -21,6 +21,43 @@ def db():
 def make_item(db, slug, tipo="evento", publicado=True, start=None, end=None, **kwargs):
     item = ActividadAgenda(tipo=tipo, titulo=slug, slug=slug, categoria=kwargs.pop("categoria", "cultura"), momento=kwargs.pop("momento", "dia"), publicado=publicado, fecha_inicio=start, fecha_fin=end, **kwargs)
     validate_activity(item); db.add(item); db.commit(); return item
+
+
+@pytest.mark.parametrize("raw", [None, "", "JSON ROTO", "{}"])
+def test_parse_additional_categories_rejects_empty_or_invalid_payloads(raw):
+    assert parse_activity_additional_categories(raw) == []
+
+
+def test_additional_categories_are_valid_unique_and_editorially_ordered():
+    raw = '["familiar","naturaleza","naturaleza","XXX",""]'
+    assert parse_activity_additional_categories(raw) == ["naturaleza", "familiar"]
+    assert normalize_activity_additional_categories(
+        ["naturaleza", "familiar"], primary_category="naturaleza"
+    ) == '["familiar"]'
+    assert normalize_activity_additional_categories([], "naturaleza") is None
+
+
+def test_additional_category_filter_is_activity_only_and_corruption_safe(db):
+    now = datetime(2026, 8, 10, 20, 0, tzinfo=CABALANGO_TZ)
+    activity = make_item(
+        db, "flyrock", tipo="actividad", categoria="entretenimiento",
+        momento="todo_el_dia", categorias_adicionales='["naturaleza","familiar"]',
+    )
+    event = make_item(
+        db, "evento-cultura", categoria="cultura", start=datetime(2026, 8, 10, 19),
+        end=datetime(2026, 8, 10, 22), categorias_adicionales='["naturaleza"]',
+    )
+    broken = make_item(
+        db, "legacy-roto", tipo="actividad", categoria="naturaleza",
+        categorias_adicionales="JSON ROTO",
+    )
+
+    assert activity in get_public_activities(db, categoria="naturaleza", now=now)
+    assert activity in get_public_activities(db, categoria="familiar", now=now)
+    assert activity not in get_public_activities(db, categoria="bienestar", now=now)
+    assert event not in get_public_activities(db, categoria="naturaleza", now=now)
+    assert event in get_public_activities(db, categoria="cultura", now=now)
+    assert broken in get_public_activities(db, categoria="naturaleza", now=now)
 
 
 def test_visibility_groups_status_and_timezone(db):

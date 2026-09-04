@@ -273,6 +273,7 @@ class ActividadAgenda(Base):
     descripcion_corta = Column(String, nullable=True)
     descripcion = Column(Text, nullable=True)
     categoria = Column(String, nullable=False, default="otros", index=True)
+    categorias_adicionales = Column(Text, nullable=True)
     momento = Column(String, nullable=False, default="todo_el_dia", index=True)
     fecha_inicio = Column(DateTime(timezone=True), nullable=True, index=True)
     fecha_fin = Column(DateTime(timezone=True), nullable=True, index=True)

@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+import json
 from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
@@ -17,6 +18,37 @@ PERSISTED_STATES = {
     "borrador": "Borrador", "programado": "Programado", "reprogramado": "Reprogramado",
     "cancelado": "Cancelado", "realizado": "Realizado",
 }
+
+
+def parse_activity_additional_categories(raw) -> list[str]:
+    """Safely parse valid discovery categories from persisted JSON."""
+    if not raw:
+        return []
+    try:
+        values = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    if not isinstance(values, list):
+        return []
+    selected = {value for value in values if isinstance(value, str) and value in CATEGORIES}
+    return [category for category in CATEGORIES if category in selected]
+
+
+def normalize_activity_additional_categories(values, primary_category="") -> str | None:
+    """Return compact, editorially ordered JSON suitable for persistence."""
+    selected = parse_activity_additional_categories(values)
+    selected = [category for category in selected if category != primary_category]
+    return json.dumps(selected, separators=(",", ":"), ensure_ascii=False) if selected else None
+
+
+def activity_matches_category(item: models.ActividadAgenda, categoria: str) -> bool:
+    if categoria not in CATEGORIES:
+        return True
+    if item.categoria == categoria:
+        return True
+    if item.tipo != "actividad":
+        return False
+    return categoria in parse_activity_additional_categories(item.categorias_adicionales)
 
 
 def now_cabalango() -> datetime:
@@ -175,7 +207,7 @@ def get_public_activities(db: Session, *, categoria="", momento="", cuando="", n
     items = db.query(models.ActividadAgenda).filter(models.ActividadAgenda.publicado.is_(True)).all()
     items = [item for item in items if is_publicly_visible(item, now)]
     if categoria in CATEGORIES:
-        items = [i for i in items if i.categoria == categoria]
+        items = [i for i in items if activity_matches_category(i, categoria)]
     if momento in MOMENTS:
         if momento == "dia":
             daytime_activity_moments = {"dia", "atardecer", "todo_el_dia"}
