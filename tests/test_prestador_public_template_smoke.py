@@ -101,10 +101,10 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
     )
 
 
-def test_provider_stylesheet_uses_amenities_cache_key():
+def test_provider_stylesheet_uses_mobile_lightbox_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260902-provider-amenities-1" in template
+    assert "?v=20260904-provider-lightbox-mobile-1" in template
     assert "?v=20260831-provider-promo-cascade-fix-2" not in template
     assert "?v=20260814-provider-promo-lightbox-1" not in template
     assert "?v=20260814-provider-opening-1" not in template
@@ -524,6 +524,28 @@ def test_gallery_uses_uniform_grid_and_contain_lightbox():
     assert "min-height: 0" in stage_rule
     assert "height: 100%" not in stage_rule
     assert "overflow: hidden" in stage_rule and "place-items: center" in stage_rule
+
+
+def test_public_gallery_mobile_lightbox_uses_full_width_without_cropping():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    mobile_css = css.split("@media (max-width: 700px) {", 1)[1].split(
+        "@media (max-width: 480px) {", 1
+    )[0]
+
+    stage_rule = re.search(
+        r"\.portal-body \.prestador-page \.public-gallery-lightbox__stage \{([^}]*)\}",
+        mobile_css,
+    ).group(1)
+    image_rule = re.search(
+        r"\.portal-body \.prestador-page \.public-gallery-lightbox__image \{([^}]*)\}",
+        mobile_css,
+    ).group(1)
+
+    assert "grid-template-columns: minmax(0, 1fr)" in stage_rule
+    assert "width: 100%" in image_rule and "height: auto" in image_rule
+    assert "max-height: calc(100dvh - 82px)" in image_rule
+    assert "object-fit: contain" in image_rule
+    assert "object-fit: cover" not in image_rule
 
 
 def test_provider_promotion_uses_the_high_contrast_editorial_treatment():

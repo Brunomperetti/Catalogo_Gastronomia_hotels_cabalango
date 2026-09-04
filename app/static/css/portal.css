@@ -6137,9 +6137,15 @@ body,
   .portal-body .prestador-page .public-gallery__grid,
   .portal-body .prestador-page .public-gallery--count-2 .public-gallery__grid { gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .portal-body .prestador-page .public-gallery--count-1 .public-gallery__grid { grid-template-columns: 1fr; }
+  .portal-body .prestador-page .public-gallery-lightbox { padding: 0; }
   .portal-body .prestador-page .public-gallery-lightbox__panel { border: 0; border-radius: 0; height: 100dvh; max-height: none; }
   .portal-body .prestador-page .gallery-lightbox-header { padding: 13px 15px; }
-  .portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 0; grid-template-columns: 52px minmax(0, 1fr) 52px; min-height: 0; }
+  .portal-body .prestador-page .public-gallery-lightbox__stage { flex: 1 1 0; grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 8px; }
+  .portal-body .prestador-page .public-gallery-lightbox__image { grid-column: 1; height: auto; max-height: calc(100dvh - 82px); object-fit: contain; width: 100%; }
+  .portal-body .prestador-page .public-gallery-lightbox .gallery-lightbox-prev,
+  .portal-body .prestador-page .public-gallery-lightbox .gallery-lightbox-next { grid-column: 1; grid-row: 1; z-index: 1; }
+  .portal-body .prestador-page .public-gallery-lightbox .gallery-lightbox-prev { justify-self: start; }
+  .portal-body .prestador-page .public-gallery-lightbox .gallery-lightbox-next { justify-self: end; }
   .portal-body .prestador-page .reviews-header { align-items: flex-start; flex-direction: column; }
   .portal-body .prestador-page .form-grid-public { grid-template-columns: 1fr; }
 }
