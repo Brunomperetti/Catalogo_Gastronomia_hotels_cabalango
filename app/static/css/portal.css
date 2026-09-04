@@ -6076,7 +6076,7 @@ body,
 .portal-body .prestador-page .public-gallery__item img { display: block; height: 100%; object-fit: cover; transition: filter .25s ease, transform .35s ease; width: 100%; }
 .portal-body .prestador-page .public-gallery__item:hover img { filter: brightness(.9); transform: scale(1.025); }
 .portal-body .prestador-page .public-gallery__item:focus-visible { outline: 3px solid rgba(119,124,88,.4); outline-offset: 3px; }
-.portal-body .prestador-page .public-gallery--count-1 .public-gallery__grid { grid-template-columns: 1fr; }
+.portal-body .prestador-page .public-gallery--single .public-gallery__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .portal-body .prestador-page .public-gallery--count-2 .public-gallery__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 /* The lightbox is deliberately sparse: image first, controls always reachable. */
@@ -6136,7 +6136,7 @@ body,
   .portal-body .prestador-page .promo-highlight > div > strong { font-size: clamp(1.3rem, 7vw, 1.55rem); }
   .portal-body .prestador-page .public-gallery__grid,
   .portal-body .prestador-page .public-gallery--count-2 .public-gallery__grid { gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .portal-body .prestador-page .public-gallery--count-1 .public-gallery__grid { grid-template-columns: 1fr; }
+  .portal-body .prestador-page .public-gallery--single .public-gallery__grid { grid-template-columns: 1fr; }
   .portal-body .prestador-page .public-gallery-lightbox { padding: 0; }
   .portal-body .prestador-page .public-gallery-lightbox__panel { border: 0; border-radius: 0; height: 100dvh; max-height: none; }
   .portal-body .prestador-page .gallery-lightbox-header { padding: 13px 15px; }
@@ -6162,7 +6162,7 @@ body,
   .portal-body .prestador-page .prestador-actions { margin-top: 26px; }
   .portal-body .prestador-page .provider-amenities__grid { grid-template-columns: 1fr; }
   .portal-body .prestador-page .public-gallery__grid,
-  .portal-body .prestador-page .public-gallery--count-1 .public-gallery__grid,
+  .portal-body .prestador-page .public-gallery--single .public-gallery__grid,
   .portal-body .prestador-page .public-gallery--count-2 .public-gallery__grid { grid-template-columns: 1fr; }
 }
 

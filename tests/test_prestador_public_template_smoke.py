@@ -129,10 +129,10 @@ def test_commerce_products_use_metadata_instead_of_catalog_relationship():
     ]
 
 
-def test_provider_stylesheet_uses_mobile_lightbox_cache_key():
+def test_provider_stylesheet_uses_single_gallery_cache_key():
     template = Path("app/templates/prestador.html").read_text(encoding="utf-8")
 
-    assert "?v=20260904-provider-lightbox-mobile-row-2" in template
+    assert "?v=20260904-provider-single-gallery-1" in template
     assert "?v=20260831-provider-promo-cascade-fix-2" not in template
     assert "?v=20260814-provider-promo-lightbox-1" not in template
     assert "?v=20260814-provider-opening-1" not in template
@@ -232,23 +232,48 @@ def test_public_gallery_renders_one_photo_without_mutating_empresa():
     photo = "/media/empresas/demo/galeria/vertical.webp"
     html = render_prestador("alojamiento", [photo])
 
-    assert 'class="public-gallery public-gallery--count-1"' in html
+    assert 'class="public-gallery public-gallery--count-1 public-gallery--single"' in html
     assert html.count('class="public-gallery__item"') == 1
     assert f'src="{photo}"' in html
     assert 'data-gallery-open="0"' in html
     assert "Cabañas Demo" in html
 
 
-def test_public_gallery_single_photo_css_uses_the_full_available_width():
+def test_public_gallery_single_variant_is_exclusive_to_exactly_one_photo():
+    single_html = render_prestador("alojamiento", ["/one.webp"])
+    two_html = render_prestador("alojamiento", ["/one.webp", "/two.webp"])
+    many_html = render_prestador(
+        "alojamiento", ["/one.webp", "/two.webp", "/three.webp"]
+    )
+
+    assert "public-gallery--single" in single_html
+    assert 'public-gallery--count-2"' in two_html
+    assert "public-gallery--single" not in two_html
+    assert 'public-gallery--count-3"' in many_html
+    assert "public-gallery--single" not in many_html
+
+
+def test_public_gallery_single_photo_css_uses_two_columns_on_desktop():
     css = open("app/static/css/portal.css", encoding="utf-8").read()
+    desktop_css = css.split("@media (max-width: 700px)", 1)[0]
 
     grid_rule = re.findall(
-        r"\.public-gallery--count-1 \.public-gallery__grid \{([^}]*)\}", css
-    )[0]
+        r"\.public-gallery--single \.public-gallery__grid \{([^}]*)\}",
+        desktop_css,
+    )[-1]
     item_rule = re.findall(r"\.public-gallery__item \{([^}]*)\}", css)[-1]
 
-    assert "grid-template-columns: 1fr" in grid_rule
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr))" in grid_rule
     assert "aspect-ratio: 4 / 3" in item_rule
+
+
+def test_single_photo_variant_is_isolated_from_lightbox_selectors():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    single_selectors = re.findall(r"([^{}]*public-gallery--single[^{}]*)\{", css)
+
+    assert len(single_selectors) == 3
+    assert all("public-gallery__grid" in selector for selector in single_selectors)
+    assert all("lightbox" not in selector for selector in single_selectors)
 
 
 def test_provider_identity_has_no_legacy_aside_when_metadata_is_empty():
@@ -309,7 +334,7 @@ def test_single_photo_grid_stays_full_width_between_481_and_700px():
     tablet_css = css.split("@media (max-width: 700px)", 1)[1].split("@media (max-width: 480px)", 1)[0]
 
     single_rule = re.search(
-        r"\.public-gallery--count-1 \.public-gallery__grid \{([^}]*)\}", tablet_css
+        r"\.public-gallery--single \.public-gallery__grid \{([^}]*)\}", tablet_css
     ).group(1)
     assert "grid-template-columns: 1fr" in single_rule
     assert "repeat(2" not in single_rule
