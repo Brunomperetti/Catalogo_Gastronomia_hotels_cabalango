@@ -38,6 +38,7 @@
     {% set review_count = review_count|default(0) %}
     {% set review_submitted = review_submitted|default(false) %}
     {% set provider_amenities = build_provider_amenities(empresa, kind) %}
+    {% set provider_products = build_provider_products(empresa, kind) if build_provider_products is defined else [] %}
     <main class="portal-shell prestador-page">
         {% set active_section = 'alojamientos' if kind == 'alojamiento' else kind if kind in ['gastronomia', 'servicios', 'actividades'] else '' %}
         {% include "partials/portal_nav.html" %}
@@ -117,6 +118,18 @@
                 {% if whatsapp_url %}<a class="portal-button" href="{{ whatsapp_url }}" target="_blank" rel="noopener noreferrer">Contactar</a>{% endif %}
             </article>
         </section>
+
+        {% if provider_products %}
+        <section class="portal-card provider-amenities" aria-labelledby="provider-products-title">
+            <p class="portal-card-label">PRODUCTOS DISPONIBLES</p>
+            <h2 id="provider-products-title">Todo lo que encontrás en {{ empresa.nombre }}</h2>
+            <ul class="provider-amenities__grid">
+                {% for product in provider_products %}
+                <li class="provider-amenities__item"><span class="provider-amenities__icon">{{ provider_icon(product.icon) }}</span><span>{{ product.label }}</span></li>
+                {% endfor %}
+            </ul>
+        </section>
+        {% endif %}
 
         {% if provider_amenities %}
         <section class="portal-card provider-amenities" aria-labelledby="provider-amenities-title">

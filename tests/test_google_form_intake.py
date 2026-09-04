@@ -459,6 +459,25 @@ def test_commerce_type_uses_known_subtype_or_safe_fallback(intake_app, payload, 
     assert company.activo is False
 
 
+@pytest.mark.parametrize("answer", [
+    ["Alimentos", "Bebidas", "Carbón / leña", "Golosinas"],
+    "Alimentos, Bebidas, Carbón / leña, Golosinas",
+])
+def test_commerce_conversion_persists_intake_categories_without_catalog_products(intake_app, payload, answer):
+    client, db = intake_app
+    body = authorized_payload(payload, external_id=f"products-{isinstance(answer, str)}",
+                              business_type="Almacén / kiosco / proveeduría")
+    body["specific_data"]["¿Qué productos se pueden encontrar?"] = answer
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+    client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+    company = db.query(Empresa).one()
+    assert json.loads(company.compras_productos_disponibles) == [
+        "alimentos", "bebidas", "carbon / lena", "golosinas",
+    ]
+    assert company.productos == []
+
+
 def test_slug_collision_and_double_post_are_idempotent(intake_app, payload):
     client, db = intake_app
     db.add(Empresa(nombre="Existente", slug="posada-del-rio", activo=True)); db.commit()

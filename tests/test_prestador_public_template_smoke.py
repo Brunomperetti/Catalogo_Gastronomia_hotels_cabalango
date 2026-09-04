@@ -8,6 +8,9 @@ from app.main import (
     build_alojamiento_key_facts,
     build_alojamiento_rooms_summary,
     build_provider_amenities,
+    build_provider_products,
+    normalize_commerce_product_categories,
+    parse_commerce_product_categories,
 )
 
 
@@ -53,6 +56,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         alojamiento_modalidad=None,
         alojamiento_detalle_unidades=None,
         alojamiento_habitaciones_unidades=None,
+        compras_productos_disponibles=None,
         pileta=False,
         rio=False,
         wifi=False,
@@ -97,8 +101,32 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         build_alojamiento_key_facts=build_alojamiento_key_facts,
         build_alojamiento_rooms_summary=build_alojamiento_rooms_summary,
         build_provider_amenities=build_provider_amenities,
+        build_provider_products=build_provider_products,
         actividad_subgrupos={},
     )
+
+
+def test_commerce_product_normalizer_accepts_labels_and_keeps_editorial_order():
+    assert parse_commerce_product_categories(None) == []
+    assert parse_commerce_product_categories("") == []
+    assert parse_commerce_product_categories("[JSON roto") == []
+    assert normalize_commerce_product_categories([
+        "Golosinas", "Bebidas frías", "bebidas frias", "Carbón/leña",
+        "Carbón / leña", "XXX",
+    ]) == ["bebidas frias", "carbon / lena", "golosinas"]
+
+
+def test_commerce_products_use_metadata_instead_of_catalog_relationship():
+    empresa = SimpleNamespace(
+        theme="servicios", subgrupo="compras", subtipo="Almacén",
+        compras_productos_disponibles=None,
+        productos=[SimpleNamespace(categoria="Alimentos", activo=True)],
+    )
+    assert build_provider_products(empresa, "servicios") == []
+    empresa.compras_productos_disponibles = '["golosinas","alimentos","bebidas frias"]'
+    assert [item["label"] for item in build_provider_products(empresa, "servicios")] == [
+        "Alimentos", "Bebidas frías", "Golosinas",
+    ]
 
 
 def test_provider_stylesheet_uses_mobile_lightbox_cache_key():
