@@ -2855,6 +2855,17 @@ def build_provider_products(empresa: models.Empresa, kind: str) -> list[dict[str
     ]
 
 
+def build_commerce_card_product_facts(empresa: models.Empresa) -> list[str]:
+    """Return a compact, editorially ordered product summary for commerce cards."""
+    products = build_provider_products(empresa, "servicios")
+    facts = [product["label"] for product in products[:3]]
+    remaining = len(products) - len(facts)
+    if remaining:
+        noun = "producto" if remaining == 1 else "productos"
+        facts.append(f"+{remaining} {noun}")
+    return facts
+
+
 def build_provider_amenities(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
     """Return persisted public amenities in their editorial display order."""
     return [
@@ -2962,9 +2973,11 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "service_groups": SERVICIOS_GRUPOS if section == "servicios" else {},
             "active_service_group": active_service_group,
             "service_card_kicker": service_card_kicker,
+            "service_group_key": service_group_key,
             "get_public_card_main_image": get_public_card_main_image,
             "get_empresa_logo_url": get_empresa_logo_url,
             "build_public_card_chips": build_public_card_chips,
+            "build_commerce_card_product_facts": build_commerce_card_product_facts,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "get_alojamiento_card_type": get_alojamiento_card_type,

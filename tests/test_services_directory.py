@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base
-from app.main import app, get_db
+from app.main import app, build_commerce_card_product_facts, get_db
 from app.models import Empresa
 
 
@@ -84,3 +84,104 @@ def test_all_public_css_consumers_use_commerce_cache_key():
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
         expected_version = "?v=20260903-home-event-flyer-mobile-contain-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260903-accommodation-mobile-filter-basis-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source
+
+
+def test_commerce_card_product_facts_keep_editorial_order_and_pluralize():
+    empresa = Empresa(theme="servicios", subgrupo="compras")
+    empresa.compras_productos_disponibles = '["fiambres", "bebidas frias", "alimentos", "bebidas"]'
+
+    assert build_commerce_card_product_facts(empresa) == [
+        "Alimentos", "Bebidas", "Bebidas frías", "+1 producto"
+    ]
+
+    empresa.compras_productos_disponibles = '["alimentos", "bebidas", "bebidas frias", "panificados", "fiambres"]'
+    assert build_commerce_card_product_facts(empresa) == [
+        "Alimentos", "Bebidas", "Bebidas frías", "+2 productos"
+    ]
+
+
+def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    TestingSession = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = TestingSession()
+    commerce = Empresa(
+        nombre="Crisma almacén", slug="crisma", theme="servicios", subgrupo="compras",
+        subtipo="Almacén", activo=True, direccion="El Vergel 229",
+        maps_url="https://maps.example/crisma", whatsapp="+54 (9) 3541-123-456",
+        compras_productos_disponibles='["alimentos","bebidas","bebidas frias","panificados","fiambres","carbon / lena","golosinas"]',
+    )
+    transport = Empresa(
+        nombre="Remis aislado", slug="remis-aislado", theme="servicios", subgrupo="transporte",
+        subtipo="Transporte", activo=True, maps_url="https://maps.example/remis", whatsapp="543541999999",
+        compras_productos_disponibles='["alimentos","bebidas"]',
+    )
+    lodging = Empresa(
+        nombre="Posada aislada", slug="posada-aislada", theme="alojamiento", subtipo="Posada",
+        activo=True, maps_url="https://maps.example/posada", whatsapp="543541888888", wifi=True,
+    )
+    commerce_no_products = Empresa(
+        nombre="Comercio mínimo", slug="comercio-minimo", theme="servicios", subgrupo="compras",
+        activo=True,
+    )
+    commerce_maps_only = Empresa(
+        nombre="Comercio con mapa", slug="comercio-mapa", theme="servicios", subgrupo="compras",
+        activo=True, maps_url="https://maps.example/solo",
+    )
+    commerce_whatsapp_only = Empresa(
+        nombre="Comercio con contacto", slug="comercio-contacto", theme="servicios", subgrupo="compras",
+        activo=True, whatsapp="543541777777",
+    )
+    db.add_all([
+        commerce, transport, lodging, commerce_no_products, commerce_maps_only,
+        commerce_whatsapp_only,
+    ])
+    db.commit()
+
+    def override_db():
+        yield db
+
+    app.dependency_overrides[get_db] = override_db
+    client = TestClient(app)
+    try:
+        html = client.get("/servicios").text
+        commerce_card = html.split('href="/prestador/crisma"', 1)[1].split("</article>", 1)[0]
+        assert commerce_card.count("Alimentos") == 1
+        assert commerce_card.count("Bebidas</span>") == 1
+        assert commerce_card.count("Bebidas frías") == 1
+        assert "Panificados" not in commerce_card
+        assert "+4 productos" in commerce_card
+        assert commerce_card.count("El Vergel 229") == 1
+        assert commerce_card.count("Cómo llegar") == 1
+        assert commerce_card.count("WhatsApp</a>") == 1
+        assert commerce_card.index("Ver ficha") < commerce_card.index("Cómo llegar") < commerce_card.index("WhatsApp</a>")
+        assert 'href="https://maps.example/crisma" target="_blank" rel="noopener"' in commerce_card
+        assert 'href="https://wa.me/5493541123456" target="_blank" rel="noopener"' in commerce_card
+
+        transport_card = html.split('href="/prestador/remis-aislado"', 1)[1].split("</article>", 1)[0]
+        assert "Alimentos" not in transport_card
+        assert "Cómo llegar" not in transport_card
+        assert transport_card.count("WhatsApp</a>") == 1
+
+        minimum_card = html.split('href="/prestador/comercio-minimo"', 1)[1].split("</article>", 1)[0]
+        assert "prestador-chip-row" not in minimum_card
+        assert "Cómo llegar" not in minimum_card
+        assert "WhatsApp</a>" not in minimum_card
+
+        maps_card = html.split('href="/prestador/comercio-mapa"', 1)[1].split("</article>", 1)[0]
+        assert maps_card.count("Cómo llegar") == 1
+        assert "WhatsApp</a>" not in maps_card
+
+        whatsapp_card = html.split('href="/prestador/comercio-contacto"', 1)[1].split("</article>", 1)[0]
+        assert "Cómo llegar" not in whatsapp_card
+        assert whatsapp_card.count("WhatsApp</a>") == 1
+
+        lodging_html = client.get("/alojamientos").text
+        assert 'class="accommodation-card"' in lodging_html
+        assert "Posada aislada" in lodging_html
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        db.close()
+        engine.dispose()
