@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 from types import SimpleNamespace
 import re
 
@@ -127,6 +128,7 @@ def test_commerce_product_normalizer_accepts_labels_and_keeps_editorial_order():
         "Golosinas", "Bebidas frías", "bebidas frias", "Carbón/leña",
         "Carbón / leña", "XXX",
     ]) == ["bebidas frias", "carbon / lena", "golosinas"]
+    assert normalize_commerce_product_categories(["Carne y pollo"]) == ["carne vacuna", "pollo"]
 
 
 def test_commerce_products_use_metadata_instead_of_catalog_relationship():
@@ -140,6 +142,17 @@ def test_commerce_products_use_metadata_instead_of_catalog_relationship():
     assert [item["label"] for item in build_provider_products(empresa, "servicios")] == [
         "Alimentos", "Bebidas frías", "Golosinas",
     ]
+
+
+def test_commerce_detail_shows_all_new_products_once_with_full_labels():
+    html = render_prestador("servicios", identity_overrides={
+        "subgrupo": "compras",
+        "compras_productos_disponibles": json.dumps([
+            "carne vacuna", "pollo", "articulos de libreria y fotocopias", "gas envasado",
+        ]),
+    })
+    for label in ("Carne vacuna", "Pollo", "Artículos de librería y fotocopias", "Gas envasado"):
+        assert html.count(label) == 1
 
 
 def test_provider_stylesheet_uses_single_gallery_cache_key():

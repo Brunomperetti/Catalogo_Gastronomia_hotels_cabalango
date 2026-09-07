@@ -475,6 +475,26 @@ def test_commerce_conversion_persists_intake_categories_without_catalog_products
     assert json.loads(company.compras_productos_disponibles) == [
         "alimentos", "bebidas", "carbon / lena", "golosinas",
     ]
+    assert company.compras_productos_taxonomia_version == 2
+    assert company.productos == []
+
+
+def test_commerce_conversion_persists_new_categories_in_editorial_order(intake_app, payload):
+    client, db = intake_app
+    body = authorized_payload(payload, external_id="new-commerce-v2",
+                              business_type="Almacén / kiosco / proveeduría")
+    body["specific_data"]["¿Qué productos se pueden encontrar?"] = [
+        "Carne vacuna", "Pollo", "Alimentos", "Helados", "Gas envasado",
+    ]
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+    client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+
+    company = db.query(Empresa).one()
+    assert json.loads(company.compras_productos_disponibles) == [
+        "carne vacuna", "pollo", "alimentos", "helados", "gas envasado",
+    ]
+    assert company.compras_productos_taxonomia_version == 2
     assert company.productos == []
 
 
@@ -527,7 +547,7 @@ def test_commerce_product_backfill_recovers_historical_intake_idempotently(monke
     engine.dispose()
 
 
-def test_commerce_product_backfill_never_overwrites_admin_value(monkeypatch):
+def test_commerce_product_backfill_preserves_v1_admin_value(monkeypatch):
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     Session = sessionmaker(bind=engine)
     Base.metadata.create_all(engine)
@@ -540,9 +560,10 @@ def test_commerce_product_backfill_never_overwrites_admin_value(monkeypatch):
     db.commit()
     configure_backfill_database(monkeypatch, engine, Session)
 
-    assert main.backfill_commerce_product_categories_from_intake() == 0
+    assert main.backfill_commerce_product_categories_from_intake() == 1
     db.refresh(company)
     assert json.loads(company.compras_productos_disponibles) == ["hielo"]
+    assert company.compras_productos_taxonomia_version == 2
     db.close()
     engine.dispose()
 
@@ -568,6 +589,56 @@ def test_commerce_product_backfill_is_isolated_from_other_rubrics(monkeypatch, t
     assert main.backfill_commerce_product_categories_from_intake() == 0
     db.refresh(company)
     assert company.compras_productos_disponibles is None
+    assert company.compras_productos_taxonomia_version is None
+    db.close()
+    engine.dispose()
+
+
+def test_legacy_other_extraction_is_whitelisted_and_splits_beef_and_chicken():
+    assert main.extract_commerce_categories_from_legacy_other(
+        "Otros: Carne, pollo, congelados, helados. Fotocopias, artículos de librería, gas envasado"
+    ) == [
+        "carne vacuna", "pollo", "articulos de libreria y fotocopias",
+        "congelados", "helados", "gas envasado",
+    ]
+    assert main.extract_commerce_categories_from_legacy_other(
+        "Otros: regalos, recargas, juguetes, gas"
+    ) == []
+
+
+def test_v2_backfill_enriches_only_new_categories_and_admin_wins(monkeypatch):
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    Session = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = Session()
+    company = Empresa(
+        nombre="Comercio genérico", slug="comercio-generico", theme="servicios", subgrupo="compras",
+        compras_productos_disponibles='["alimentos","bebidas"]',
+    )
+    db.add(company)
+    db.flush()
+    db.add(historical_intake(company, "legacy-v2", [
+        "Alimentos", "Bebidas",
+        "Otros: Carne, pollo, congelados, helados. Fotocopias, artículos de librería, gas envasado",
+    ]))
+    db.commit()
+    configure_backfill_database(monkeypatch, engine, Session)
+
+    assert main.backfill_commerce_product_categories_from_intake() == 1
+    db.refresh(company)
+    expected = [
+        "carne vacuna", "pollo", "articulos de libreria y fotocopias", "alimentos", "bebidas",
+        "congelados", "helados", "gas envasado",
+    ]
+    assert json.loads(company.compras_productos_disponibles) == expected
+    assert company.compras_productos_taxonomia_version == 2
+    assert main.backfill_commerce_product_categories_from_intake() == 0
+
+    company.compras_productos_disponibles = '["alimentos"]'
+    db.commit()
+    assert main.backfill_commerce_product_categories_from_intake() == 0
+    db.refresh(company)
+    assert json.loads(company.compras_productos_disponibles) == ["alimentos"]
     db.close()
     engine.dispose()
 
@@ -585,9 +656,10 @@ def test_commerce_product_backfill_ignores_payload_without_product_field(monkeyp
     db.commit()
     configure_backfill_database(monkeypatch, engine, Session)
 
-    assert main.backfill_commerce_product_categories_from_intake() == 0
+    assert main.backfill_commerce_product_categories_from_intake() == 1
     db.refresh(company)
     assert company.compras_productos_disponibles is None
+    assert company.compras_productos_taxonomia_version == 2
     db.close()
     engine.dispose()
 

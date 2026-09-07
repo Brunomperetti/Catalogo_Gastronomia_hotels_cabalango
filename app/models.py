@@ -35,6 +35,7 @@ class Empresa(Base):
     alojamiento_detalle_unidades = Column(Text, nullable=True)
     alojamiento_habitaciones_unidades = Column(Text, nullable=True)
     compras_productos_disponibles = Column(Text, nullable=True)
+    compras_productos_taxonomia_version = Column(Integer, nullable=True)
     habitaciones = Column(String, nullable=True)
     banos = Column(String, nullable=True)
     video_url = Column(String, nullable=True)

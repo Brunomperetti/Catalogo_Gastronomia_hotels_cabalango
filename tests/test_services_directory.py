@@ -172,6 +172,28 @@ def test_compact_schedule_is_isolated_to_commerce_service_cards():
     assert build_public_card_chips(lodging, "alojamientos") == []
 
 
+def test_commerce_card_prioritizes_beef_chicken_and_short_stationery_label():
+    company = Empresa(
+        theme="servicios", subgrupo="compras", subtipo="Almacén",
+        compras_productos_disponibles=(
+            '["alimentos","bebidas","congelados","carne vacuna","pollo",'
+            '"articulos de libreria y fotocopias"]'
+        ),
+    )
+    assert build_commerce_card_product_facts(company) == [
+        "Carne vacuna", "Pollo", "Librería / fotocopias", "+3 productos",
+    ]
+
+    company.compras_productos_disponibles = '["carne vacuna","alimentos","bebidas","bebidas frias"]'
+    assert build_commerce_card_product_facts(company) == [
+        "Carne vacuna", "Alimentos", "Bebidas", "+1 producto",
+    ]
+    company.compras_productos_disponibles = '["pollo","alimentos","bebidas","bebidas frias"]'
+    assert build_commerce_card_product_facts(company) == [
+        "Pollo", "Alimentos", "Bebidas", "+1 producto",
+    ]
+
+
 def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
