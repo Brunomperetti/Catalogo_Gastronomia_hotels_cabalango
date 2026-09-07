@@ -174,6 +174,7 @@ def ensure_empresa_media_columns():
             "alojamiento_detalle_unidades": "TEXT",
             "alojamiento_habitaciones_unidades": "TEXT",
             "compras_productos_disponibles": "TEXT",
+            "compras_productos_taxonomia_version": "INTEGER",
             "habitaciones": "VARCHAR",
             "banos": "VARCHAR",
             "video_url": "VARCHAR",
@@ -2264,6 +2265,7 @@ def editar_empresa_panel(
         empresa.compras_productos_disponibles = serialize_commerce_product_categories(
             compras_productos_disponibles
         )
+        empresa.compras_productos_taxonomia_version = COMMERCE_PRODUCT_TAXONOMY_VERSION
 
     if slug_final != slug_original:
         old_static_dir = Path("app/static/empresas") / slug_original
@@ -2884,19 +2886,34 @@ PROVIDER_AMENITIES = {
 }
 
 PROVIDER_PRODUCT_CATEGORIES = [
+    ("carne vacuna", "Carne vacuna"),
+    ("pollo", "Pollo"),
+    ("articulos de libreria y fotocopias", "Artículos de librería y fotocopias"),
     ("alimentos", "Alimentos"),
     ("bebidas", "Bebidas"),
     ("bebidas frias", "Bebidas frías"),
     ("panificados", "Panificados"),
     ("fiambres", "Fiambres"),
     ("frutas y verduras", "Frutas y verduras"),
-    ("articulos de limpieza", "Artículos de limpieza"),
-    ("higiene personal", "Higiene personal"),
+    ("congelados", "Congelados"),
+    ("helados", "Helados"),
     ("hielo", "Hielo"),
     ("carbon / lena", "Carbón / leña"),
-    ("golosinas", "Golosinas"),
+    ("gas envasado", "Gas envasado"),
     ("productos regionales", "Productos regionales"),
+    ("articulos de limpieza", "Artículos de limpieza"),
+    ("higiene personal", "Higiene personal"),
+    ("golosinas", "Golosinas"),
 ]
+
+COMMERCE_PRODUCT_TAXONOMY_VERSION = 2
+COMMERCE_PRODUCT_V2_CATEGORIES = {
+    "carne vacuna", "pollo", "articulos de libreria y fotocopias",
+    "congelados", "helados", "gas envasado",
+}
+COMMERCE_CARD_PRODUCT_LABEL_OVERRIDES = {
+    "articulos de libreria y fotocopias": "Librería / fotocopias",
+}
 
 
 def _commerce_product_key(value: Any) -> str:
@@ -2920,7 +2937,24 @@ def normalize_commerce_product_categories(values) -> list[str]:
     known.update({
         _commerce_product_key(label): key for key, label in PROVIDER_PRODUCT_CATEGORIES
     })
-    selected = {known[key] for value in values if (key := _commerce_product_key(value)) in known}
+    aliases = {
+        "carne": "carne vacuna", "carnes": "carne vacuna",
+        "carnes vacuna": "carne vacuna", "carnes vacunas": "carne vacuna", "pollos": "pollo",
+        "articulos de libreria": "articulos de libreria y fotocopias",
+        "libreria": "articulos de libreria y fotocopias",
+        "fotocopia": "articulos de libreria y fotocopias",
+        "fotocopias": "articulos de libreria y fotocopias",
+        "libreria y fotocopias": "articulos de libreria y fotocopias",
+        "congelado": "congelados", "helado": "helados",
+    }
+    known.update({_commerce_product_key(alias): canonical for alias, canonical in aliases.items()})
+    selected = set()
+    for value in values:
+        key = _commerce_product_key(value)
+        if key in {"carne y pollo", "carnes y pollos"}:
+            selected.update({"carne vacuna", "pollo"})
+        elif key in known:
+            selected.add(known[key])
     return [key for key, _label in PROVIDER_PRODUCT_CATEGORIES if key in selected]
 
 
@@ -2960,7 +2994,10 @@ def build_provider_products(empresa: models.Empresa, kind: str) -> list[dict[str
 def build_commerce_card_product_facts(empresa: models.Empresa) -> list[str]:
     """Return a compact, editorially ordered product summary for commerce cards."""
     products = build_provider_products(empresa, "servicios")
-    facts = [product["label"] for product in products[:3]]
+    facts = [
+        COMMERCE_CARD_PRODUCT_LABEL_OVERRIDES.get(product["key"], product["label"])
+        for product in products[:3]
+    ]
     remaining = len(products) - len(facts)
     if remaining:
         noun = "producto" if remaining == 1 else "productos"
@@ -3618,7 +3655,33 @@ COMMERCE_PRODUCT_INTAKE_FIELDS = (
 
 def commerce_products_from_intake(payload: dict) -> str | None:
     value = get_intake_specific_value(payload, *COMMERCE_PRODUCT_INTAKE_FIELDS)
-    return serialize_commerce_product_categories(parse_commerce_product_categories(value))
+    direct = parse_commerce_product_categories(value)
+    legacy = extract_commerce_categories_from_legacy_other(value)
+    return serialize_commerce_product_categories([*direct, *legacy])
+
+
+def extract_commerce_categories_from_legacy_other(value) -> list[str]:
+    """Recognize only V2 categories in historical free-text ``Otros`` answers."""
+    candidates = [value] if isinstance(value, str) else value
+    if not isinstance(candidates, (list, tuple, set)):
+        return []
+    found: set[str] = set()
+    patterns = {
+        "carne vacuna": r"\bcarnes?(?:\s+vacunas?)?\b",
+        "pollo": r"\bpollos?\b",
+        "articulos de libreria y fotocopias": r"\b(?:articulos?\s+de\s+libreria|libreria|fotocopias?)\b",
+        "congelados": r"\bcongelados?\b",
+        "helados": r"\bhelados?\b",
+        "gas envasado": r"\bgas\s+envasado\b",
+    }
+    for candidate in candidates:
+        text_value = _commerce_product_key(candidate)
+        if not text_value.startswith("otros"):
+            continue
+        for category, pattern in patterns.items():
+            if re.search(pattern, text_value):
+                found.add(category)
+    return [key for key, _label in PROVIDER_PRODUCT_CATEGORIES if key in found]
 
 
 def backfill_commerce_product_categories_from_intake() -> int:
@@ -3627,9 +3690,9 @@ def backfill_commerce_product_categories_from_intake() -> int:
     tables = set(inspector.get_table_names())
     if not {"empresas", "solicitudes_prestadores"}.issubset(tables):
         return 0
-    if "compras_productos_disponibles" not in {
+    if not {"compras_productos_disponibles", "compras_productos_taxonomia_version"}.issubset({
         column["name"] for column in inspector.get_columns("empresas")
-    }:
+    }):
         return 0
     db = SessionLocal()
     changed = 0
@@ -3643,17 +3706,24 @@ def backfill_commerce_product_categories_from_intake() -> int:
             empresa = db.get(models.Empresa, solicitud.converted_entity_id)
             if (
                 not empresa
-                or empresa.compras_productos_disponibles is not None
                 or normalize_theme(empresa.theme) != "servicios"
                 or service_group_key(empresa) != "compras"
+                or (empresa.compras_productos_taxonomia_version or 0) >= COMMERCE_PRODUCT_TAXONOMY_VERSION
             ):
                 continue
-            serialized = commerce_products_from_intake(
-                parse_intake_json(solicitud.raw_payload, {})
-            )
-            if serialized:
-                empresa.compras_productos_disponibles = serialized
-                changed += 1
+            payload = parse_intake_json(solicitud.raw_payload, {})
+            intake_value = get_intake_specific_value(payload, *COMMERCE_PRODUCT_INTAKE_FIELDS)
+            if empresa.compras_productos_disponibles is None:
+                recovered = parse_commerce_product_categories(intake_value)
+                recovered.extend(extract_commerce_categories_from_legacy_other(intake_value))
+            else:
+                recovered = parse_commerce_product_categories(empresa.compras_productos_disponibles)
+                intake_v2 = set(parse_commerce_product_categories(intake_value))
+                intake_v2.update(extract_commerce_categories_from_legacy_other(intake_value))
+                recovered.extend(intake_v2 & COMMERCE_PRODUCT_V2_CATEGORIES)
+            empresa.compras_productos_disponibles = serialize_commerce_product_categories(recovered)
+            empresa.compras_productos_taxonomia_version = COMMERCE_PRODUCT_TAXONOMY_VERSION
+            changed += 1
         if changed:
             db.commit()
         return changed
@@ -3739,6 +3809,7 @@ def build_empresa_from_intake(item: models.SolicitudPrestador, payload: dict, db
     )
     if mapping["theme"] == "servicios" and group == "compras":
         empresa.compras_productos_disponibles = commerce_products_from_intake(payload)
+        empresa.compras_productos_taxonomia_version = COMMERCE_PRODUCT_TAXONOMY_VERSION
     direct_values = {
         "capacidad": ("Capacidad",), "habitaciones": ("Habitaciones",),
         "banos": ("Baños", "Banos"), "precio_desde": ("Precio desde", "Tarifa desde", "Precio/tarifa desde"),

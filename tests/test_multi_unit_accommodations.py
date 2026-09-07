@@ -38,13 +38,15 @@ def test_bootstrap_adds_multi_unit_columns_idempotently(monkeypatch):
     assert {
         "alojamiento_modalidad", "alojamiento_detalle_unidades",
         "alojamiento_habitaciones_unidades", "compras_productos_disponibles",
+        "compras_productos_taxonomia_version",
     } <= columns
     with engine.connect() as connection:
         row = connection.execute(text(
             "SELECT nombre, alojamiento_modalidad, alojamiento_detalle_unidades, "
-            "alojamiento_habitaciones_unidades, compras_productos_disponibles FROM empresas"
+            "alojamiento_habitaciones_unidades, compras_productos_disponibles, "
+            "compras_productos_taxonomia_version FROM empresas"
         )).one()
-    assert row == ("Legacy", None, None, None, None)
+    assert row == ("Legacy", None, None, None, None, None)
 
 
 def test_room_options_are_normalized_and_invalid_data_is_safe():
