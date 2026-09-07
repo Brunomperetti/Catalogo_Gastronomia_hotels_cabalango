@@ -2742,6 +2742,92 @@ def build_alojamiento_key_facts(empresa: models.Empresa) -> list[str]:
     return facts
 
 
+COMMERCE_CARD_DAY_ABBREVIATIONS = {
+    "lunes": "Lun",
+    "martes": "Mar",
+    "miercoles": "Mié",
+    "jueves": "Jue",
+    "viernes": "Vie",
+    "sabado": "Sáb",
+    "domingo": "Dom",
+}
+
+
+def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
+    """Build a read-only editorial schedule for commerce directory cards."""
+    raw_schedule = clean_text(getattr(empresa, "horarios", None), default="")
+    if not raw_schedule:
+        return None
+
+    days_value = ""
+    hours_value = ""
+    unlabeled_parts: list[str] = []
+    for part in (item.strip() for item in raw_schedule.split("|")):
+        if not part:
+            continue
+        label_match = re.match(r"^(d[ií]as?|horarios?)\s*:\s*(.*)$", part, re.IGNORECASE)
+        if label_match:
+            label = normalize_taxonomy_key(label_match.group(1))
+            if label.startswith("dia"):
+                days_value = label_match.group(2).strip()
+            else:
+                hours_value = label_match.group(2).strip()
+        elif re.match(
+            r"^(todo el a[nñ]o\s*:|abierto todo el a[nñ]o|temporada limitada)",
+            part,
+            re.IGNORECASE,
+        ):
+            continue
+        else:
+            unlabeled_parts.append(part)
+
+    simple_hours_pattern = re.compile(
+        r"^(\d{1,2})(?::(\d{2}))?\s*(?:a|-|–)\s*"
+        r"(\d{1,2})(?::(\d{2}))?\s*(?:h(?:s)?\.?)?$",
+        re.IGNORECASE,
+    )
+    if not days_value and unlabeled_parts:
+        days_value = next(
+            (part for part in unlabeled_parts if any(day in normalize_taxonomy_key(part) for day in COMMERCE_CARD_DAY_ABBREVIATIONS)),
+            "",
+        )
+    if not hours_value:
+        hours_value = next((part for part in unlabeled_parts if simple_hours_pattern.fullmatch(part)), "")
+
+    days_summary = ""
+    normalized_days = normalize_taxonomy_key(days_value)
+    found_days = [day for day in COMMERCE_CARD_DAY_ABBREVIATIONS if re.search(rf"\b{day}\b", normalized_days)]
+    found_set = set(found_days)
+    if "lunes a domingo" in normalized_days or found_set == set(COMMERCE_CARD_DAY_ABBREVIATIONS):
+        days_summary = "Todos los días"
+    elif "lunes a viernes" in normalized_days or found_set == {"lunes", "martes", "miercoles", "jueves", "viernes"}:
+        days_summary = "Lun a vie"
+    elif found_set == {"sabado", "domingo"}:
+        days_summary = "Sáb y dom"
+    elif found_set == {"viernes", "sabado", "domingo"}:
+        days_summary = "Vie a dom"
+    elif found_days:
+        days_summary = " · ".join(COMMERCE_CARD_DAY_ABBREVIATIONS[day] for day in found_days)
+    elif days_value:
+        days_summary = re.sub(r"\s+", " ", days_value).strip(" ,")
+
+    hours_summary = ""
+    clean_hours = re.sub(r"\s+", " ", hours_value).strip(" |")
+    hours_match = simple_hours_pattern.fullmatch(clean_hours)
+    if hours_match:
+        start_hour, start_minute, end_hour, end_minute = hours_match.groups()
+        values = (int(start_hour), int(start_minute or 0), int(end_hour), int(end_minute or 0))
+        if values[0] <= 23 and values[2] <= 23 and values[1] <= 59 and values[3] <= 59:
+            hours_summary = f"{values[0]:02d}:{values[1]:02d}–{values[2]:02d}:{values[3]:02d}"
+        else:
+            hours_summary = clean_hours
+    elif clean_hours:
+        hours_summary = clean_hours
+
+    summary_parts = [part for part in (days_summary, hours_summary) if part]
+    return " · ".join(summary_parts) or None
+
+
 def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
     chips: list[str] = []
     kind = "alojamiento" if section == "alojamientos" else get_prestador_kind(empresa)
@@ -2755,6 +2841,11 @@ def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
                 chips.append(label)
         if clean_text(empresa.subtipo, default=""):
             chips.append(empresa.subtipo)
+    elif section == "servicios" and service_group_key(empresa) == "compras":
+        for value in [empresa.subtipo, build_commerce_card_schedule(empresa), empresa.precio_desde]:
+            clean_value = clean_text(value, default="")
+            if clean_value:
+                chips.append(clean_value)
     else:
         for value in [empresa.subtipo, empresa.horarios, empresa.precio_desde]:
             clean_value = clean_text(value, default="")
