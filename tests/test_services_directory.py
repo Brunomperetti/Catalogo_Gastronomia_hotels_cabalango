@@ -126,6 +126,10 @@ def test_commerce_card_schedule_normalizes_safe_day_and_hour_patterns_without_mu
     empresa = Empresa(theme="servicios", subgrupo="compras")
     cases = [
         (
+            "Días: Lunes a lunes | Horarios: Lunes a lunes 9 a 23",
+            "Todos los días · 09:00–23:00",
+        ),
+        (
             "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: 08 a 00hs | Todo el año: Sí",
             "Todos los días · 08:00–00:00",
         ),
@@ -134,6 +138,9 @@ def test_commerce_card_schedule_normalizes_safe_day_and_hour_patterns_without_mu
             "Todos los días · 08:00–00:00",
         ),
         ("Lunes a domingo", "Todos los días"),
+        ("Días: Todos los dias | Horarios: Todos los dias 9 a 23", "Todos los días · 09:00–23:00"),
+        ("Días: Todos los días | Horarios: Todos los días 9:00 a 23:00", "Todos los días · 09:00–23:00"),
+        ("Días: Lunes a domingo | Horarios: Lunes a domingo 9 a 23", "Todos los días · 09:00–23:00"),
         ("Días: Lunes, Martes, Miércoles, Jueves, Viernes | Horarios: 08:00 a 20:00", "Lun a vie · 08:00–20:00"),
         ("Días: Sábado, Domingo | Horarios: 09 a 22hs", "Sáb y dom · 09:00–22:00"),
         ("Días: Viernes, Sábado, Domingo | Horarios: 10 a 00hs", "Vie a dom · 10:00–00:00"),

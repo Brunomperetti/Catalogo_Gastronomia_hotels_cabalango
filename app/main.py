@@ -2786,6 +2786,10 @@ def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
         r"(\d{1,2})(?::(\d{2}))?\s*(?:h(?:s)?\.?)?$",
         re.IGNORECASE,
     )
+    redundant_all_days_prefix = re.compile(
+        r"^(?:lunes\s+a\s+(?:lunes|domingo)|todos\s+los\s+d[ií]as)\b\s*",
+        re.IGNORECASE,
+    )
     if not days_value and unlabeled_parts:
         days_value = next(
             (part for part in unlabeled_parts if any(day in normalize_taxonomy_key(part) for day in COMMERCE_CARD_DAY_ABBREVIATIONS)),
@@ -2798,7 +2802,13 @@ def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
     normalized_days = normalize_taxonomy_key(days_value)
     found_days = [day for day in COMMERCE_CARD_DAY_ABBREVIATIONS if re.search(rf"\b{day}\b", normalized_days)]
     found_set = set(found_days)
-    if "lunes a domingo" in normalized_days or found_set == set(COMMERCE_CARD_DAY_ABBREVIATIONS):
+    if (
+        any(
+            all_days_label in normalized_days
+            for all_days_label in ("lunes a domingo", "lunes a lunes", "todos los dias")
+        )
+        or found_set == set(COMMERCE_CARD_DAY_ABBREVIATIONS)
+    ):
         days_summary = "Todos los días"
     elif "lunes a viernes" in normalized_days or found_set == {"lunes", "martes", "miercoles", "jueves", "viernes"}:
         days_summary = "Lun a vie"
@@ -2813,7 +2823,8 @@ def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
 
     hours_summary = ""
     clean_hours = re.sub(r"\s+", " ", hours_value).strip(" |")
-    hours_match = simple_hours_pattern.fullmatch(clean_hours)
+    hours_without_redundant_days = redundant_all_days_prefix.sub("", clean_hours).strip()
+    hours_match = simple_hours_pattern.fullmatch(hours_without_redundant_days)
     if hours_match:
         start_hour, start_minute, end_hour, end_minute = hours_match.groups()
         values = (int(start_hour), int(start_minute or 0), int(end_hour), int(end_minute or 0))
