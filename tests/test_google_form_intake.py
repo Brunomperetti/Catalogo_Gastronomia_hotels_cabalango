@@ -498,6 +498,11 @@ def test_commerce_conversion_persists_new_categories_in_editorial_order(intake_a
     assert company.productos == []
 
 
+def test_commerce_product_normalizer_accepts_legacy_beef_label_variant():
+    assert main.normalize_commerce_product_categories(["Carnes vacuna"]) == ["carne vacuna"]
+    assert main.normalize_commerce_product_categories(["Carne vacuna"]) == ["carne vacuna"]
+
+
 def historical_intake(company, external_id, products_marker=...):
     specific_data = {}
     if products_marker is not ...:

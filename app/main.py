@@ -2939,7 +2939,7 @@ def normalize_commerce_product_categories(values) -> list[str]:
     })
     aliases = {
         "carne": "carne vacuna", "carnes": "carne vacuna",
-        "carnes vacunas": "carne vacuna", "pollos": "pollo",
+        "carnes vacuna": "carne vacuna", "carnes vacunas": "carne vacuna", "pollos": "pollo",
         "articulos de libreria": "articulos de libreria y fotocopias",
         "libreria": "articulos de libreria y fotocopias",
         "fotocopia": "articulos de libreria y fotocopias",
