@@ -7,6 +7,7 @@ from jinja2 import Environment, FileSystemLoader
 from app.main import (
     build_alojamiento_key_facts,
     build_alojamiento_rooms_summary,
+    build_commerce_delivery_status,
     build_provider_amenities,
     build_provider_products,
     normalize_commerce_product_categories,
@@ -102,8 +103,20 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         build_alojamiento_rooms_summary=build_alojamiento_rooms_summary,
         build_provider_amenities=build_provider_amenities,
         build_provider_products=build_provider_products,
+        commerce_delivery_status=build_commerce_delivery_status(empresa) if theme == "servicios" else None,
         actividad_subgrupos={},
     )
+
+
+def test_commerce_delivery_row_uses_explicit_tri_state_without_affecting_whatsapp():
+    available = render_prestador("servicios", identity_overrides={"subgrupo": "compras", "delivery": True})
+    unavailable = render_prestador("servicios", identity_overrides={"subgrupo": "compras", "delivery": False})
+    unknown = render_prestador("servicios", identity_overrides={"subgrupo": "compras", "delivery": None})
+
+    assert "<dt>Delivery</dt><dd>Disponible</dd>" in available
+    assert "<dt>Delivery</dt><dd>No disponible</dd>" in unavailable
+    assert "Consultar por WhatsApp" in unavailable
+    assert "<dt>Delivery</dt>" not in unknown
 
 
 def test_commerce_product_normalizer_accepts_labels_and_keeps_editorial_order():

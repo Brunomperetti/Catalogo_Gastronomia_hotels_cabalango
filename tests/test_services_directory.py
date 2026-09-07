@@ -8,6 +8,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base
 from app.main import (
     app,
+    build_commerce_delivery_status,
     build_commerce_card_product_facts,
     build_commerce_card_schedule,
     build_public_card_chips,
@@ -106,6 +107,21 @@ def test_commerce_card_product_facts_keep_editorial_order_and_pluralize():
     ]
 
 
+def test_commerce_delivery_status_is_tri_state_and_isolated():
+    commerce = Empresa(theme="servicios", subgrupo="compras", delivery=True)
+    assert build_commerce_delivery_status(commerce) == {
+        "card_label": "Delivery", "detail_label": "Disponible", "icon": "delivery"
+    }
+    commerce.delivery = False
+    assert build_commerce_delivery_status(commerce) == {
+        "card_label": "Sin delivery", "detail_label": "No disponible", "icon": "delivery"
+    }
+    commerce.delivery = None
+    assert build_commerce_delivery_status(commerce) is None
+    assert build_commerce_delivery_status(Empresa(theme="servicios", subgrupo="transporte", delivery=True)) is None
+    assert build_commerce_delivery_status(Empresa(theme="gastronomia", subgrupo="compras", delivery=False)) is None
+
+
 def test_commerce_card_schedule_normalizes_safe_day_and_hour_patterns_without_mutation():
     empresa = Empresa(theme="servicios", subgrupo="compras")
     cases = [
@@ -160,12 +176,14 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         nombre="Crisma almacén", slug="crisma", theme="servicios", subgrupo="compras",
         subtipo="Almacén", activo=True, direccion="El Vergel 229",
         maps_url="https://maps.example/crisma", whatsapp="+54 (9) 3541-123-456",
+        delivery=True,
         horarios="Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: 08 a 00hs | Todo el año: Sí",
         compras_productos_disponibles='["alimentos","bebidas","bebidas frias","panificados","fiambres","carbon / lena","golosinas"]',
     )
     transport = Empresa(
         nombre="Remis aislado", slug="remis-aislado", theme="servicios", subgrupo="transporte",
         subtipo="Transporte", activo=True, maps_url="https://maps.example/remis", whatsapp="543541999999",
+        delivery=False,
         compras_productos_disponibles='["alimentos","bebidas"]',
     )
     lodging = Empresa(
@@ -182,7 +200,7 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
     )
     commerce_whatsapp_only = Empresa(
         nombre="Comercio con contacto", slug="comercio-contacto", theme="servicios", subgrupo="compras",
-        activo=True, whatsapp="543541777777",
+        activo=True, whatsapp="543541777777", delivery=False,
     )
     db.add_all([
         commerce, transport, lodging, commerce_no_products, commerce_maps_only,
@@ -199,6 +217,8 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         html = client.get("/servicios").text
         commerce_card = html.split('href="/prestador/crisma"', 1)[1].split("</article>", 1)[0]
         assert "Todos los días · 08:00–00:00" in commerce_card
+        assert commerce_card.count(">Delivery<") == 1
+        assert "Sin delivery" not in commerce_card
         for raw_fragment in ("Días:", "Todo el año", "Lunes, Martes", "08 a 00hs"):
             assert raw_fragment not in commerce_card
         assert commerce_card.count("Alimentos") == 1
@@ -217,11 +237,15 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         assert "Alimentos" not in transport_card
         assert "Cómo llegar" not in transport_card
         assert transport_card.count("WhatsApp</a>") == 1
+        assert ">Delivery<" not in transport_card
+        assert "Sin delivery" not in transport_card
 
         minimum_card = html.split('href="/prestador/comercio-minimo"', 1)[1].split("</article>", 1)[0]
         assert "prestador-chip-row" not in minimum_card
         assert "Cómo llegar" not in minimum_card
         assert "WhatsApp</a>" not in minimum_card
+        assert ">Delivery<" not in minimum_card
+        assert "Sin delivery" not in minimum_card
 
         maps_card = html.split('href="/prestador/comercio-mapa"', 1)[1].split("</article>", 1)[0]
         assert maps_card.count("Cómo llegar") == 1
@@ -230,6 +254,7 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         whatsapp_card = html.split('href="/prestador/comercio-contacto"', 1)[1].split("</article>", 1)[0]
         assert "Cómo llegar" not in whatsapp_card
         assert whatsapp_card.count("WhatsApp</a>") == 1
+        assert whatsapp_card.count("Sin delivery") == 1
 
         lodging_html = client.get("/alojamientos").text
         assert 'class="accommodation-card"' in lodging_html

@@ -2957,6 +2957,17 @@ def build_commerce_card_product_facts(empresa: models.Empresa) -> list[str]:
     return facts
 
 
+def build_commerce_delivery_status(empresa: models.Empresa) -> dict[str, str] | None:
+    """Expose the persisted tri-state delivery value only for service commerces."""
+    if normalize_theme(empresa.theme) != "servicios" or service_group_key(empresa) != "compras":
+        return None
+    if empresa.delivery is True:
+        return {"card_label": "Delivery", "detail_label": "Disponible", "icon": "delivery"}
+    if empresa.delivery is False:
+        return {"card_label": "Sin delivery", "detail_label": "No disponible", "icon": "delivery"}
+    return None
+
+
 def build_provider_amenities(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
     """Return persisted public amenities in their editorial display order."""
     return [
@@ -3069,6 +3080,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "get_empresa_logo_url": get_empresa_logo_url,
             "build_public_card_chips": build_public_card_chips,
             "build_commerce_card_product_facts": build_commerce_card_product_facts,
+            "build_commerce_delivery_status": build_commerce_delivery_status,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "get_alojamiento_card_type": get_alojamiento_card_type,
@@ -5563,6 +5575,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "build_provider_amenities": build_provider_amenities,
             "build_provider_products": build_provider_products,
+            "commerce_delivery_status": build_commerce_delivery_status(empresa) if kind == "servicios" else None,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
             "service_card_kicker": service_card_kicker,
         },
