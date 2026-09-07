@@ -6,7 +6,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base
-from app.main import app, build_commerce_card_product_facts, get_db
+from app.main import (
+    app,
+    build_commerce_card_product_facts,
+    build_commerce_card_schedule,
+    build_public_card_chips,
+    get_db,
+)
 from app.models import Empresa
 
 
@@ -100,6 +106,49 @@ def test_commerce_card_product_facts_keep_editorial_order_and_pluralize():
     ]
 
 
+def test_commerce_card_schedule_normalizes_safe_day_and_hour_patterns_without_mutation():
+    empresa = Empresa(theme="servicios", subgrupo="compras")
+    cases = [
+        (
+            "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: 08 a 00hs | Todo el año: Sí",
+            "Todos los días · 08:00–00:00",
+        ),
+        (
+            "Días:Lunes,Martes,Miércoles,Jueves,Viernes,Sábado,Domingo|Horarios:08 a 00hs|Todo el año:Sí",
+            "Todos los días · 08:00–00:00",
+        ),
+        ("Lunes a domingo", "Todos los días"),
+        ("Días: Lunes, Martes, Miércoles, Jueves, Viernes | Horarios: 08:00 a 20:00", "Lun a vie · 08:00–20:00"),
+        ("Días: Sábado, Domingo | Horarios: 09 a 22hs", "Sáb y dom · 09:00–22:00"),
+        ("Días: Viernes, Sábado, Domingo | Horarios: 10 a 00hs", "Vie a dom · 10:00–00:00"),
+        ("Días: Lunes, Miércoles, Viernes | Horarios: 09 a 18hs", "Lun · Mié · Vie · 09:00–18:00"),
+        ("Días: Sábado | Horarios: 10 a 23hs", "Sáb · 10:00–23:00"),
+        ("Horarios: 8:00 - 21:00", "08:00–21:00"),
+        ("Horarios: 09:30 a 13:30", "09:30–13:30"),
+        ("Horarios: 09:00 a 13:00 y 17:00 a 21:00", "09:00 a 13:00 y 17:00 a 21:00"),
+    ]
+    for original, expected in cases:
+        empresa.horarios = original
+        assert build_commerce_card_schedule(empresa) == expected
+        assert empresa.horarios == original
+
+    empresa.horarios = None
+    assert build_commerce_card_schedule(empresa) is None
+    empresa.horarios = ""
+    assert build_commerce_card_schedule(empresa) is None
+
+
+def test_compact_schedule_is_isolated_to_commerce_service_cards():
+    raw = "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: 08 a 00hs | Todo el año: Sí"
+    commerce = Empresa(theme="servicios", subgrupo="compras", subtipo="Almacén", horarios=raw)
+    transport = Empresa(theme="servicios", subgrupo="transporte", subtipo="Transporte", horarios=raw)
+    lodging = Empresa(theme="alojamiento", subtipo="Posada", horarios=raw)
+
+    assert build_public_card_chips(commerce, "servicios") == ["Almacén", "Todos los días · 08:00–00:00"]
+    assert build_public_card_chips(transport, "servicios") == ["Transporte", raw]
+    assert build_public_card_chips(lodging, "alojamientos") == []
+
+
 def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
@@ -111,6 +160,7 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         nombre="Crisma almacén", slug="crisma", theme="servicios", subgrupo="compras",
         subtipo="Almacén", activo=True, direccion="El Vergel 229",
         maps_url="https://maps.example/crisma", whatsapp="+54 (9) 3541-123-456",
+        horarios="Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: 08 a 00hs | Todo el año: Sí",
         compras_productos_disponibles='["alimentos","bebidas","bebidas frias","panificados","fiambres","carbon / lena","golosinas"]',
     )
     transport = Empresa(
@@ -148,6 +198,9 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
     try:
         html = client.get("/servicios").text
         commerce_card = html.split('href="/prestador/crisma"', 1)[1].split("</article>", 1)[0]
+        assert "Todos los días · 08:00–00:00" in commerce_card
+        for raw_fragment in ("Días:", "Todo el año", "Lunes, Martes", "08 a 00hs"):
+            assert raw_fragment not in commerce_card
         assert commerce_card.count("Alimentos") == 1
         assert commerce_card.count("Bebidas</span>") == 1
         assert commerce_card.count("Bebidas frías") == 1
