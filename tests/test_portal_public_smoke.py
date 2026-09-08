@@ -143,6 +143,13 @@ def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     assert "stroke-dasharray" in css and "stroke-dashoffset" in css
     assert "stroke-dashoffset 700ms ease-out 80ms" in css
     assert '[data-home-stagger="1"]' in css
+    assert 'class="destination-story-grid"' in template
+    assert 'class="destination-story-grid" data-home-reveal' not in template
+    for story, stagger in (("historia", "1"), ("ubicacion", "2"), ("vida-local", "3")):
+        assert f"destination-story-{story}" in home
+        story_card = home[home.index(f"destination-story-{story}"):]
+        assert f'data-home-stagger="{stagger}"' in story_card.split(">", 1)[0]
+    assert '.destination-planning [data-home-reveal][data-home-stagger="4"] { transition-delay: 240ms; }' in css
     assert "IntersectionObserver" in script
     assert "prefers-reduced-motion: reduce" in script
 

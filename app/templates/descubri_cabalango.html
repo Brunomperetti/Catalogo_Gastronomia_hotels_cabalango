@@ -114,11 +114,11 @@
             ('ubicacion', 'Ubicación', content.ubicacion, 'icon-pin'),
             ('vida-local', 'Vida local', content.vida_local, 'icon-people')
         ] %}
-        <div class="destination-story-grid" data-home-reveal data-home-stagger="2">
+        <div class="destination-story-grid">
             {% for key, label, text, icon in destination_stories %}
             {% if key != 'naturaleza' %}
             {% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}
-            <article class="destination-story-card destination-story-{{ key }}"{% if key == 'ubicacion' %} id="como-llegar"{% endif %}>
+            <article class="destination-story-card destination-story-{{ key }}" data-home-reveal data-home-stagger="{{ loop.index0 }}"{% if key == 'ubicacion' %} id="como-llegar"{% endif %}>
                 <h3><svg aria-hidden="true" focusable="false"><use href="#{{ icon }}"/></svg>{{ label }}</h3>
                 <p class="destination-story-summary">{{ story_text|truncate(210 if key == 'naturaleza' else 115, False, '…') }}</p>
                 <button class="destination-story-more" type="button" data-dialog-open="destination-dialog-{{ key }}" aria-haspopup="dialog">{% if key == 'historia' %}Conocé su historia{% elif key == 'ubicacion' %}Cómo llegar{% elif key == 'naturaleza' %}Explorá su naturaleza{% else %}Conocé la vida local{% endif %}<span aria-hidden="true">→</span></button>
