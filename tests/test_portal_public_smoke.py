@@ -179,6 +179,11 @@ def test_home_about_has_one_living_photo_signature_with_accessible_one_shot_moti
     assert "stroke-dasharray: var(--signature-length)" in css
     assert "stroke-dashoffset: var(--signature-length)" in css
     assert ".destination-about-signature.is-visible" in css
+    river_transition = re.search(
+        r"destination-signature-river \{[^}]*transition: stroke-dashoffset 630ms ease-out (\d+)ms;",
+        css,
+    )
+    assert river_transition and int(river_transition.group(1)) >= 280
     wrapper_neutralization = ".destination-guide.home-motion-ready .destination-about-signature.home-reveal {"
     assert wrapper_neutralization in css
     neutralization_rule = css[css.index(wrapper_neutralization):css.index("}", css.index(wrapper_neutralization))]
