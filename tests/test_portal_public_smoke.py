@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260903-home-event-flyer-mobile-contain-1" in response.text
+    assert "?v=20260908-home-ambient-identity-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -174,6 +174,12 @@ def test_home_about_has_one_ambient_identity_with_accessible_one_shot_motion():
     assert "stroke-dasharray: var(--identity-length)" in css
     assert "stroke-dashoffset: var(--identity-length)" in css
     assert ".destination-about-identity.is-visible" in css
+    wrapper_neutralization = ".destination-guide.home-motion-ready .destination-about-identity.home-reveal {"
+    assert wrapper_neutralization in css
+    neutralization_rule = css[css.index(wrapper_neutralization):css.index("}", css.index(wrapper_neutralization))]
+    assert "opacity: 1" in neutralization_rule
+    assert "transform: none" in neutralization_rule
+    assert "transition: none" in neutralization_rule
     reduced_motion = css[css.rindex("@media (prefers-reduced-motion: reduce)"):]
     assert ".destination-about-identity path { stroke-dashoffset: 0; }" in reduced_motion
     assert home.count("destination-about-identity") == 1

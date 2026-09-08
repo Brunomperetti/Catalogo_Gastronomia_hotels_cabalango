@@ -6436,6 +6436,11 @@ body,
 }
 .destination-guide.home-motion-ready [data-home-reveal].is-visible,
 .destination-guide.home-motion-ready .home-reveal.is-visible { opacity: 1; transform: translateY(0); }
+.destination-guide.home-motion-ready .destination-about-identity.home-reveal {
+  opacity: 1;
+  transform: none;
+  transition: none;
+}
 .destination-guide .destination-about { isolation: isolate; position: relative; }
 .destination-guide .destination-about > :not(.destination-about-identity) { position: relative; z-index: 1; }
 .destination-guide .destination-about-identity {
