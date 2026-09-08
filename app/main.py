@@ -431,6 +431,7 @@ INTAKE_MAX_BODY_BYTES = 256 * 1024
 INTAKE_BUSINESS_TYPES = {
     "Alojamiento", "Gastronomía", "Almacén / kiosco / proveeduría",
     "Productos regionales / artesanías", "Actividad turística / recreativa",
+    "Actividad / clase / experiencia",
     "Evento", "Camping", "Estacionamiento", "Transporte / remis",
     "Salud y bienestar", "Otro servicio",
 }
@@ -483,6 +484,7 @@ class GoogleFormIntake(IntakeOptionalModel):
     business_type: Literal[
         "Alojamiento", "Gastronomía", "Almacén / kiosco / proveeduría",
         "Productos regionales / artesanías", "Actividad turística / recreativa",
+        "Actividad / clase / experiencia",
         "Evento", "Camping", "Estacionamiento", "Transporte / remis",
         "Salud y bienestar", "Otro servicio",
     ] | None = None
@@ -3634,6 +3636,7 @@ INTAKE_CONVERSION_MAP = {
     "Salud y bienestar": {"entity": "empresa", "theme": "servicios", "subgrupo": "salud"},
     "Otro servicio": {"entity": "empresa", "theme": "servicios", "subgrupo": "otros"},
     "Actividad turística / recreativa": {"entity": "actividad_agenda", "tipo": "actividad"},
+    "Actividad / clase / experiencia": {"entity": "actividad_agenda", "tipo": "actividad"},
     "Evento": {"entity": "actividad_agenda", "tipo": "evento"},
 }
 
