@@ -379,7 +379,9 @@ def intake_key_for_test(value):
 
 
 @pytest.mark.parametrize("business_type,expected", [
-    ("Actividad turística / recreativa", "actividad"), ("Evento", "evento")
+    ("Actividad turística / recreativa", "actividad"),
+    ("Actividad / clase / experiencia", "actividad"),
+    ("Evento", "evento"),
 ])
 def test_agenda_conversion_is_unpublished(intake_app, payload, business_type, expected):
     client, db = intake_app
@@ -392,6 +394,7 @@ def test_agenda_conversion_is_unpublished(intake_app, payload, business_type, ex
     assert activity.tipo == expected and activity.categoria == "naturaleza"
     assert activity.publicado is False and activity.destacado is False and activity.fecha_inicio is None
     assert activity.lugar == "Puente"
+    assert db.query(Empresa).count() == 0
 
 
 def test_empresa_conversion_maps_short_description_and_promotion(intake_app, payload):
