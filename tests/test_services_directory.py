@@ -141,6 +141,8 @@ def test_commerce_card_schedule_normalizes_safe_day_and_hour_patterns_without_mu
         ("Días: Todos los dias | Horarios: Todos los dias 9 a 23", "Todos los días · 09:00–23:00"),
         ("Días: Todos los días | Horarios: Todos los días 9:00 a 23:00", "Todos los días · 09:00–23:00"),
         ("Días: Lunes a domingo | Horarios: Lunes a domingo 9 a 23", "Todos los días · 09:00–23:00"),
+        ("Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: Lunes a domingo de 9 a 20 horas", "Todos los días · 09:00–20:00"),
+        ("lunes a lunes 9 a 20", "Todos los días · 09:00–20:00"),
         ("Días: Lunes, Martes, Miércoles, Jueves, Viernes | Horarios: 08:00 a 20:00", "Lun a vie · 08:00–20:00"),
         ("Días: Sábado, Domingo | Horarios: 09 a 22hs", "Sáb y dom · 09:00–22:00"),
         ("Días: Viernes, Sábado, Domingo | Horarios: 10 a 00hs", "Vie a dom · 10:00–00:00"),
@@ -161,14 +163,14 @@ def test_commerce_card_schedule_normalizes_safe_day_and_hour_patterns_without_mu
     assert build_commerce_card_schedule(empresa) is None
 
 
-def test_compact_schedule_is_isolated_to_commerce_service_cards():
+def test_compact_schedule_is_applied_to_all_service_cards_only():
     raw = "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: 08 a 00hs | Todo el año: Sí"
     commerce = Empresa(theme="servicios", subgrupo="compras", subtipo="Almacén", horarios=raw)
     transport = Empresa(theme="servicios", subgrupo="transporte", subtipo="Transporte", horarios=raw)
     lodging = Empresa(theme="alojamiento", subtipo="Posada", horarios=raw)
 
     assert build_public_card_chips(commerce, "servicios") == ["Almacén", "Todos los días · 08:00–00:00"]
-    assert build_public_card_chips(transport, "servicios") == ["Transporte", raw]
+    assert build_public_card_chips(transport, "servicios") == ["Transporte", "Todos los días · 08:00–00:00"]
     assert build_public_card_chips(lodging, "alojamientos") == []
 
 
@@ -213,6 +215,7 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         nombre="Remis aislado", slug="remis-aislado", theme="servicios", subgrupo="transporte",
         subtipo="Transporte", activo=True, maps_url="https://maps.example/remis", whatsapp="543541999999",
         delivery=False,
+        horarios="Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: Lunes a domingo de 9 a 20 horas | Todo el año: Sí",
         compras_productos_disponibles='["alimentos","bebidas"]',
     )
     lodging = Empresa(
@@ -223,17 +226,17 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         nombre="Comercio mínimo", slug="comercio-minimo", theme="servicios", subgrupo="compras",
         activo=True,
     )
-    commerce_maps_only = Empresa(
-        nombre="Comercio con mapa", slug="comercio-mapa", theme="servicios", subgrupo="compras",
+    service_maps_only = Empresa(
+        nombre="Estacionamiento con mapa", slug="servicio-mapa", theme="servicios", subgrupo="estacionamiento",
         activo=True, maps_url="https://maps.example/solo",
     )
-    commerce_whatsapp_only = Empresa(
-        nombre="Comercio con contacto", slug="comercio-contacto", theme="servicios", subgrupo="compras",
+    service_whatsapp_only = Empresa(
+        nombre="Transporte con contacto", slug="servicio-contacto", theme="servicios", subgrupo="transporte",
         activo=True, whatsapp="543541777777", delivery=False,
     )
     db.add_all([
-        commerce, transport, lodging, commerce_no_products, commerce_maps_only,
-        commerce_whatsapp_only,
+        commerce, transport, lodging, commerce_no_products, service_maps_only,
+        service_whatsapp_only,
     ])
     db.commit()
 
@@ -264,8 +267,12 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
 
         transport_card = html.split('href="/prestador/remis-aislado"', 1)[1].split("</article>", 1)[0]
         assert "Alimentos" not in transport_card
-        assert "Cómo llegar" not in transport_card
+        assert "Todos los días · 09:00–20:00" in transport_card
+        for raw_fragment in ("Días:", "Horarios:", "Todo el año:"):
+            assert raw_fragment not in transport_card
+        assert transport_card.count("Cómo llegar") == 1
         assert transport_card.count("WhatsApp</a>") == 1
+        assert transport_card.index("Ver ficha") < transport_card.index("Cómo llegar") < transport_card.index("WhatsApp</a>")
         assert ">Delivery<" not in transport_card
         assert "Sin delivery" not in transport_card
 
@@ -276,14 +283,14 @@ def test_commerce_cards_show_product_summary_and_independent_ordered_actions():
         assert ">Delivery<" not in minimum_card
         assert "Sin delivery" not in minimum_card
 
-        maps_card = html.split('href="/prestador/comercio-mapa"', 1)[1].split("</article>", 1)[0]
+        maps_card = html.split('href="/prestador/servicio-mapa"', 1)[1].split("</article>", 1)[0]
         assert maps_card.count("Cómo llegar") == 1
         assert "WhatsApp</a>" not in maps_card
 
-        whatsapp_card = html.split('href="/prestador/comercio-contacto"', 1)[1].split("</article>", 1)[0]
+        whatsapp_card = html.split('href="/prestador/servicio-contacto"', 1)[1].split("</article>", 1)[0]
         assert "Cómo llegar" not in whatsapp_card
         assert whatsapp_card.count("WhatsApp</a>") == 1
-        assert whatsapp_card.count("Sin delivery") == 1
+        assert "Sin delivery" not in whatsapp_card
 
         lodging_html = client.get("/alojamientos").text
         assert 'class="accommodation-card"' in lodging_html

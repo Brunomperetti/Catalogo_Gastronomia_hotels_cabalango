@@ -2756,7 +2756,7 @@ COMMERCE_CARD_DAY_ABBREVIATIONS = {
 
 
 def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
-    """Build a read-only editorial schedule for commerce directory cards."""
+    """Build a read-only editorial schedule for service directory cards."""
     raw_schedule = clean_text(getattr(empresa, "horarios", None), default="")
     if not raw_schedule:
         return None
@@ -2785,13 +2785,25 @@ def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
 
     simple_hours_pattern = re.compile(
         r"^(\d{1,2})(?::(\d{2}))?\s*(?:a|-|–)\s*"
-        r"(\d{1,2})(?::(\d{2}))?\s*(?:h(?:s)?\.?)?$",
+        r"(\d{1,2})(?::(\d{2}))?\s*(?:h(?:s)?\.?|horas?)?$",
         re.IGNORECASE,
     )
     redundant_all_days_prefix = re.compile(
-        r"^(?:lunes\s+a\s+(?:lunes|domingo)|todos\s+los\s+d[ií]as)\b\s*",
+        r"^(?:lunes\s+a\s+(?:lunes|domingo)|todos\s+los\s+d[ií]as|7\s+d[ií]as)\b\s*(?:de\s+)?",
         re.IGNORECASE,
     )
+    combined_schedule_pattern = re.compile(
+        r"^((?:lunes\s+a\s+(?:lunes|domingo)|todos\s+los\s+d[ií]as|7\s+d[ií]as))"
+        r"\s+(?:de\s+)?(.+)$",
+        re.IGNORECASE,
+    )
+    if not hours_value:
+        for part in unlabeled_parts:
+            combined_match = combined_schedule_pattern.fullmatch(part)
+            if combined_match and simple_hours_pattern.fullmatch(combined_match.group(2).strip()):
+                days_value = days_value or combined_match.group(1).strip()
+                hours_value = combined_match.group(2).strip()
+                break
     if not days_value and unlabeled_parts:
         days_value = next(
             (part for part in unlabeled_parts if any(day in normalize_taxonomy_key(part) for day in COMMERCE_CARD_DAY_ABBREVIATIONS)),
@@ -2807,7 +2819,7 @@ def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
     if (
         any(
             all_days_label in normalized_days
-            for all_days_label in ("lunes a domingo", "lunes a lunes", "todos los dias")
+            for all_days_label in ("lunes a domingo", "lunes a lunes", "todos los dias", "7 dias")
         )
         or found_set == set(COMMERCE_CARD_DAY_ABBREVIATIONS)
     ):
@@ -2854,7 +2866,7 @@ def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
                 chips.append(label)
         if clean_text(empresa.subtipo, default=""):
             chips.append(empresa.subtipo)
-    elif section == "servicios" and service_group_key(empresa) == "compras":
+    elif section == "servicios":
         for value in [empresa.subtipo, build_commerce_card_schedule(empresa), empresa.precio_desde]:
             clean_value = clean_text(value, default="")
             if clean_value:
