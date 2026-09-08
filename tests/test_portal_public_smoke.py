@@ -120,6 +120,16 @@ def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     assert home.count("destination-quick-links") >= 1
     assert home.count("data-home-reveal") >= 7
     assert "destination-river-divider home-reveal" in home
+    assert 'class="destination-editorial-hero" data-home-reveal' not in home
+    template = __import__("pathlib").Path("app/templates/descubri_cabalango.html").read_text(encoding="utf-8")
+    for start, end, minimum_hooks in (
+        ('destination-about"', 'class="destination-river-divider', 3),
+        ('class="destination-journeys"', 'class="destination-planning"', 4),
+        ('class="destination-planning"', 'class="destination-nearby"', 3),
+        ('destination-places-section"', 'destination-video-section"', 2),
+    ):
+        section = template[template.index(start):template.find(end, template.index(start)) if end in template[template.index(start):] else len(template)]
+        assert section.count("data-home-reveal") >= minimum_hooks
     for href in ("/alojamientos", "/gastronomia", "/actividades", "/servicios?grupo=compras", "/como-llegar", "#lugares"):
         assert f'href="{href}"' in home
 
@@ -131,6 +141,8 @@ def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     assert "@media (prefers-reduced-motion: reduce)" in css
     assert ".destination-guide.home-motion-ready [data-home-reveal]" in css
     assert "stroke-dasharray" in css and "stroke-dashoffset" in css
+    assert "stroke-dashoffset 700ms ease-out 80ms" in css
+    assert '[data-home-stagger="1"]' in css
     assert "IntersectionObserver" in script
     assert "prefers-reduced-motion: reduce" in script
 

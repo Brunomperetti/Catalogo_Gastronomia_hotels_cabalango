@@ -47,7 +47,7 @@
         <symbol id="icon-music" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 10l10-2"/><ellipse cx="6.5" cy="18" rx="2.5" ry="2"/><ellipse cx="16.5" cy="16" rx="2.5" ry="2"/></symbol>
     </svg>
 
-    <section class="destination-editorial-hero" data-home-reveal aria-labelledby="destination-title">
+    <section class="destination-editorial-hero" aria-labelledby="destination-title">
         <div class="destination-hero-copy">
             <p class="portal-kicker">Cabalango · Valle de Punilla</p>
             <h1 id="destination-title">Descubrí Cabalango</h1>
@@ -79,12 +79,12 @@
     </nav>
 
     {% if home_events %}
-    <section class="home-agenda" data-home-reveal aria-labelledby="home-agenda-title">
-        <header class="home-agenda__header">
+    <section class="home-agenda" aria-labelledby="home-agenda-title">
+        <header class="home-agenda__header" data-home-reveal>
             <div><p class="portal-kicker">Agenda</p><h2 id="home-agenda-title">Lo que viene en Cabalango</h2><p>Eventos, encuentros y propuestas para disfrutar Cabalango.</p></div>
             <a class="home-agenda__all" href="/agenda">Ver agenda completa <span aria-hidden="true">→</span></a>
         </header>
-        <div class="home-agenda__grid" data-count="{{ home_events|length }}">
+        <div class="home-agenda__grid" data-count="{{ home_events|length }}" data-home-reveal data-home-stagger="1">
             {% for card in home_events %}{% set item = card.item %}
             <article class="home-agenda-event{% if item.imagen_url %} home-agenda-event--with-image{% endif %}">
                 {% if item.imagen_url %}<img class="home-agenda-event__image" src="{{ item.imagen_url }}" alt="{{ item.titulo }}" loading="lazy">{% endif %}
@@ -103,10 +103,10 @@
     </section>
     {% endif %}
 
-    <section class="destination-section destination-about" data-home-reveal id="sobre-cabalango">
+    <section class="destination-section destination-about" id="sobre-cabalango">
         <div class="destination-about-intro">
-            <div><p class="portal-kicker">Sobre Cabalango</p><h2>Una pausa serrana con identidad propia</h2><p>{{ (content.naturaleza or 'Río, balnearios, senderos y monte nativo invitan a bajar el ritmo y disfrutar el paisaje.')|truncate(280, False, '…') }}</p></div>
-            <figure>{% if about_photo and about_photo.image_path %}<img src="{{ about_photo.image_path }}" alt="Río y paisaje serrano de Cabalango" loading="lazy">{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Paisaje serrano de Cabalango"></div>{% endif %}</figure>
+            <div data-home-reveal><p class="portal-kicker">Sobre Cabalango</p><h2>Una pausa serrana con identidad propia</h2><p>{{ (content.naturaleza or 'Río, balnearios, senderos y monte nativo invitan a bajar el ritmo y disfrutar el paisaje.')|truncate(280, False, '…') }}</p></div>
+            <figure data-home-reveal data-home-stagger="1">{% if about_photo and about_photo.image_path %}<img src="{{ about_photo.image_path }}" alt="Río y paisaje serrano de Cabalango" loading="lazy">{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Paisaje serrano de Cabalango"></div>{% endif %}</figure>
         </div>
         {% set destination_stories = [
             ('naturaleza', 'Naturaleza', content.naturaleza, 'icon-water'),
@@ -114,7 +114,7 @@
             ('ubicacion', 'Ubicación', content.ubicacion, 'icon-pin'),
             ('vida-local', 'Vida local', content.vida_local, 'icon-people')
         ] %}
-        <div class="destination-story-grid">
+        <div class="destination-story-grid" data-home-reveal data-home-stagger="2">
             {% for key, label, text, icon in destination_stories %}
             {% if key != 'naturaleza' %}
             {% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}
@@ -132,26 +132,26 @@
         <svg viewBox="0 0 1000 42" preserveAspectRatio="none" focusable="false"><path d="M2 25c105-19 174 12 278 2s165-23 267-7 182 19 451-7"/></svg>
     </div>
 
-    <section class="destination-journeys" data-home-reveal aria-labelledby="journeys-title">
-        <header><p class="portal-kicker">Planes para cada visita</p><h2 id="journeys-title">Viví Cabalango a tu manera</h2><p>Elegí el plan que mejor se adapta a tu visita.</p></header>
+    <section class="destination-journeys" aria-labelledby="journeys-title">
+        <header data-home-reveal><p class="portal-kicker">Planes para cada visita</p><h2 id="journeys-title">Viví Cabalango a tu manera</h2><p>Elegí el plan que mejor se adapta a tu visita.</p></header>
         {% set journey_photos = journey_fallback_photos %}
         {% set journey_rio = journey_media.get('journey_rio') %}{% set journey_escapada = journey_media.get('journey_escapada') %}{% set journey_familia = journey_media.get('journey_familia') %}
         <div class="destination-journey-grid">
-            <article class="destination-journey-card is-featured">{% set journey_photo = journey_rio or journey_photos[0] %}{% if journey_photo %}<img src="{{ journey_photo.image_path }}" alt="Un día junto al río en Cabalango" loading="lazy">{% endif %}<div><p class="destination-journey-number"><svg aria-hidden="true" focusable="false"><use href="#icon-water"/></svg>Pasar el día</p><h3>{{ journey_rio.titulo if journey_rio and journey_rio.titulo else 'Un día junto al río' }}</h3><p>{{ journey_rio.descripcion if journey_rio and journey_rio.descripcion else 'Balnearios, sombra y caminatas para disfrutar sin apuro.' }}</p><a href="/actividades">Ver qué hacer <span aria-hidden="true">→</span></a></div></article>
-            <article class="destination-journey-card">{% set journey_photo = journey_escapada or journey_photos[1] %}{% if journey_photo %}<img src="{{ journey_photo.image_path }}" alt="Escapada de fin de semana en Cabalango" loading="lazy">{% endif %}<div><p class="destination-journey-number"><svg aria-hidden="true" focusable="false"><use href="#icon-sun"/></svg>Escapada de fin de semana</p><h3>{{ journey_escapada.titulo if journey_escapada and journey_escapada.titulo else 'Quedarse un poco más' }}</h3><p>{{ journey_escapada.descripcion if journey_escapada and journey_escapada.descripcion else 'Alojamiento, sabores locales y tranquilidad para desconectar.' }}</p><a href="/alojamientos">Ver alojamientos <span aria-hidden="true">→</span></a></div></article>
-            <article class="destination-journey-card">{% set journey_photo = journey_familia or journey_photos[2] %}{% if journey_photo %}<img src="{{ journey_photo.image_path }}" alt="Plan en familia en Cabalango" loading="lazy">{% endif %}<div><p class="destination-journey-number"><svg aria-hidden="true" focusable="false"><use href="#icon-leaf"/></svg>Plan en familia</p><h3>{{ journey_familia.titulo if journey_familia and journey_familia.titulo else 'Tiempo para compartir' }}</h3><p>{{ journey_familia.descripcion if journey_familia and journey_familia.descripcion else 'Espacios abiertos y naturaleza para disfrutar en familia.' }}</p><a href="/actividades">Explorar actividades <span aria-hidden="true">→</span></a></div></article>
+            <article class="destination-journey-card is-featured" data-home-reveal data-home-stagger="1">{% set journey_photo = journey_rio or journey_photos[0] %}{% if journey_photo %}<img src="{{ journey_photo.image_path }}" alt="Un día junto al río en Cabalango" loading="lazy">{% endif %}<div><p class="destination-journey-number"><svg aria-hidden="true" focusable="false"><use href="#icon-water"/></svg>Pasar el día</p><h3>{{ journey_rio.titulo if journey_rio and journey_rio.titulo else 'Un día junto al río' }}</h3><p>{{ journey_rio.descripcion if journey_rio and journey_rio.descripcion else 'Balnearios, sombra y caminatas para disfrutar sin apuro.' }}</p><a href="/actividades">Ver qué hacer <span aria-hidden="true">→</span></a></div></article>
+            <article class="destination-journey-card" data-home-reveal data-home-stagger="2">{% set journey_photo = journey_escapada or journey_photos[1] %}{% if journey_photo %}<img src="{{ journey_photo.image_path }}" alt="Escapada de fin de semana en Cabalango" loading="lazy">{% endif %}<div><p class="destination-journey-number"><svg aria-hidden="true" focusable="false"><use href="#icon-sun"/></svg>Escapada de fin de semana</p><h3>{{ journey_escapada.titulo if journey_escapada and journey_escapada.titulo else 'Quedarse un poco más' }}</h3><p>{{ journey_escapada.descripcion if journey_escapada and journey_escapada.descripcion else 'Alojamiento, sabores locales y tranquilidad para desconectar.' }}</p><a href="/alojamientos">Ver alojamientos <span aria-hidden="true">→</span></a></div></article>
+            <article class="destination-journey-card" data-home-reveal data-home-stagger="3">{% set journey_photo = journey_familia or journey_photos[2] %}{% if journey_photo %}<img src="{{ journey_photo.image_path }}" alt="Plan en familia en Cabalango" loading="lazy">{% endif %}<div><p class="destination-journey-number"><svg aria-hidden="true" focusable="false"><use href="#icon-leaf"/></svg>Plan en familia</p><h3>{{ journey_familia.titulo if journey_familia and journey_familia.titulo else 'Tiempo para compartir' }}</h3><p>{{ journey_familia.descripcion if journey_familia and journey_familia.descripcion else 'Espacios abiertos y naturaleza para disfrutar en familia.' }}</p><a href="/actividades">Explorar actividades <span aria-hidden="true">→</span></a></div></article>
         </div>
     </section>
 
-    <section class="destination-planning" data-home-reveal id="clima" aria-labelledby="planning-title">
-        <header class="destination-planning-heading">
+    <section class="destination-planning" id="clima" aria-labelledby="planning-title">
+        <header class="destination-planning-heading" data-home-reveal>
             <div><p class="portal-kicker">Planificá tu visita</p><h2 id="planning-title">El clima, antes de salir</h2><p>Una lectura rápida del tiempo serrano para organizar mejor el día.</p></div>
             {% if content.recomendaciones %}<aside class="destination-travel-tip"><svg aria-hidden="true"><use href="#icon-compass"/></svg><div><strong>Tip para tu visita</strong><p>{{ content.recomendaciones }}</p></div></aside>{% endif %}
         </header>
         <section class="destination-weather-card" aria-labelledby="weather-title">
-            <header class="weather-intro"><h3 class="portal-kicker" id="weather-title">Clima en Cabalango</h3></header>
+            <header class="weather-intro" data-home-reveal data-home-stagger="1"><h3 class="portal-kicker" id="weather-title">Clima en Cabalango</h3></header>
             {% if weather.available %}
-            <div class="weather-live-panel">
+            <div class="weather-live-panel" data-home-reveal data-home-stagger="2">
               <div class="weather-current">
                 <p class="weather-layer-label">Ahora</p>
                 {% set current_condition = weather.condition|default('', true)|lower %}
@@ -165,24 +165,24 @@
                 <div><svg aria-hidden="true" focusable="false"><use href="#icon-wind"/></svg><span>Viento</span><strong>{{ weather.wind|round|int if weather.wind is not none else '—' }} km/h</strong></div>
               </div>
             </div>
-            <div class="weather-forecast" aria-label="Pronóstico extendido">
+            <div class="weather-forecast" aria-label="Pronóstico extendido" data-home-reveal data-home-stagger="3">
                 <div class="weather-section-heading"><svg aria-hidden="true" focusable="false"><use href="#icon-calendar"/></svg><strong>Próximos días</strong><span>Pronóstico extendido</span></div>
                 <div class="weather-days">{% for day in weather.forecast %}{% set day_condition = day.condition|default('', true)|lower %}{% set day_icon = 'icon-rain' if 'lluv' in day_condition or 'torment' in day_condition else ('icon-sun' if 'despej' in day_condition or 'soleado' in day_condition else ('icon-cloud-sun' if 'parcial' in day_condition else 'icon-cloud')) %}<article class="weather-day"><div class="weather-day-heading"><span>{{ day.label }}</span><svg aria-hidden="true" focusable="false"><use href="#{{ day_icon }}"/></svg></div><p class="weather-day-temperatures"><span>{{ day.min|round|int if day.min is not none else '—' }}°</span><i aria-hidden="true">/</i><strong>{{ day.max|round|int if day.max is not none else '—' }}°</strong></p><small class="weather-day-condition">{{ day.condition }}</small><small class="weather-day-rain"><svg aria-hidden="true" focusable="false"><use href="#icon-drop"/></svg><span>Lluvia {{ day.rain_probability or 0 }}%</span></small></article>{% endfor %}</div>
             </div>
             {% else %}
-            <div class="weather-fallback" role="status"><svg aria-hidden="true" focusable="false"><use href="#icon-cloud-sun"/></svg><div><strong>El clima está tomando una pausa</strong><p>Clima no disponible por el momento.</p><a class="weather-refresh" href="/?refresh_weather=1">↻ Actualizar clima</a></div></div>
+            <div class="weather-fallback" role="status" data-home-reveal data-home-stagger="2"><svg aria-hidden="true" focusable="false"><use href="#icon-cloud-sun"/></svg><div><strong>El clima está tomando una pausa</strong><p>Clima no disponible por el momento.</p><a class="weather-refresh" href="/?refresh_weather=1">↻ Actualizar clima</a></div></div>
             {% endif %}
-            <div class="season-grid" aria-label="Temperaturas estacionales orientativas">
+            <div class="season-grid" aria-label="Temperaturas estacionales orientativas" data-home-reveal data-home-stagger="4">
                 <p><strong>Mejor época para visitar</strong><span class="season-guidance">Rangos orientativos</span></p>
                 <div><svg aria-hidden="true" focusable="false"><use href="#icon-sprout"/></svg><span>Primavera</span><strong>12–26 °C</strong></div><div><svg aria-hidden="true" focusable="false"><use href="#icon-sun"/></svg><span>Verano</span><strong>18–32 °C</strong></div><div><svg aria-hidden="true" focusable="false"><use href="#icon-autumn-leaf"/></svg><span>Otoño</span><strong>10–24 °C</strong></div><div><svg aria-hidden="true" focusable="false"><use href="#icon-snowflake"/></svg><span>Invierno</span><strong>3–18 °C</strong></div>
             </div>
         </section>
     </section>
 
-    <section class="destination-nearby" data-home-reveal aria-labelledby="nearby-title">
+    <section class="destination-nearby" aria-labelledby="nearby-title">
         <header class="destination-nearby-heading">
-            <div class="destination-nearby-title"><p class="portal-kicker">CERCA DE CABALANGO</p><h2 id="nearby-title">Ciudades cerca de Cabalango</h2></div>
-            <div class="destination-nearby-map" aria-hidden="true">
+            <div class="destination-nearby-title" data-home-reveal><p class="portal-kicker">CERCA DE CABALANGO</p><h2 id="nearby-title">Ciudades cerca de Cabalango</h2></div>
+            <div class="destination-nearby-map" aria-hidden="true" data-home-reveal data-home-stagger="1">
                 <svg viewBox="0 0 480 210" focusable="false">
                     <path class="nearby-map-contour" d="M7 177c53-12 81-45 125-45 53 0 60 32 106 32 48 0 71-55 124-55 46 0 67 31 111 37"/>
                     <path class="nearby-map-route" d="M106 142c27-35 58-44 92-38 43 8 69-26 97-47 28-21 57-23 89-10M198 104c-1 30 14 51 42 67"/>
@@ -194,7 +194,7 @@
                 </svg>
             </div>
         </header>
-        <div class="destination-nearby-grid">
+        <div class="destination-nearby-grid" data-home-reveal data-home-stagger="1">
             <article class="destination-nearby-card destination-nearby-carlos-paz">
                 <div class="destination-nearby-card-top"><span class="destination-nearby-icon"><svg aria-hidden="true" focusable="false"><use href="#icon-city-night"/></svg></span><span class="destination-nearby-distance"><svg aria-hidden="true" focusable="false"><use href="#icon-pin"/></svg>A pocos minutos</span></div>
                 <h3>Villa Carlos Paz</h3>
@@ -214,21 +214,21 @@
                 <ul class="destination-nearby-tags" aria-label="Experiencias en Cosquín"><li>Folklore</li><li>Peñas</li><li>Cultura</li><li>Eventos</li></ul>
             </article>
         </div>
-        <p class="destination-nearby-footnote"><strong>Para seguir camino:</strong> La Falda, a 45 km aprox., suma Siete Cascadas, miradores, paseos y festivales a una escapada por el valle.</p>
+        <p class="destination-nearby-footnote" data-home-reveal data-home-stagger="2"><strong>Para seguir camino:</strong> La Falda, a 45 km aprox., suma Siete Cascadas, miradores, paseos y festivales a una escapada por el valle.</p>
     </section>
 
     {% if lugares %}
-    <section id="lugares" class="destination-section destination-places-section" data-home-reveal aria-labelledby="places-title">
-        <header class="destination-gallery-heading"><div><p class="portal-kicker">RINCONES DE CABALANGO</p><h2 id="places-title">Lugares para descubrir</h2><p class="destination-gallery-intro">Naturaleza, río y paseos para conocer Cabalango a tu ritmo.</p></div><a class="destination-gallery-link" href="/lugares">Ver todos <span aria-hidden="true">→</span></a></header>
+    <section id="lugares" class="destination-section destination-places-section" aria-labelledby="places-title">
+        <header class="destination-gallery-heading" data-home-reveal><div><p class="portal-kicker">RINCONES DE CABALANGO</p><h2 id="places-title">Lugares para descubrir</h2><p class="destination-gallery-intro">Naturaleza, río y paseos para conocer Cabalango a tu ritmo.</p></div><a class="destination-gallery-link" href="/lugares">Ver todos <span aria-hidden="true">→</span></a></header>
         <div class="destination-places-grid" data-count="{{ lugares|length }}">
-        {% for lugar in lugares %}<a class="destination-place-card{% if loop.first %} is-primary{% endif %}" href="/lugares/{{ lugar.slug }}" aria-label="Conocer {{ lugar.nombre }}"><img src="{{ lugar.imagen_principal_url }}" alt="{{ lugar.nombre }}"{% if not loop.first %} loading="lazy"{% endif %}><span class="destination-place-overlay"><small>{{ lugar_categories.get(lugar.categoria, lugar.categoria) }}</small><strong>{{ lugar.nombre }}</strong><em>{{ lugar.descripcion_corta }}</em><b>Conocer el lugar →</b></span></a>{% endfor %}
+        {% for lugar in lugares %}<a data-home-reveal data-home-stagger="{{ loop.index }}" class="destination-place-card{% if loop.first %} is-primary{% endif %}" href="/lugares/{{ lugar.slug }}" aria-label="Conocer {{ lugar.nombre }}"><img src="{{ lugar.imagen_principal_url }}" alt="{{ lugar.nombre }}"{% if not loop.first %} loading="lazy"{% endif %}><span class="destination-place-overlay"><small>{{ lugar_categories.get(lugar.categoria, lugar.categoria) }}</small><strong>{{ lugar.nombre }}</strong><em>{{ lugar.descripcion_corta }}</em><b>Conocer el lugar →</b></span></a>{% endfor %}
         </div>
     </section>
     {% endif %}
 
-    {% if main_video_url %}<section class="destination-section destination-video-section" data-home-reveal><p class="portal-kicker">Videos / recorridos</p><h2>Recorré el destino</h2><article class="destination-video-feature"><div><span>Video destacado</span><h3>Un recorrido para sentir Cabalango antes de llegar</h3><p>Accedé al material audiovisual del destino en una nueva pestaña.</p></div><a class="portal-button" href="{{ main_video_url }}" target="_blank" rel="noopener">Ver recorrido</a></article></section>{% endif %}
+    {% if main_video_url %}<section class="destination-section destination-video-section"><div data-home-reveal><p class="portal-kicker">Videos / recorridos</p><h2>Recorré el destino</h2></div><article class="destination-video-feature" data-home-reveal data-home-stagger="1"><div><span>Video destacado</span><h3>Un recorrido para sentir Cabalango antes de llegar</h3><p>Accedé al material audiovisual del destino en una nueva pestaña.</p></div><a class="portal-button" href="{{ main_video_url }}" target="_blank" rel="noopener">Ver recorrido</a></article></section>{% endif %}
 
-    <section class="destination-cta" data-home-reveal><div><svg class="destination-cta-mark" aria-hidden="true" focusable="false"><use href="#icon-river-mark"/></svg><p class="portal-kicker">Tu próxima escapada</p><h2>Organizá tu visita a tu ritmo</h2><p>El río, el monte y la hospitalidad local te esperan. Elegí por dónde empezar.</p><div class="prestador-actions"><a class="portal-button" href="/alojamientos">Alojamientos</a><a class="portal-button portal-button-secondary" href="/gastronomia">Gastronomía</a><a class="portal-button portal-button-secondary" href="/actividades">Qué hacer</a></div></div></section>
+    <section class="destination-cta"><div data-home-reveal><svg class="destination-cta-mark" aria-hidden="true" focusable="false"><use href="#icon-river-mark"/></svg><p class="portal-kicker">Tu próxima escapada</p><h2>Organizá tu visita a tu ritmo</h2><p>El río, el monte y la hospitalidad local te esperan. Elegí por dónde empezar.</p><div class="prestador-actions"><a class="portal-button" href="/alojamientos">Alojamientos</a><a class="portal-button portal-button-secondary" href="/gastronomia">Gastronomía</a><a class="portal-button portal-button-secondary" href="/actividades">Qué hacer</a></div></div></section>
 </main>
 {% for key, label, text, icon in destination_stories %}
 {% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}

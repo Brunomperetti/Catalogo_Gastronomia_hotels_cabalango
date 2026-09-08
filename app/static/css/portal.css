@@ -6436,6 +6436,10 @@ body,
 }
 .destination-guide.home-motion-ready [data-home-reveal].is-visible,
 .destination-guide.home-motion-ready .home-reveal.is-visible { opacity: 1; transform: translateY(0); }
+.destination-guide.home-motion-ready [data-home-reveal][data-home-stagger="1"] { transition-delay: 80ms; }
+.destination-guide.home-motion-ready [data-home-reveal][data-home-stagger="2"] { transition-delay: 160ms; }
+.destination-guide.home-motion-ready [data-home-reveal][data-home-stagger="3"] { transition-delay: 240ms; }
+.destination-guide.home-motion-ready [data-home-reveal][data-home-stagger="4"] { transition-delay: 320ms; }
 .destination-guide.home-motion-ready .destination-quick-links a { opacity: 0; transform: translateY(8px); }
 .destination-guide.home-motion-ready .destination-quick-links.is-visible a {
   opacity: 1;
@@ -6450,7 +6454,7 @@ body,
 .destination-guide .destination-river-divider { box-sizing: border-box; height: 42px; margin: clamp(8px, 2vw, 20px) 0 clamp(34px, 5vw, 62px); width: 100%; }
 .destination-guide .destination-river-divider svg { display: block; height: 100%; overflow: visible; width: 100%; }
 .destination-guide .destination-river-divider path { fill: none; stroke: #78929a; stroke-dasharray: 1100; stroke-dashoffset: 1100; stroke-linecap: round; stroke-width: 1.25; vector-effect: non-scaling-stroke; }
-.destination-guide .destination-river-divider.is-visible path { stroke-dashoffset: 0; transition: stroke-dashoffset 500ms ease-out 80ms; }
+.destination-guide .destination-river-divider.is-visible path { stroke-dashoffset: 0; transition: stroke-dashoffset 700ms ease-out 80ms; }
 
 @media (hover: hover) and (pointer: fine) {
   .destination-guide .destination-about figure,
