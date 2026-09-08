@@ -2789,11 +2789,11 @@ def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
         re.IGNORECASE,
     )
     redundant_all_days_prefix = re.compile(
-        r"^(?:lunes\s+a\s+(?:lunes|domingo)|todos\s+los\s+d[ií]as|7\s+d[ií]as)\b\s*(?:de\s+)?",
+        r"^(?:lunes\s+a\s+(?:lunes|domingos?)|todos\s+los\s+d[ií]as|7\s+d[ií]as)\b\s*(?:de\s+)?",
         re.IGNORECASE,
     )
     combined_schedule_pattern = re.compile(
-        r"^((?:lunes\s+a\s+(?:lunes|domingo)|todos\s+los\s+d[ií]as|7\s+d[ií]as))"
+        r"^((?:lunes\s+a\s+(?:lunes|domingos?)|todos\s+los\s+d[ií]as|7\s+d[ií]as))"
         r"\s+(?:de\s+)?(.+)$",
         re.IGNORECASE,
     )
@@ -2819,7 +2819,7 @@ def build_commerce_card_schedule(empresa: models.Empresa) -> str | None:
     if (
         any(
             all_days_label in normalized_days
-            for all_days_label in ("lunes a domingo", "lunes a lunes", "todos los dias", "7 dias")
+            for all_days_label in ("lunes a domingo", "lunes a domingos", "lunes a lunes", "todos los dias", "7 dias")
         )
         or found_set == set(COMMERCE_CARD_DAY_ABBREVIATIONS)
     ):
