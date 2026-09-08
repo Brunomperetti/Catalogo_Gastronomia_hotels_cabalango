@@ -112,6 +112,29 @@ def test_portal_home_smoke():
     assert "Si buscás más movimiento" not in response.text
 
 
+def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
+    client = TestClient(app)
+    home = client.get("/").text
+
+    assert '/static/js/portal-home-motion.js' in home
+    assert home.count("destination-quick-links") >= 1
+    assert home.count("data-home-reveal") >= 7
+    assert "destination-river-divider home-reveal" in home
+    for href in ("/alojamientos", "/gastronomia", "/actividades", "/servicios?grupo=compras", "/como-llegar", "#lugares"):
+        assert f'href="{href}"' in home
+
+    for route in ("/gastronomia", "/alojamientos", "/servicios", "/actividades", "/agenda", "/como-llegar"):
+        assert '/static/js/portal-home-motion.js' not in client.get(route).text
+
+    css = __import__("pathlib").Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    script = __import__("pathlib").Path("app/static/js/portal-home-motion.js").read_text(encoding="utf-8")
+    assert "@media (prefers-reduced-motion: reduce)" in css
+    assert ".destination-guide.home-motion-ready [data-home-reveal]" in css
+    assert "stroke-dasharray" in css and "stroke-dashoffset" in css
+    assert "IntersectionObserver" in script
+    assert "prefers-reduced-motion: reduce" in script
+
+
 def test_travel_guide_is_public_compact_and_uses_external_sources():
     response = TestClient(app).get("/como-llegar")
     html = response.text
