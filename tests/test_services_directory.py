@@ -142,6 +142,7 @@ def test_commerce_card_schedule_normalizes_safe_day_and_hour_patterns_without_mu
         ("Días: Todos los días | Horarios: Todos los días 9:00 a 23:00", "Todos los días · 09:00–23:00"),
         ("Días: Lunes a domingo | Horarios: Lunes a domingo 9 a 23", "Todos los días · 09:00–23:00"),
         ("Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: Lunes a domingo de 9 a 20 horas", "Todos los días · 09:00–20:00"),
+        ("Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | Horarios: Lunes a domingos de 9 a 20 horas", "Todos los días · 09:00–20:00"),
         ("lunes a lunes 9 a 20", "Todos los días · 09:00–20:00"),
         ("Días: Lunes, Martes, Miércoles, Jueves, Viernes | Horarios: 08:00 a 20:00", "Lun a vie · 08:00–20:00"),
         ("Días: Sábado, Domingo | Horarios: 09 a 22hs", "Sáb y dom · 09:00–22:00"),
