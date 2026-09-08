@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260903-home-event-flyer-mobile-contain-1" in response.text
+    assert "?v=20260908-home-ambient-identity-1" in response.text
     for dialog_id in [
         "destination-dialog-historia",
         "destination-dialog-ubicacion",
@@ -152,6 +152,38 @@ def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     assert '.destination-planning [data-home-reveal][data-home-stagger="4"] { transition-delay: 240ms; }' in css
     assert "IntersectionObserver" in script
     assert "prefers-reduced-motion: reduce" in script
+
+
+def test_home_about_has_one_ambient_identity_with_accessible_one_shot_motion():
+    home = TestClient(app).get("/").text
+    template = __import__("pathlib").Path("app/templates/descubri_cabalango.html").read_text(encoding="utf-8")
+    css = __import__("pathlib").Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    about = template[template.index('class="destination-section destination-about"'):template.index('class="destination-river-divider')]
+
+    assert template.count('class="destination-about-identity home-reveal"') == 1
+    assert about.count('class="destination-about-identity home-reveal"') == 1
+    assert 'aria-hidden="true"' in about.split("</div>", 1)[0]
+    assert 'focusable="false"' in about.split("</div>", 1)[0]
+    for path_class in ("river", "branch", "leaf", "earth"):
+        assert f'class="destination-identity-{path_class}"' in about
+    assert about.count('class="destination-identity-river"') == 1
+    assert about.count('class="destination-identity-branch"') == 1
+    assert 3 <= about.count('class="destination-identity-leaf"') <= 5
+    assert about.count('class="destination-identity-earth"') == 1
+    assert ".destination-about-identity" in css and "pointer-events: none" in css
+    assert "stroke-dasharray: var(--identity-length)" in css
+    assert "stroke-dashoffset: var(--identity-length)" in css
+    assert ".destination-about-identity.is-visible" in css
+    wrapper_neutralization = ".destination-guide.home-motion-ready .destination-about-identity.home-reveal {"
+    assert wrapper_neutralization in css
+    neutralization_rule = css[css.index(wrapper_neutralization):css.index("}", css.index(wrapper_neutralization))]
+    assert "opacity: 1" in neutralization_rule
+    assert "transform: none" in neutralization_rule
+    assert "transition: none" in neutralization_rule
+    reduced_motion = css[css.rindex("@media (prefers-reduced-motion: reduce)"):]
+    assert ".destination-about-identity path { stroke-dashoffset: 0; }" in reduced_motion
+    assert home.count("destination-about-identity") == 1
+    assert home.count('class="destination-river-divider home-reveal"') == 1
 
 
 def test_travel_guide_is_public_compact_and_uses_external_sources():
