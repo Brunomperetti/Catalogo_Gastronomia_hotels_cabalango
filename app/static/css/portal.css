@@ -5265,6 +5265,7 @@ body,
 .destination-about-intro > div > p:last-child { font-size: clamp(1rem, 1.25vw, 1.1rem); line-height: 1.62; margin: 0; max-width: 48ch; }
 .destination-about-intro figure { aspect-ratio: 16 / 10; border-radius: 24px; height: clamp(360px, 32vw, 420px); margin: 0; max-width: 100%; min-width: 0; overflow: hidden; width: 100%; }
 .destination-about-intro img { display: block; height: 100%; max-width: 100%; min-width: 0; object-fit: cover; width: 100%; }
+.destination-about-visual { min-width: 0; overflow: visible; position: relative; }
 .destination-guide .destination-story-grid { align-items: start; border-top: 0; box-sizing: border-box; display: grid; gap: clamp(36px, 4vw, 48px); grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: clamp(36px, 3.5vw, 46px); padding: 0 clamp(48px, 4vw, 56px); }
 .destination-guide .destination-story-card { background: transparent; border: 0; border-radius: 0; box-shadow: none; display: block; min-height: 0; min-width: 0; padding: 0; }
 .destination-story-card h3 { color: var(--portal-heading); font-family: var(--portal-font-display); font-size: 1.65rem; margin: 0 0 10px; }
@@ -6436,46 +6437,44 @@ body,
 }
 .destination-guide.home-motion-ready [data-home-reveal].is-visible,
 .destination-guide.home-motion-ready .home-reveal.is-visible { opacity: 1; transform: translateY(0); }
-.destination-guide.home-motion-ready .destination-about-identity.home-reveal {
+.destination-guide.home-motion-ready .destination-about-signature.home-reveal {
   opacity: 1;
   transform: none;
   transition: none;
 }
-.destination-guide .destination-about { isolation: isolate; position: relative; }
-.destination-guide .destination-about > :not(.destination-about-identity) { position: relative; z-index: 1; }
-.destination-guide .destination-about-identity {
-  inset: -22px -2% -8px;
+.destination-guide .destination-about-signature {
+  inset: -24px -34px -28px -22px;
   opacity: 1;
   pointer-events: none;
   position: absolute;
   transform: none;
   transition: none;
-  z-index: 0;
+  z-index: 1;
 }
-.destination-guide .destination-about-identity svg { display: block; height: 100%; width: 100%; }
-.destination-guide .destination-about-identity path {
+.destination-guide .destination-about-signature svg { display: block; height: 100%; overflow: visible; width: 100%; }
+.destination-guide .destination-about-signature path {
   fill: none;
-  stroke-dasharray: var(--identity-length);
-  stroke-dashoffset: var(--identity-length);
+  stroke-dasharray: var(--signature-length);
+  stroke-dashoffset: var(--signature-length);
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 1.25;
+  stroke-width: 1.6;
   vector-effect: non-scaling-stroke;
 }
-.destination-guide .destination-identity-river { --identity-length: 1300; stroke: rgb(120 146 154 / 16%); }
-.destination-guide .destination-identity-branch,
-.destination-guide .destination-identity-leaf { stroke: rgb(116 128 106 / 14%); }
-.destination-guide .destination-identity-branch { --identity-length: 520; }
-.destination-guide .destination-identity-leaf { --identity-length: 160; }
-.destination-guide .destination-identity-earth { --identity-length: 360; stroke: rgb(169 135 98 / 14%); }
-.destination-guide .destination-about-identity.is-visible .destination-identity-river { stroke-dashoffset: 0; transition: stroke-dashoffset 700ms ease-out; }
-.destination-guide .destination-about-identity.is-visible .destination-identity-branch { stroke-dashoffset: 0; transition: stroke-dashoffset 750ms ease-out 250ms; }
-.destination-guide .destination-about-identity.is-visible .destination-identity-leaf { stroke-dashoffset: 0; transition: stroke-dashoffset 420ms ease-out; }
-.destination-guide .destination-about-identity.is-visible .destination-identity-leaf:nth-of-type(3) { transition-delay: 650ms; }
-.destination-guide .destination-about-identity.is-visible .destination-identity-leaf:nth-of-type(4) { transition-delay: 780ms; }
-.destination-guide .destination-about-identity.is-visible .destination-identity-leaf:nth-of-type(5) { transition-delay: 910ms; }
-.destination-guide .destination-about-identity.is-visible .destination-identity-leaf:nth-of-type(6) { transition-delay: 1040ms; }
-.destination-guide .destination-about-identity.is-visible .destination-identity-earth { stroke-dashoffset: 0; transition: stroke-dashoffset 550ms ease-out 1100ms; }
+.destination-guide .destination-signature-river { --signature-length: 330; stroke: rgb(110 143 153 / 32%); }
+.destination-guide .destination-signature-branch,
+.destination-guide .destination-signature-leaf { stroke: rgb(103 122 91 / 30%); }
+.destination-guide .destination-signature-branch { --signature-length: 220; }
+.destination-guide .destination-signature-leaf { --signature-length: 70; }
+.destination-guide .destination-signature-earth { --signature-length: 90; stroke: rgb(158 119 79 / 26%); }
+.destination-guide .destination-about-signature.is-visible .destination-signature-river { stroke-dashoffset: 0; transition: stroke-dashoffset 630ms ease-out; }
+.destination-guide .destination-about-signature.is-visible .destination-signature-branch { stroke-dashoffset: 0; transition: stroke-dashoffset 700ms ease-out 180ms; }
+.destination-guide .destination-about-signature.is-visible .destination-signature-leaf { stroke-dashoffset: 0; transition: stroke-dashoffset 380ms ease-out; }
+.destination-guide .destination-about-signature.is-visible .destination-signature-leaf:nth-of-type(3) { transition-delay: 500ms; }
+.destination-guide .destination-about-signature.is-visible .destination-signature-leaf:nth-of-type(4) { transition-delay: 610ms; }
+.destination-guide .destination-about-signature.is-visible .destination-signature-leaf:nth-of-type(5) { transition-delay: 720ms; }
+.destination-guide .destination-about-signature.is-visible .destination-signature-leaf:nth-of-type(6) { transition-delay: 830ms; }
+.destination-guide .destination-about-signature.is-visible .destination-signature-earth { stroke-dashoffset: 0; transition: stroke-dashoffset 470ms ease-out 850ms; }
 .destination-guide.home-motion-ready [data-home-reveal][data-home-stagger="1"] { transition-delay: 80ms; }
 .destination-guide.home-motion-ready [data-home-reveal][data-home-stagger="2"] { transition-delay: 160ms; }
 .destination-guide.home-motion-ready [data-home-reveal][data-home-stagger="3"] { transition-delay: 240ms; }
@@ -6501,9 +6500,11 @@ body,
 .destination-guide .destination-river-divider.is-visible path { stroke-dashoffset: 0; transition: stroke-dashoffset 700ms ease-out 80ms; }
 
 @media (max-width: 700px) {
-  .destination-guide .destination-about-identity { inset: 300px -24% 72px -28%; }
-  .destination-guide .destination-about-identity path { stroke-width: 1; }
-  .destination-guide .destination-identity-earth { display: none; }
+  .destination-guide .destination-about-visual { overflow: clip; overflow-clip-margin: 18px; }
+  .destination-guide .destination-about-signature { inset: -12px -18px -18px -12px; }
+  .destination-guide .destination-about-signature path { stroke-width: 1.3; }
+  .destination-guide .destination-signature-earth,
+  .destination-guide .destination-signature-leaf:nth-of-type(6) { display: none; }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -6537,7 +6538,7 @@ body,
   .destination-guide a,
   .destination-guide button { animation: none !important; opacity: 1 !important; transform: none !important; transition: none !important; }
   .destination-guide .destination-river-divider path,
-  .destination-guide .destination-about-identity path { stroke-dashoffset: 0; }
+  .destination-guide .destination-about-signature path { stroke-dashoffset: 0; }
 }
 
 /* Compact public travel guide. All rules are scoped to avoid changing the Home. */

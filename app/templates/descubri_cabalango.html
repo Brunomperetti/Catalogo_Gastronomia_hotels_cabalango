@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260908-home-ambient-identity-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260908-home-photo-signature-1">
     <script src="{{ url_for('static', path='js/portal-dialogs.js') }}" defer></script>
     <script src="{{ url_for('static', path='js/portal-home-motion.js') }}" defer></script>
     {% if hero_photos|length > 1 %}<script src="{{ url_for('static', path='js/portal-hero-rotator.js') }}?v=20260825-hero-caption-sync-3" defer></script>{% endif %}
@@ -104,20 +104,22 @@
     {% endif %}
 
     <section class="destination-section destination-about" id="sobre-cabalango">
-        <div class="destination-about-identity home-reveal" aria-hidden="true">
-            <svg viewBox="0 0 1200 650" preserveAspectRatio="none" focusable="false">
-                <path class="destination-identity-river" d="M-20 474c128-58 214-7 341-31 139-27 205-101 356-78 142 22 251 106 543 36"/>
-                <path class="destination-identity-branch" d="M106 516c25-54 31-109 25-164-5-50 5-97 40-139 20-25 29-53 27-86"/>
-                <path class="destination-identity-leaf" d="M136 373c-34-9-55-30-61-62 34 7 56 27 61 62Z"/>
-                <path class="destination-identity-leaf" d="M142 326c32-11 54-32 62-63-33 7-55 28-62 63Z"/>
-                <path class="destination-identity-leaf" d="M164 230c-26-7-43-23-50-48 28 4 45 20 50 48Z"/>
-                <path class="destination-identity-leaf" d="M190 161c24-9 40-26 46-49-25 5-41 21-46 49Z"/>
-                <path class="destination-identity-earth" d="M917 173c50-10 71-46 111-47 43-1 62 40 99 46 24 4 46-4 72-19"/>
-            </svg>
-        </div>
         <div class="destination-about-intro">
             <div data-home-reveal><p class="portal-kicker">Sobre Cabalango</p><h2>Una pausa serrana con identidad propia</h2><p>{{ (content.naturaleza or 'Río, balnearios, senderos y monte nativo invitan a bajar el ritmo y disfrutar el paisaje.')|truncate(280, False, '…') }}</p></div>
-            <figure data-home-reveal data-home-stagger="1">{% if about_photo and about_photo.image_path %}<img src="{{ about_photo.image_path }}" alt="Río y paisaje serrano de Cabalango" loading="lazy">{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Paisaje serrano de Cabalango"></div>{% endif %}</figure>
+            <div class="destination-about-visual">
+                <figure data-home-reveal data-home-stagger="1">{% if about_photo and about_photo.image_path %}<img src="{{ about_photo.image_path }}" alt="Río y paisaje serrano de Cabalango" loading="lazy">{% else %}<div class="destination-hero-placeholder" role="img" aria-label="Paisaje serrano de Cabalango"></div>{% endif %}</figure>
+                <div class="destination-about-signature home-reveal" aria-hidden="true">
+                    <svg viewBox="0 0 320 270" preserveAspectRatio="xMidYMid meet" focusable="false">
+                        <path class="destination-signature-river" d="M18 235c30-9 54 8 85 1 35-8 55-19 87-12 28 6 50 20 79 12 14-4 25-3 37 2"/>
+                        <path class="destination-signature-branch" d="M279 241c8-29 5-53 9-77 4-27 18-39 17-64-1-17 3-31 11-45"/>
+                        <path class="destination-signature-leaf" d="M289 186c-12-2-20-8-24-18 12 0 21 6 24 18Z"/>
+                        <path class="destination-signature-leaf" d="M296 151c11-3 18-10 22-20-12 1-19 8-22 20Z"/>
+                        <path class="destination-signature-leaf" d="M303 114c-9-2-15-7-18-15 10 0 16 5 18 15Z"/>
+                        <path class="destination-signature-leaf" d="M311 78c8-3 13-9 15-17-9 2-14 8-15 17Z"/>
+                        <path class="destination-signature-earth" d="M267 31c10-1 15-9 23-8 8 1 11 8 18 9 5 1 9-1 13-4"/>
+                    </svg>
+                </div>
+            </div>
         </div>
         {% set destination_stories = [
             ('naturaleza', 'Naturaleza', content.naturaleza, 'icon-water'),
