@@ -386,6 +386,24 @@ def test_provider_management_forms_are_closed_native_disclosures(admin_app):
     assert response.text.count('action="/empresa/editar_panel"') == 1
 
 
+@pytest.mark.parametrize(("area", "expected_activities_links"), [
+    ("prestador", 1),
+    ("portal", 2),
+])
+def test_admin_has_global_activities_shortcut_in_every_area(admin_app, area, expected_activities_links):
+    client, db, _ = admin_app
+    add_company(db)
+
+    response = client.get(f"/admin?area={area}")
+
+    assert response.status_code == 200
+    assert '<a class="admin-tab admin-tab--global" href="/admin/solicitudes">Solicitudes recibidas' in response.text
+    assert '<a class="admin-tab admin-tab--global" href="/admin/actividades">Actividades / agenda</a>' in response.text
+    assert response.text.count('href="/admin/actividades"') == expected_activities_links
+    if area == "portal":
+        assert '<a class="admin-tab admin-tab--global" href="/admin/actividades">Qué hacer</a>' in response.text
+
+
 @pytest.mark.parametrize(("tab", "panel_id", "expected_text"), [
     ("leads", "leads", "Tablero comercial"),
     ("usuarios", "usuarios", "Usuarios y accesos"),
