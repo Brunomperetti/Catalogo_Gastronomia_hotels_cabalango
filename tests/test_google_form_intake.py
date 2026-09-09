@@ -353,6 +353,7 @@ def test_rejected_and_empty_name_do_not_convert(intake_app, payload):
     ("Transporte / remis", "servicios", "transporte", "Remis"),
     ("Estacionamiento", "servicios", "estacionamiento", "Estacionamiento"),
     ("Salud y bienestar", "servicios", "salud", "Farmacia"),
+    ("Servicios de salud / atención profesional", "servicios", "salud", "Farmacia"),
     ("Otro servicio", "servicios", "otros", None),
 ])
 def test_empresa_rubric_mapping_is_draft(intake_app, payload, business_type, theme, group, subtype):
@@ -360,7 +361,7 @@ def test_empresa_rubric_mapping_is_draft(intake_app, payload, business_type, the
     body = authorized_payload(payload, external_id=f"type-{intake_key_for_test(business_type)}", business_type=business_type)
     if business_type.startswith("Almacén"):
         body["specific_data"]["Tipo de comercio"] = "Kiosco"
-    if business_type == "Salud y bienestar":
+    if business_type in {"Salud y bienestar", "Servicios de salud / atención profesional"}:
         body["specific_data"]["Tipo de servicio"] = "Farmacia"
     item_id = post_intake(client, body).json()["id"]
     login_admin(client)
@@ -372,6 +373,12 @@ def test_empresa_rubric_mapping_is_draft(intake_app, payload, business_type, the
     request = db.get(SolicitudPrestador, item_id)
     assert request.status == "procesada" and request.converted_entity_type == "empresa"
     assert request.converted_entity_id == company.id and request.processed_at is not None
+
+
+def test_health_intake_labels_have_identical_conversion_mapping():
+    assert main.INTAKE_CONVERSION_MAP["Salud y bienestar"] == main.INTAKE_CONVERSION_MAP[
+        "Servicios de salud / atención profesional"
+    ] == {"entity": "empresa", "theme": "servicios", "subgrupo": "salud"}
 
 
 def intake_key_for_test(value):
