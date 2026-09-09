@@ -1654,7 +1654,8 @@ def _parse_activity_schedule(value):
         day_summary = ACTIVITY_WEEKDAYS[first_day]
 
     hours_match = re.fullmatch(
-        r"\s*(\d{1,2})(?::(\d{2}))?\s*(?:a|[-–—])\s*(\d{1,2})(?::(\d{2}))?\s*(?:h|hs)?\.?\s*",
+        r"\s*(?:de\s+)?(\d{1,2})(?::(\d{2}))?\s*(?:hs?\.?)?\s*"
+        r"(?:a|[-–—])\s*(\d{1,2})(?::(\d{2}))?\s*(?:hs?\.?)?\s*",
         hours_text,
         re.IGNORECASE,
     )
