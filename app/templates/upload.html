@@ -232,13 +232,15 @@
             </section>
 
             <section class="admin-card admin-card--wide">
-                <div class="card-header-custom"><h2 class="card-title-custom">Texto editorial del destino</h2><p class="card-subtitle-custom">Editá la bajada turística, historia, ubicación, naturaleza, vida local y recomendaciones generales de Cabalango.</p></div>
+                <div class="card-header-custom"><h2 class="card-title-custom">Texto editorial del destino</h2><p class="card-subtitle-custom">Editá la bajada turística, historia, ubicación, naturaleza, seguridad, salud, vida local y recomendaciones generales de Cabalango.</p></div>
                 <form action="/admin/cabalango/contenido" method="post" class="stack-form">
                     <div class="form-grid">
                         <div class="full-width"><label class="field-label">Introducción / bajada general</label><textarea class="input-custom" name="introduccion" rows="3">{{ destino_content.introduccion or '' }}</textarea></div>
                         <div><label class="field-label">Historia de Cabalango</label><textarea class="input-custom" name="historia" rows="5">{{ destino_content.historia or '' }}</textarea></div>
                         <div><label class="field-label">Ubicación / cómo llegar</label><textarea class="input-custom" name="ubicacion" rows="5">{{ destino_content.ubicacion or '' }}</textarea></div>
                         <div><label class="field-label">Naturaleza / río</label><textarea class="input-custom" name="naturaleza" rows="5">{{ destino_content.naturaleza or '' }}</textarea></div>
+                        <div><label class="field-label">Seguridad y tranquilidad</label><textarea class="input-custom" name="seguridad" rows="5">{{ destino_content.seguridad or '' }}</textarea><small>Información útil para visitantes sobre prevención, Guardia Local, Protección Civil, presencia policial y recursos de seguridad.</small></div>
+                        <div><label class="field-label">Salud y emergencias</label><textarea class="input-custom" name="salud_emergencias" rows="5">{{ destino_content.salud_emergencias or '' }}</textarea><small>Información sobre CAPS/dispensario, atención médica, especialidades, contactos y asistencia ante emergencias.</small></div>
                         <div><label class="field-label">Vida local</label><textarea class="input-custom" name="vida_local" rows="5">{{ destino_content.vida_local or '' }}</textarea></div>
                         <div class="full-width"><label class="field-label">Recomendaciones</label><textarea class="input-custom" name="recomendaciones" rows="4">{{ destino_content.recomendaciones or '' }}</textarea></div>
                         <div class="full-width"><label class="field-label">Video destacado del destino</label><input class="input-custom" name="video_url" value="{{ destino_content.video_url or '' }}" placeholder="YouTube, Instagram, Drive o Vimeo"></div>

@@ -3,13 +3,13 @@ import subprocess
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app import main
 from app.database import Base
-from app.models import DestinoMedia, Empresa, Usuario
+from app.models import DestinoContenido, DestinoMedia, Empresa, Usuario
 
 
 @pytest.fixture()
@@ -87,6 +87,57 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
     assert "Ocultar" in html
     assert "Ubicación opcional" in html
     assert "Sin ubicación fija" in html
+
+
+def test_destination_editor_supports_safety_health_and_preserves_existing_fields(destino_admin):
+    client, db, _ = destino_admin
+    html = client.get("/admin?area=portal&tab=cabalango").text
+    for field in ("seguridad", "salud_emergencias", "historia", "ubicacion", "naturaleza", "vida_local", "recomendaciones"):
+        assert f'name="{field}"' in html
+
+    response = client.post("/admin/cabalango/contenido", data={
+        "seguridad": "Guardia local disponible.",
+        "salud_emergencias": "Atención en el CAPS.",
+        "historia": "Memoria histórica intacta.",
+        "ubicacion": "Ubicación intacta.",
+        "naturaleza": "Naturaleza.",
+        "vida_local": "Vida comunitaria.",
+        "recomendaciones": "Recomendaciones.",
+        "visible": "1",
+    }, follow_redirects=False)
+    assert response.status_code == 303
+    content = db.query(DestinoContenido).one()
+    assert content.seguridad == "Guardia local disponible."
+    assert content.salud_emergencias == "Atención en el CAPS."
+    assert content.historia == "Memoria histórica intacta."
+    assert content.ubicacion == "Ubicación intacta."
+
+    html = client.get("/").text
+    for value in ("Guardia local disponible.", "Atención en el CAPS.", "Vida comunitaria.", "Memoria histórica intacta."):
+        assert value in html
+    assert content.vida_local == "Vida comunitaria."
+    assert content.historia == "Memoria histórica intacta."
+    cards = html.split('class="destination-story-grid"', 1)[1].split("</section>", 1)[0]
+    for title in ("Seguridad y tranquilidad", "Salud y emergencias", "Vida local e historia"):
+        assert f"<h3" in cards and title in cards
+    assert not any(f">{old}</h3>" in cards for old in ("Historia", "Ubicación", "Vida local"))
+    assert cards.count("data-home-reveal") == 3
+
+
+def test_destination_bootstrap_adds_editorial_columns_without_data_loss(monkeypatch):
+    legacy_engine = create_engine("sqlite://", poolclass=StaticPool)
+    with legacy_engine.begin() as connection:
+        connection.execute(text("CREATE TABLE destino_contenido (id INTEGER PRIMARY KEY, historia TEXT, ubicacion TEXT)"))
+        connection.execute(text("INSERT INTO destino_contenido (historia, ubicacion) VALUES ('Historia legada', 'Ubicación legada')"))
+    monkeypatch.setattr(main, "engine", legacy_engine)
+
+    main.ensure_destino_contenido_table()
+    main.ensure_destino_contenido_table()
+
+    assert {"seguridad", "salud_emergencias"}.issubset({column["name"] for column in inspect(legacy_engine).get_columns("destino_contenido")})
+    with legacy_engine.connect() as connection:
+        row = connection.execute(text("SELECT historia, ubicacion FROM destino_contenido")).one()
+    assert row == ("Historia legada", "Ubicación legada")
 
 
 def test_home_journeys_use_explicit_visible_assignments_and_keep_ctas(destino_admin, monkeypatch):
