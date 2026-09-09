@@ -98,6 +98,89 @@ def test_services_taxonomy_filters_and_compatibility():
         engine.dispose()
 
 
+def test_services_overview_groups_previews_without_changing_filtered_results():
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    TestingSession = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = TestingSession()
+    purchases = [
+        Empresa(
+            nombre=f"Compra editorial {index}", slug=f"compra-{index}",
+            theme="servicios", subgrupo="compras", subtipo="Almacén",
+            activo=True, horarios="Lunes a domingo", direccion="Centro",
+            maps_url=f"https://maps.example/compra-{index}", whatsapp="543541111111",
+        )
+        for index in range(5)
+    ]
+    records = purchases + [
+        Empresa(nombre="Remis portada", slug="remis-portada", theme="servicios", subgrupo="transporte", subtipo="Remis", activo=True),
+        Empresa(nombre="Parking portada", slug="parking-portada", theme="servicios", subgrupo="estacionamiento", subtipo="Estacionamiento", activo=True),
+        Empresa(nombre="Salud portada", slug="salud-portada", theme="servicios", subgrupo="salud", subtipo="Farmacia", activo=True),
+        Empresa(nombre="Lavadero portada", slug="lavadero-portada", theme="servicios", subgrupo="otros", subtipo="Lavadero", activo=True),
+    ]
+    db.add_all(records)
+    db.commit()
+
+    def override_db():
+        yield db
+
+    app.dependency_overrides[get_db] = override_db
+    client = TestClient(app)
+    try:
+        overview = client.get("/servicios")
+        assert overview.status_code == 200
+        html = overview.text
+        assert '<a class="is-active" href="/servicios">Todo</a>' in html
+        headings = [
+            'id="services-group-compras">Compras',
+            'id="services-group-transporte">Transporte',
+            'id="services-group-estacionamiento">Estacionamiento',
+            'id="services-group-salud">Salud y bienestar',
+            'id="services-group-otros">Otros servicios',
+        ]
+        assert all(heading in html for heading in headings)
+        assert [html.index(heading) for heading in headings] == sorted(html.index(heading) for heading in headings)
+        expected_ctas = {
+            "compras": "Ver todas las compras",
+            "transporte": "Ver transporte",
+            "estacionamiento": "Ver estacionamientos",
+            "salud": "Ver salud y bienestar",
+            "otros": "Ver otros servicios",
+        }
+        for key, copy in expected_ctas.items():
+            assert f'href="/servicios?grupo={key}">{copy}' in html
+
+        compras_block = html.split('id="services-group-compras"', 1)[1].split('id="services-group-transporte"', 1)[0]
+        estacionamiento_block = html.split('id="services-group-estacionamiento"', 1)[1].split('id="services-group-salud"', 1)[0]
+        assert compras_block.count('class="prestador-card prestador-card-premium"') == 3
+        assert "Parking portada" not in compras_block
+        assert "Compra editorial" not in estacionamiento_block
+        assert "Ver ficha" in compras_block
+        assert "Cómo llegar" in compras_block
+        assert "WhatsApp" in compras_block
+        assert "Todos los días" in compras_block
+
+        filtered = client.get("/servicios?grupo=compras")
+        assert filtered.status_code == 200
+        assert filtered.text.count('class="prestador-card prestador-card-premium"') == 5
+        assert "¿Qué estás buscando?" in filtered.text
+        assert "Almacenes y kioscos" in filtered.text
+        assert "Productos locales y artesanías" in filtered.text
+        assert '<a class="is-active" href="/servicios">Todo</a>' not in filtered.text
+        assert '<a class="is-active" href="/servicios?grupo=compras">Compras</a>' in filtered.text
+
+        db.query(Empresa).filter(Empresa.subgrupo == "otros").delete()
+        db.commit()
+        without_others = client.get("/servicios").text
+        assert 'id="services-group-otros"' not in without_others
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        db.close()
+        engine.dispose()
+
+
 def test_all_public_css_consumers_use_commerce_cache_key():
     templates = [
         "descubri_cabalango.html", "actividades.html", "portal_home.html",

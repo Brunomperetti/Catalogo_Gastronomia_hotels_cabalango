@@ -152,7 +152,30 @@
         </header>
         {% endif %}
 
-        {% if empresas %}
+        {% if section == 'servicios' and not active_service_group and service_group_previews %}
+        <div class="services-overview">
+            {% for group in service_group_previews %}
+            <section class="services-overview-group" aria-labelledby="services-group-{{ group.key }}">
+                <header class="services-overview-heading">
+                    <div>
+                        <h2 id="services-group-{{ group.key }}">{{ group.label }}</h2>
+                        <p>{{ group.description }}</p>
+                    </div>
+                    <a href="/servicios?grupo={{ group.key }}">{{ group.cta }} <span aria-hidden="true">→</span></a>
+                </header>
+                <div class="prestadores-grid prestadores-grid-premium" aria-label="{{ group.label }}">
+                    {% for empresa in group['items'] %}
+                    {% set card_image = get_public_card_main_image(empresa) %}
+                    {% set logo_url = get_empresa_logo_url(empresa) %}
+                    {% set card_chips = build_public_card_chips(empresa, section) %}
+                    {% set clean_whatsapp = (empresa.whatsapp or '')|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') %}
+                    {% include "partials/service_card.html" %}
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+        {% elif empresas %}
         <section class="{% if section == 'alojamientos' %}accommodation-grid{% else %}prestadores-grid prestadores-grid-premium{% endif %}" aria-label="Listado de prestadores y lugares">
             {% for empresa in empresas %}
             {% set card_image = get_public_card_main_image(empresa) %}
@@ -163,32 +186,7 @@
             {% set key_facts = build_alojamiento_key_facts(empresa) %}
             {% include "partials/alojamiento_card.html" %}
             {% else %}
-            {% set is_commerce_card = section == 'servicios' and service_group_key(empresa) == 'compras' %}
-            {% set commerce_product_facts = build_commerce_card_product_facts(empresa) if is_commerce_card else [] %}
-            {% set commerce_delivery_status = build_commerce_delivery_status(empresa) if is_commerce_card else none %}
-            <article class="prestador-card prestador-card-premium">
-                <a class="prestador-media {% if not card_image %}prestador-media--placeholder{% endif %}" href="/prestador/{{ empresa.slug }}" aria-label="Ver ficha de {{ empresa.nombre }}">
-                    {% if card_image %}<img class="prestador-banner" src="{{ card_image }}" alt="Foto principal de {{ empresa.nombre }}" loading="lazy">{% else %}<div class="prestador-banner prestador-banner-abstract" aria-hidden="true"><span>{{ empresa.subtipo or theme_display_label(empresa.theme) }}</span></div>{% endif %}
-                    {% if section == 'alojamientos' and (empresa.subtipo or theme_display_label(empresa.theme)) %}<span class="prestador-type-badge">{{ empresa.subtipo or theme_display_label(empresa.theme) }}</span>{% endif %}
-                    {% if logo_url %}<img class="prestador-logo prestador-logo-chip" src="{{ logo_url }}" alt="" loading="lazy" aria-hidden="true" onerror="this.remove()">{% endif %}
-                    {% if empresa.precio_desde and section == 'alojamientos' %}<span class="prestador-price-badge">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</span>{% endif %}
-                </a>
-                <div class="prestador-content">
-                    <p class="prestador-theme">{% if section == 'servicios' %}{{ service_card_kicker(empresa) }}{% else %}{{ empresa.subtipo or theme_display_label(empresa.theme) }}{% if empresa.subgrupo %} · {{ actividad_subgrupos.get(empresa.subgrupo, {}).get('label', empresa.subgrupo) }}{% endif %}{% endif %}</p>
-                    <h2>{{ empresa.nombre }}</h2>
-                    <p class="prestador-summary">{{ empresa.descripcion_corta or empresa.descripcion or 'Propuesta turística de Cabalango con contacto directo y ficha pública preparada para consultas.' }}</p>
-                    {% if section == 'alojamientos' %}
-                        {% set key_facts = build_alojamiento_key_facts(empresa) %}
-                        {% if empresa.direccion %}<div class="prestador-location">📍 {{ empresa.direccion }}</div>{% endif %}
-                        {% if key_facts %}<div class="alojamiento-key-facts">{% for fact in key_facts %}<span>{{ fact }}</span>{% endfor %}</div>{% endif %}
-                    {% endif %}
-                    {% if card_chips %}<div class="prestador-chip-row">{% for chip in card_chips %}<span>{{ chip }}</span>{% endfor %}</div>{% endif %}
-                    {% if commerce_delivery_status %}<div class="prestador-chip-row"><span>{{ commerce_delivery_status.card_label }}</span></div>{% endif %}
-                    {% if commerce_product_facts %}<div class="prestador-chip-row">{% for fact in commerce_product_facts %}<span>{{ fact }}</span>{% endfor %}</div>{% endif %}
-                    <div class="prestador-card-meta">{% if section != 'alojamientos' and empresa.direccion %}<span>📍 {{ empresa.direccion }}</span>{% elif empresa.whatsapp %}<span>💬 WhatsApp {{ empresa.whatsapp }}</span>{% else %}<span>Consultá disponibilidad</span>{% endif %}</div>
-                    <div class="prestador-card-actions"><a class="portal-button" href="/prestador/{{ empresa.slug }}">Ver ficha</a>{% if section == 'servicios' and empresa.maps_url %}<a class="portal-button portal-button-secondary" href="{{ empresa.maps_url }}" target="_blank" rel="noopener">Cómo llegar</a>{% endif %}{% if clean_whatsapp %}<a class="portal-button portal-button-secondary" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">WhatsApp</a>{% endif %}</div>
-                </div>
-            </article>
+            {% include "partials/service_card.html" %}
             {% endif %}
             {% endfor %}
         </section>

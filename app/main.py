@@ -2625,6 +2625,29 @@ SERVICIOS_GRUPOS = {
     "otros": "Otros servicios",
 }
 
+SERVICIOS_PORTADA = {
+    "compras": {
+        "description": "Todo lo práctico y local para tu estadía.",
+        "cta": "Ver todas las compras",
+    },
+    "transporte": {
+        "description": "Opciones para moverte por Cabalango y la zona.",
+        "cta": "Ver transporte",
+    },
+    "estacionamiento": {
+        "description": "Dónde dejar el vehículo durante tu visita.",
+        "cta": "Ver estacionamientos",
+    },
+    "salud": {
+        "description": "Atención y servicios útiles durante tu estadía.",
+        "cta": "Ver salud y bienestar",
+    },
+    "otros": {
+        "description": "Más soluciones y propuestas locales.",
+        "cta": "Ver otros servicios",
+    },
+}
+
 SERVICIOS_SUBTIPOS = {
     "proveeduria": ("compras", "Proveeduría"),
     "almacen": ("compras", "Almacén"),
@@ -3226,11 +3249,24 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
         empresas = [empresa for empresa in empresas if (empresa.subgrupo or "").lower() == subgrupo]
     active_service_group = ""
     active_purchase_type = ""
+    service_group_previews = []
     if section == "servicios":
         requested_group = normalize_taxonomy_key(request.query_params.get("grupo"))
         active_service_group = requested_group if requested_group in SERVICIOS_GRUPOS else ""
         if active_service_group:
             empresas = [empresa for empresa in empresas if service_group_key(empresa) == active_service_group]
+        else:
+            for key, label in SERVICIOS_GRUPOS.items():
+                group_items = [empresa for empresa in empresas if service_group_key(empresa) == key]
+                if group_items:
+                    service_group_previews.append({
+                        "key": key,
+                        "label": label,
+                        "description": SERVICIOS_PORTADA[key]["description"],
+                        "cta": SERVICIOS_PORTADA[key]["cta"],
+                        "items": group_items[:3],
+                        "total": len(group_items),
+                    })
         if active_service_group == "compras":
             requested_type = normalize_taxonomy_key(request.query_params.get("tipo"))
             active_purchase_type = requested_type if requested_type in {"almacenes", "locales"} else ""
@@ -3253,6 +3289,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "service_groups": SERVICIOS_GRUPOS if section == "servicios" else {},
             "active_service_group": active_service_group,
             "active_purchase_type": active_purchase_type,
+            "service_group_previews": service_group_previews,
             "service_card_kicker": service_card_kicker,
             "service_group_key": service_group_key,
             "get_public_card_main_image": get_public_card_main_image,
