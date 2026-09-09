@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260903-accommodation-mobile-filter-basis-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260909-purchase-types-1">
 </head>
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
@@ -32,6 +32,25 @@
             <a class="{% if not active_service_group %}is-active{% endif %}" href="/servicios">Todo</a>
             {% for key, label in service_groups.items() %}<a class="{% if active_service_group == key %}is-active{% endif %}" href="/servicios?grupo={{ key }}">{{ label }}</a>{% endfor %}
         </nav>
+        {% if active_service_group == 'compras' %}
+        <section class="purchase-types" aria-labelledby="purchase-types-title">
+            <div class="purchase-types-heading">
+                <p class="portal-kicker">Compras en Cabalango</p>
+                <h2 id="purchase-types-title">¿Qué estás buscando?</h2>
+            </div>
+            <div class="purchase-type-options">
+                <a class="purchase-type-option {% if active_purchase_type == 'almacenes' %}is-active{% endif %}" href="/servicios?grupo=compras&amp;tipo=almacenes">
+                    <strong>Almacenes y kioscos</strong>
+                    <span>Todo lo práctico para tu estadía.</span>
+                </a>
+                <a class="purchase-type-option {% if active_purchase_type == 'locales' %}is-active{% endif %}" href="/servicios?grupo=compras&amp;tipo=locales">
+                    <strong>Productos locales y artesanías</strong>
+                    <span>Sabores, cosmética, cerámica y creaciones de emprendedores locales.</span>
+                </a>
+            </div>
+            {% if active_purchase_type %}<a class="purchase-types-reset" href="/servicios?grupo=compras">Ver todas las compras</a>{% endif %}
+        </section>
+        {% endif %}
         {% endif %}
 
         {% if section == 'alojamientos' %}
@@ -123,6 +142,13 @@
                 </select>
                 <button type="submit">Aplicar</button>
             </form>
+        </header>
+        {% endif %}
+
+        {% if active_service_group == 'compras' %}
+        <header class="purchase-results-header">
+            <h2>{% if active_purchase_type == 'almacenes' %}Almacenes y kioscos{% elif active_purchase_type == 'locales' %}Productos locales y artesanías{% else %}Compras{% endif %}</h2>
+            {% if active_purchase_type == 'locales' %}<p>Descubrí sabores, objetos y productos creados por emprendedores de Cabalango.</p>{% endif %}
         </header>
         {% endif %}
 

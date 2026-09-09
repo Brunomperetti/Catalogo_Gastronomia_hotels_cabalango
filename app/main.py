@@ -2618,7 +2618,7 @@ ACTIVIDADES_SUBGRUPOS = {
 }
 
 SERVICIOS_GRUPOS = {
-    "compras": "Almacenes y kioscos",
+    "compras": "Compras",
     "transporte": "Transporte",
     "estacionamiento": "Estacionamiento",
     "salud": "Salud y bienestar",
@@ -2668,10 +2668,21 @@ def service_group_key(empresa: models.Empresa) -> str:
     return "otros"
 
 
+def is_local_products_service(empresa: models.Empresa) -> bool:
+    """Identify local producers from the existing explicit service taxonomy."""
+    return (
+        normalize_theme(empresa.theme) == "servicios"
+        and service_group_key(empresa) == "compras"
+        and normalize_taxonomy_key(empresa.subtipo) == normalize_taxonomy_key("Productos regionales")
+    )
+
+
 def service_card_kicker(empresa: models.Empresa) -> str:
     group = service_group_key(empresa)
     group_label = SERVICIOS_GRUPOS[group]
     subtype_key = normalize_taxonomy_key(empresa.subtipo)
+    if is_local_products_service(empresa):
+        return "Productos locales y artesanías"
     subtype_label = SERVICIOS_SUBTIPOS.get(subtype_key, (group, clean_text(empresa.subtipo, default="")))[1]
     if not subtype_label or normalize_taxonomy_key(subtype_label) == normalize_taxonomy_key(group_label):
         return group_label
@@ -3214,11 +3225,19 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
     if section == "actividades" and subgrupo:
         empresas = [empresa for empresa in empresas if (empresa.subgrupo or "").lower() == subgrupo]
     active_service_group = ""
+    active_purchase_type = ""
     if section == "servicios":
         requested_group = normalize_taxonomy_key(request.query_params.get("grupo"))
         active_service_group = requested_group if requested_group in SERVICIOS_GRUPOS else ""
         if active_service_group:
             empresas = [empresa for empresa in empresas if service_group_key(empresa) == active_service_group]
+        if active_service_group == "compras":
+            requested_type = normalize_taxonomy_key(request.query_params.get("tipo"))
+            active_purchase_type = requested_type if requested_type in {"almacenes", "locales"} else ""
+            if active_purchase_type == "locales":
+                empresas = [empresa for empresa in empresas if is_local_products_service(empresa)]
+            elif active_purchase_type == "almacenes":
+                empresas = [empresa for empresa in empresas if not is_local_products_service(empresa)]
     return templates.TemplateResponse(
         "portal_prestadores.html",
         {
@@ -3233,6 +3252,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "active_subgrupo": subgrupo if section == "actividades" else None,
             "service_groups": SERVICIOS_GRUPOS if section == "servicios" else {},
             "active_service_group": active_service_group,
+            "active_purchase_type": active_purchase_type,
             "service_card_kicker": service_card_kicker,
             "service_group_key": service_group_key,
             "get_public_card_main_image": get_public_card_main_image,

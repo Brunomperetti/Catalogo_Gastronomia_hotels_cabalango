@@ -635,7 +635,7 @@ def test_admin_uses_shopping_group_label_without_changing_value(admin_app):
     company = add_company(db, slug="almacen", theme="servicios", subtipo="Almacén", subgrupo="compras")
     response = client.get(f"/admin?empresa={company.slug}&tab=rubro")
     assert response.status_code == 200
-    assert '<option value="compras" selected>Almacenes y kioscos</option>' in response.text
+    assert '<option value="compras" selected>Compras</option>' in response.text
 
 
 @pytest.mark.parametrize(("subtype", "group"), [
