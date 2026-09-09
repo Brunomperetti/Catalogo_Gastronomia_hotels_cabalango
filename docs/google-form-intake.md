@@ -106,9 +106,11 @@ confirmación de datos explícitamente afirmativas. El mapping central es:
 - Gastronomía → `Empresa` de gastronomía.
 - Almacén/kiosco/proveeduría y regionales/artesanías → `Empresa` de servicios,
   grupo real `compras`; sólo se acepta un subtipo existente en la taxonomía.
-- Estacionamiento, Transporte/remis, Salud y bienestar y Otro servicio →
-  `Empresa` de servicios en los grupos reales `estacionamiento`, `transporte`,
-  `salud` y `otros`, respectivamente.
+- Estacionamiento, Transporte/remis y Otro servicio → `Empresa` de servicios en
+  los grupos reales `estacionamiento`, `transporte` y `otros`, respectivamente.
+- Servicios de salud / atención profesional (nombre actual del formulario) y
+  Salud y bienestar (alias histórico aceptado) → `Empresa` de servicios en el
+  mismo grupo real `salud`.
 - Actividad turística/recreativa y Evento → `ActividadAgenda` con tipo
   `actividad` y `evento`, respectivamente.
 

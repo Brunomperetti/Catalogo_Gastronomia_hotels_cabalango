@@ -433,7 +433,8 @@ INTAKE_BUSINESS_TYPES = {
     "Productos regionales / artesanías", "Actividad turística / recreativa",
     "Actividad / clase / experiencia",
     "Evento", "Camping", "Estacionamiento", "Transporte / remis",
-    "Salud y bienestar", "Otro servicio",
+    "Salud y bienestar", "Servicios de salud / atención profesional",
+    "Otro servicio",
 }
 
 
@@ -486,7 +487,8 @@ class GoogleFormIntake(IntakeOptionalModel):
         "Productos regionales / artesanías", "Actividad turística / recreativa",
         "Actividad / clase / experiencia",
         "Evento", "Camping", "Estacionamiento", "Transporte / remis",
-        "Salud y bienestar", "Otro servicio",
+        "Salud y bienestar", "Servicios de salud / atención profesional",
+        "Otro servicio",
     ] | None = None
     business_name: str | None = Field(None, max_length=255)
     contact: IntakeContact | None = None
@@ -3634,6 +3636,7 @@ INTAKE_CONVERSION_MAP = {
     "Estacionamiento": {"entity": "empresa", "theme": "servicios", "subgrupo": "estacionamiento", "subtipo": "Estacionamiento"},
     "Transporte / remis": {"entity": "empresa", "theme": "servicios", "subgrupo": "transporte", "subtipo": "Remis"},
     "Salud y bienestar": {"entity": "empresa", "theme": "servicios", "subgrupo": "salud"},
+    "Servicios de salud / atención profesional": {"entity": "empresa", "theme": "servicios", "subgrupo": "salud"},
     "Otro servicio": {"entity": "empresa", "theme": "servicios", "subgrupo": "otros"},
     "Actividad turística / recreativa": {"entity": "actividad_agenda", "tipo": "actividad"},
     "Actividad / clase / experiencia": {"entity": "actividad_agenda", "tipo": "actividad"},
