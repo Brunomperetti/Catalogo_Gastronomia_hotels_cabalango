@@ -5048,9 +5048,44 @@ body,
   border-color: var(--portal-olive);
   color: var(--portal-cream);
 }
+.purchase-types {
+  background: rgba(255, 250, 241, .82);
+  border: 1px solid var(--portal-line);
+  border-radius: 28px;
+  margin-top: clamp(18px, 3vw, 28px);
+  padding: clamp(20px, 3vw, 30px);
+}
+.purchase-types-heading h2,
+.purchase-results-header h2 { color: var(--portal-ink-strong); font-family: var(--portal-serif); margin: 0; }
+.purchase-types-heading h2 { font-size: clamp(1.65rem, 3vw, 2.25rem); }
+.purchase-type-options { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 18px; }
+.purchase-type-option {
+  background: var(--portal-card);
+  border: 1px solid var(--portal-line);
+  border-radius: 20px;
+  color: var(--portal-graphite);
+  display: grid;
+  gap: 5px;
+  padding: 18px 20px;
+  text-decoration: none;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.purchase-type-option strong { color: var(--portal-ink-strong); font-family: var(--portal-serif); font-size: 1.3rem; }
+.purchase-type-option span { color: var(--muted-text-color); line-height: 1.5; }
+.purchase-type-option:hover,
+.purchase-type-option:focus-visible,
+.purchase-type-option.is-active { border-color: var(--portal-olive); box-shadow: 0 12px 30px rgba(55,44,28,.10); transform: translateY(-1px); }
+.purchase-type-option.is-active { background: rgba(93,112,86,.10); }
+.purchase-types-reset { color: var(--portal-olive-dark); display: inline-block; font-weight: 800; margin-top: 16px; }
+.purchase-results-header { margin-top: clamp(26px, 4vw, 42px); }
+.purchase-results-header h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
+.purchase-results-header p { color: var(--muted-text-color); line-height: 1.55; margin: 7px 0 0; }
+.purchase-results-header + .prestadores-grid { margin-top: 18px; }
 @media (max-width: 480px) {
   .services-filters { margin-inline: -4px; }
   .services-filters a { padding: 9px 14px; }
+  .purchase-type-options { grid-template-columns: 1fr; }
+  .purchase-types { border-radius: 22px; padding: 18px; }
 }
 
 /* Public destination gallery: an airy, magazine-style composition. */

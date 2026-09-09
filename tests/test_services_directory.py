@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.database import Base
 from app.main import (
+    SERVICIOS_GRUPOS,
     app,
     build_commerce_delivery_status,
     build_commerce_card_product_facts,
@@ -18,6 +19,7 @@ from app.models import Empresa
 
 
 def test_services_taxonomy_filters_and_compatibility():
+    assert SERVICIOS_GRUPOS["compras"] == "Compras"
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
@@ -26,6 +28,7 @@ def test_services_taxonomy_filters_and_compatibility():
     db = TestingSession()
     records = [
         ("Proveeduría Tomaco", "tomaco", "compras", "Proveeduría", True),
+        ("Manos de Cabalango", "manos-cabalango", "compras", "  PRODUCTOS   REGIONALES ", True),
         ("Remis Cabalango", "remis-cabalango", "transporte", "Remis", True),
         ("Costa Norte", "costa-norte", "estacionamiento", "Playa de estacionamiento", True),
         ("Pregot Rosana", "pregot-rosana", "salud", "Kinesiología", True),
@@ -51,7 +54,7 @@ def test_services_taxonomy_filters_and_compatibility():
         response = client.get("/servicios")
         assert response.status_code == 200
         assert "Compras y servicios" in response.text
-        assert 'href="/servicios?grupo=compras">Almacenes y kioscos</a>' in response.text
+        assert 'href="/servicios?grupo=compras">Compras</a>' in response.text
         assert "Servicios útiles" not in response.text
         assert "PARA VECINOS Y VISITANTES" in response.text
         assert "Comercio inactivo" not in response.text
@@ -71,7 +74,20 @@ def test_services_taxonomy_filters_and_compatibility():
             assert excluded not in filtered.text
 
         compras = client.get("/servicios?grupo=compras")
-        assert 'href="/servicios?grupo=compras">Almacenes y kioscos</a>' in compras.text
+        assert 'href="/servicios?grupo=compras">Compras</a>' in compras.text
+        assert "Almacenes y kioscos" in compras.text
+        assert "Productos locales y artesanías" in compras.text
+        assert "Proveeduría Tomaco" in compras.text
+        assert "Manos de Cabalango" in compras.text
+
+        locales = client.get("/servicios?grupo=compras&tipo=locales")
+        assert "Manos de Cabalango" in locales.text
+        assert "Proveeduría Tomaco" not in locales.text
+        assert "Descubrí sabores, objetos y productos creados por emprendedores de Cabalango." in locales.text
+
+        almacenes = client.get("/servicios?grupo=compras&tipo=almacenes")
+        assert "Proveeduría Tomaco" in almacenes.text
+        assert "Manos de Cabalango" not in almacenes.text
 
         assert client.get("/prestador/remis-cabalango").status_code == 200
         for path in ["/gastronomia", "/alojamientos", "/actividades"]:
@@ -89,7 +105,7 @@ def test_all_public_css_consumers_use_commerce_cache_key():
     ]
     for template in templates:
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
-        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260903-accommodation-mobile-filter-basis-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260909-purchase-types-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source
 
 
