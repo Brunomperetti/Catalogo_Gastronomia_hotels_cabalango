@@ -247,6 +247,8 @@ class DestinoContenido(Base):
     historia = Column(Text, nullable=True)
     ubicacion = Column(Text, nullable=True)
     naturaleza = Column(Text, nullable=True)
+    seguridad = Column(Text, nullable=True)
+    salud_emergencias = Column(Text, nullable=True)
     recomendaciones = Column(Text, nullable=True)
     vida_local = Column(Text, nullable=True)
     video_url = Column(String, nullable=True)

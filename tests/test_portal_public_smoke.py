@@ -47,7 +47,7 @@ def test_portal_home_smoke():
 
     assert response.status_code == 200
     assert "Descubrí Cabalango" in response.text
-    for label in ["Historia", "Ubicación", "Naturaleza", "Vida local"]:
+    for label in ["Seguridad y tranquilidad", "Salud y emergencias", "Vida local e historia"]:
         assert label in response.text
     for visitor_copy in [
         "Río, monte y tiempo para disfrutar sin apuro.",
@@ -68,24 +68,23 @@ def test_portal_home_smoke():
     ]:
         assert f'href="{href}"' in response.text
     assert response.text.count("destination-story-more") == 3
-    assert 'id="como-llegar"' in response.text
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
     assert "?v=20260908-home-photo-signature-1" in response.text
     for dialog_id in [
-        "destination-dialog-historia",
-        "destination-dialog-ubicacion",
-        "destination-dialog-naturaleza",
-        "destination-dialog-vida-local",
+        "destination-dialog-seguridad",
+        "destination-dialog-salud-emergencias",
+        "destination-dialog-vida-local-historia",
     ]:
         assert f'id="{dialog_id}"' in response.text
     assert "/static/js/portal-dialogs.js" in response.text
     assert "destination-dialog-content" in response.text
     for full_text in [
         "Un destino serrano de ritmo pausado",
-        "Cabalango se encuentra en el Valle de Punilla",
         "Río, balnearios, senderos",
         "Ferias, sabores caseros",
+        "Información útil para disfrutar Cabalango con tranquilidad.",
+        "Información de atención médica y contactos útiles para tu estadía.",
     ]:
         assert full_text in response.text
     assert "Logo_Cabalango.png" in response.text
@@ -145,7 +144,7 @@ def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     assert '[data-home-stagger="1"]' in css
     assert 'class="destination-story-grid"' in template
     assert 'class="destination-story-grid" data-home-reveal' not in template
-    for story, stagger in (("historia", "1"), ("ubicacion", "2"), ("vida-local", "3")):
+    for story, stagger in (("seguridad", "1"), ("salud-emergencias", "2"), ("vida-local-historia", "3")):
         assert f"destination-story-{story}" in home
         story_card = home[home.index(f"destination-story-{story}"):]
         assert f'data-home-stagger="{stagger}"' in story_card.split(">", 1)[0]
@@ -469,7 +468,7 @@ def test_home_editorial_order_and_redundancy(monkeypatch):
     ]
     assert [html.index(marker) for marker in ordered] == sorted(html.index(marker) for marker in ordered)
     assert "Balnearios, monte y caminatas tranquilas" not in html
-    assert 'id="clima"' in html and 'id="fotos"' not in html and 'id="como-llegar"' in html
+    assert 'id="clima"' in html and 'id="fotos"' not in html and 'id="como-llegar"' not in html
 
 
 def test_home_hero_and_quick_links_navigation(monkeypatch):

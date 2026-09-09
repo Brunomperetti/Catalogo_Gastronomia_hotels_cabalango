@@ -24,6 +24,8 @@
         <symbol id="icon-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></symbol>
         <symbol id="icon-home" viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v9H4v-9Z"/><path d="M9 20v-6h6v6"/></symbol>
         <symbol id="icon-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3.5 20c.3-4 2.1-6 5.5-6s5.2 2 5.5 6M14 15c3.5-.7 5.7.9 6.2 4"/></symbol>
+        <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.2 8.3-8 10-4.8-1.7-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
+        <symbol id="icon-health" viewBox="0 0 24 24"><path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4Z"/></symbol>
         <symbol id="icon-food" viewBox="0 0 24 24"><path d="M7 3v8M4 3v5c0 2 1.3 3 3 3s3-1 3-3V3M7 11v10M16 3v18M16 3c3 1 4 4 4 7h-4"/></symbol>
         <symbol id="icon-shop" viewBox="0 0 24 24"><path d="M4 9h16v11H4V9ZM3 9l2-5h14l2 5"/><path d="M8 20v-6h5v6M3 9c0 1.5 1 2.5 2.5 2.5S8 10.5 8 9c0 1.5 1 2.5 2.5 2.5S13 10.5 13 9c0 1.5 1 2.5 2.5 2.5S18 10.5 18 9c0 1.5 1 2.5 2.5 2.5"/></symbol>
         <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
@@ -122,21 +124,17 @@
             </div>
         </div>
         {% set destination_stories = [
-            ('naturaleza', 'Naturaleza', content.naturaleza, 'icon-water'),
-            ('historia', 'Historia', content.historia, 'icon-book'),
-            ('ubicacion', 'Ubicación', content.ubicacion, 'icon-pin'),
-            ('vida-local', 'Vida local', content.vida_local, 'icon-people')
+            ('seguridad', 'Seguridad y tranquilidad', content.seguridad or 'Información útil para disfrutar Cabalango con tranquilidad.', 'icon-shield', 'Información útil'),
+            ('salud-emergencias', 'Salud y emergencias', content.salud_emergencias or 'Información de atención médica y contactos útiles para tu estadía.', 'icon-health', 'Ver atención y contactos'),
+            ('vida-local-historia', 'Vida local e historia', content.vida_local or content.historia or 'Estamos preparando más información sobre Cabalango.', 'icon-people', 'Conocé Cabalango')
         ] %}
         <div class="destination-story-grid">
-            {% for key, label, text, icon in destination_stories %}
-            {% if key != 'naturaleza' %}
-            {% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}
-            <article class="destination-story-card destination-story-{{ key }}" data-home-reveal data-home-stagger="{{ loop.index0 }}"{% if key == 'ubicacion' %} id="como-llegar"{% endif %}>
+            {% for key, label, story_text, icon, cta in destination_stories %}
+            <article class="destination-story-card destination-story-{{ key }}" data-home-reveal data-home-stagger="{{ loop.index }}">
                 <h3><svg aria-hidden="true" focusable="false"><use href="#{{ icon }}"/></svg>{{ label }}</h3>
-                <p class="destination-story-summary">{{ story_text|truncate(210 if key == 'naturaleza' else 115, False, '…') }}</p>
-                <button class="destination-story-more" type="button" data-dialog-open="destination-dialog-{{ key }}" aria-haspopup="dialog">{% if key == 'historia' %}Conocé su historia{% elif key == 'ubicacion' %}Cómo llegar{% elif key == 'naturaleza' %}Explorá su naturaleza{% else %}Conocé la vida local{% endif %}<span aria-hidden="true">→</span></button>
+                <p class="destination-story-summary">{{ story_text|truncate(115, False, '…') }}</p>
+                <button class="destination-story-more" type="button" data-dialog-open="destination-dialog-{{ key }}" aria-haspopup="dialog">{{ cta }}<span aria-hidden="true">→</span></button>
             </article>
-            {% endif %}
             {% endfor %}
         </div>
     </section>
@@ -243,14 +241,13 @@
 
     <section class="destination-cta"><div data-home-reveal><svg class="destination-cta-mark" aria-hidden="true" focusable="false"><use href="#icon-river-mark"/></svg><p class="portal-kicker">Tu próxima escapada</p><h2>Organizá tu visita a tu ritmo</h2><p>El río, el monte y la hospitalidad local te esperan. Elegí por dónde empezar.</p><div class="prestador-actions"><a class="portal-button" href="/alojamientos">Alojamientos</a><a class="portal-button portal-button-secondary" href="/gastronomia">Gastronomía</a><a class="portal-button portal-button-secondary" href="/actividades">Qué hacer</a></div></div></section>
 </main>
-{% for key, label, text, icon in destination_stories %}
-{% set story_text = text or 'Estamos preparando más información sobre este aspecto de Cabalango.' %}
+{% for key, label, story_text, icon, cta in destination_stories %}
 <dialog class="destination-dialog" id="destination-dialog-{{ key }}" data-portal-dialog aria-labelledby="destination-dialog-{{ key }}-title" aria-describedby="destination-dialog-{{ key }}-description">
     <div class="destination-dialog-panel">
         <button class="destination-dialog-close" type="button" data-dialog-close aria-label="Cerrar {{ label }}">×</button>
         <p class="portal-kicker">Sobre Cabalango · {{ label }}</p>
         <h2 id="destination-dialog-{{ key }}-title">{{ label }}</h2>
-        <div class="destination-dialog-content" id="destination-dialog-{{ key }}-description"><p>{{ story_text }}</p></div>
+        <div class="destination-dialog-content" id="destination-dialog-{{ key }}-description">{% if key == 'vida-local-historia' %}<h3>Vida local</h3><p>{{ content.vida_local or 'Estamos preparando más información sobre la vida local de Cabalango.' }}</p><h3>Historia</h3><p>{{ content.historia or 'Estamos preparando más información sobre la historia de Cabalango.' }}</p>{% else %}<p>{{ story_text }}</p>{% endif %}</div>
         <button class="portal-button destination-dialog-action" type="button" data-dialog-close>Cerrar</button>
     </div>
 </dialog>

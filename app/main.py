@@ -316,6 +316,8 @@ def ensure_destino_contenido_table():
         "historia": "TEXT",
         "ubicacion": "TEXT",
         "naturaleza": "TEXT",
+        "seguridad": "TEXT",
+        "salud_emergencias": "TEXT",
         "recomendaciones": "TEXT",
         "vida_local": "TEXT",
         "video_url": "VARCHAR",
@@ -4536,6 +4538,8 @@ def actualizar_destino_contenido(
     historia: str = Form(""),
     ubicacion: str = Form(""),
     naturaleza: str = Form(""),
+    seguridad: str | None = Form(None),
+    salud_emergencias: str | None = Form(None),
     recomendaciones: str = Form(""),
     vida_local: str = Form(""),
     video_url: str = Form(""),
@@ -4550,6 +4554,8 @@ def actualizar_destino_contenido(
     content.historia = clean_text(historia, default="") or None
     content.ubicacion = clean_text(ubicacion, default="") or None
     content.naturaleza = clean_text(naturaleza, default="") or None
+    content.seguridad = clean_text(seguridad, default="") or None
+    content.salud_emergencias = clean_text(salud_emergencias, default="") or None
     content.recomendaciones = clean_text(recomendaciones, default="") or None
     content.vida_local = clean_text(vida_local, default="") or None
     content.video_url = normalize_external_url(video_url) or (clean_text(video_url, default="") or None)
