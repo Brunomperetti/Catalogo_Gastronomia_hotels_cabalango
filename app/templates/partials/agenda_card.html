@@ -4,7 +4,7 @@
     <p class="agenda-card__meta">{{ categories[item.categoria] }}{% if item.lugar %} · {{ item.lugar }}{% endif %}</p>
     <h3>{{ item.titulo }}</h3>
     {% if item.descripcion_corta and item.descripcion_corta|trim|lower != item.titulo|trim|lower %}<p class="agenda-card__description">{{ item.descripcion_corta }}</p>{% endif %}
-    <span class="agenda-moment">{{ moments[item.momento] }}</span>
+    <span class="agenda-moment">{{ activity_schedules.get(item.id, moments[item.momento]) if item.tipo == 'actividad' and activity_schedules is defined else moments[item.momento] }}</span>
     <a class="portal-button" href="/actividades/{{ item.slug }}">Ver actividad</a>
   </div>
 </article>

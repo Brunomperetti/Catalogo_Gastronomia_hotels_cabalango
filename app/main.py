@@ -1583,6 +1583,98 @@ def normalize_instagram_contact(value):
     return {"label": text, "url": None}
 
 
+def normalize_instagram_url(value):
+    """Return a safe public Instagram URL without changing the stored value."""
+    text = clean_text(value, default="")
+    if not text:
+        return None
+
+    handle = text[1:] if text.startswith("@") else text
+    if re.fullmatch(r"[A-Za-z0-9._]{1,30}", handle):
+        return f"https://www.instagram.com/{handle}/"
+
+    if not re.match(r"^https?://", text, re.IGNORECASE):
+        return None
+    try:
+        parsed = urlparse(text)
+    except Exception:
+        return None
+    if parsed.scheme.lower() not in {"http", "https"}:
+        return None
+    if (parsed.hostname or "").lower() not in {"instagram.com", "www.instagram.com"}:
+        return None
+    return text
+
+
+ACTIVITY_WEEKDAYS = (
+    "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo",
+)
+
+
+def _parse_activity_schedule(value):
+    """Return the compact schedule and whether the structured text was understood."""
+    original = clean_text(value, default="")
+    if not original:
+        return "", False
+
+    parts = [part.strip() for part in original.split("|") if part.strip()]
+    days_text = hours_text = None
+    for part in parts:
+        match = re.match(r"^(D[ií]as?|Horarios?)\s*:\s*(.+)$", part, re.IGNORECASE)
+        if not match:
+            continue
+        if match.group(1).lower().startswith(("d", "día", "dia")):
+            days_text = match.group(2).strip()
+        else:
+            hours_text = match.group(2).strip()
+
+    if not days_text or not hours_text:
+        return original, False
+
+    supplied_days = [day.strip() for day in days_text.split(",") if day.strip()]
+    normalized_days = [
+        unicodedata.normalize("NFKD", day).encode("ascii", "ignore").decode().lower()
+        for day in supplied_days
+    ]
+    canonical_days = [
+        unicodedata.normalize("NFKD", day).encode("ascii", "ignore").decode().lower()
+        for day in ACTIVITY_WEEKDAYS
+    ]
+    try:
+        first_day = canonical_days.index(normalized_days[0])
+    except (IndexError, ValueError):
+        return original, False
+    if normalized_days != canonical_days[first_day:first_day + len(normalized_days)]:
+        return original, False
+    if len(supplied_days) == 7:
+        day_summary = "Todos los días"
+    elif len(supplied_days) > 1:
+        day_summary = f"{ACTIVITY_WEEKDAYS[first_day]} a {ACTIVITY_WEEKDAYS[first_day + len(supplied_days) - 1].lower()}"
+    else:
+        day_summary = ACTIVITY_WEEKDAYS[first_day]
+
+    hours_match = re.fullmatch(
+        r"\s*(\d{1,2})(?::(\d{2}))?\s*(?:a|[-–—])\s*(\d{1,2})(?::(\d{2}))?\s*(?:h|hs)?\.?\s*",
+        hours_text,
+        re.IGNORECASE,
+    )
+    if not hours_match:
+        return original, False
+    start_hour, start_minute, end_hour, end_minute = hours_match.groups()
+    if int(start_hour) > 23 or int(end_hour) > 23:
+        return original, False
+    start_minute, end_minute = start_minute or "00", end_minute or "00"
+    if int(start_minute) > 59 or int(end_minute) > 59:
+        return original, False
+    hours_summary = f"{int(start_hour):02d}:{start_minute}–{int(end_hour):02d}:{end_minute}"
+    return f"{day_summary} · {hours_summary}", True
+
+
+def format_activity_schedule(value):
+    """Compact a structured permanent-activity schedule, or preserve its text."""
+    return _parse_activity_schedule(value)[0]
+
+
 def normalize_whatsapp_url(value):
     clean_number = re.sub(r"\D+", "", clean_text(value, default=""))
     return f"https://wa.me/{clean_number}" if clean_number else None
@@ -3393,7 +3485,8 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
 def portal_actividades(request: Request, momento: str = "", categoria: str = "", db: Session = Depends(get_db)):
     experience_items = get_public_activities(db, categoria=categoria, momento=momento)
     items = [item for item in experience_items if item.tipo == "actividad"]
-    return templates.TemplateResponse("actividades.html", {"request": request, "agenda": prepare_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "filters": {"momento": momento, "categoria": categoria}, "active_section": "actividades"})
+    activity_schedules = {item.id: compact[0] for item in items if (compact := _parse_activity_schedule(item.horarios))[1]}
+    return templates.TemplateResponse("actividades.html", {"request": request, "agenda": prepare_public_agenda(items), "categories": CATEGORIES, "moments": MOMENTS, "activity_schedules": activity_schedules, "filters": {"momento": momento, "categoria": categoria}, "active_section": "actividades"})
 
 
 @app.get("/agenda", response_class=HTMLResponse)
@@ -3408,7 +3501,8 @@ def actividad_detail(request: Request, slug: str, db: Session = Depends(get_db))
     item = next((i for i in get_public_activities(db) if i.slug == slug), None)
     if not item:
         raise HTTPException(status_code=404, detail="Actividad no encontrada")
-    return templates.TemplateResponse("actividad_detalle.html", {"request": request, "item": item, "categories": CATEGORIES, "moments": MOMENTS, "active_section": "actividades"})
+    schedule, schedule_is_compact = _parse_activity_schedule(item.horarios) if item.tipo == "actividad" else ("", False)
+    return templates.TemplateResponse("actividad_detalle.html", {"request": request, "item": item, "categories": CATEGORIES, "moments": MOMENTS, "activity_schedule": schedule, "activity_schedule_is_compact": schedule_is_compact, "instagram_url": normalize_instagram_url(item.instagram), "active_section": "actividades"})
 
 
 def build_home_agenda(db: Session):

@@ -18,6 +18,33 @@ from app.models import ActividadAgenda, ActividadAgendaFoto, Usuario
 
 
 NOW = datetime(2026, 8, 10, 20, 0, tzinfo=agenda_domain.CABALANGO_TZ)
+STRUCTURED_SCHEDULE = (
+    "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado | "
+    "Horarios: 9 a 19hs | Todo el año: Sí"
+)
+
+
+def test_activity_schedule_formatter_compacts_days_and_hours_safely():
+    assert main_module.format_activity_schedule(STRUCTURED_SCHEDULE) == "Lunes a sábado · 09:00–19:00"
+    every_day = STRUCTURED_SCHEDULE.replace(
+        "Lunes, Martes, Miércoles, Jueves, Viernes, Sábado",
+        "Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo",
+    )
+    assert main_module.format_activity_schedule(every_day) == "Todos los días · 09:00–19:00"
+    unrecognized = "Consultar horarios según el clima"
+    assert main_module.format_activity_schedule(unrecognized) == unrecognized
+
+
+@pytest.mark.parametrize(("value", "expected"), [
+    ("@marianalucia.yoga", "https://www.instagram.com/marianalucia.yoga/"),
+    ("marianalucia.yoga", "https://www.instagram.com/marianalucia.yoga/"),
+    ("https://instagram.com/marianalucia.yoga", "https://instagram.com/marianalucia.yoga"),
+    ("https://www.instagram.com/marianalucia.yoga/", "https://www.instagram.com/marianalucia.yoga/"),
+    ("javascript:alert(1)", None),
+    ("data:text/html,unsafe", None),
+])
+def test_instagram_url_normalization(value, expected):
+    assert main_module.normalize_instagram_url(value) == expected
 
 
 def test_legacy_sqlite_agenda_bootstrap_is_additive_and_idempotent(tmp_path, monkeypatch):
@@ -610,6 +637,59 @@ def test_detail_whatsapp_is_primary_and_conditional(agenda_app):
 
     without_whatsapp = client.get("/actividades/feria-hoy").text
     assert "Consultar por WhatsApp" not in without_whatsapp
+
+
+def test_permanent_activity_uses_compact_schedule_in_card_and_detail(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.momento = "todo_el_dia"
+        item.horarios = STRUCTURED_SCHEDULE
+        db.commit()
+
+    listing = client.get("/actividades").text
+    card = listing.split('href="/actividades/yoga-permanente"', 1)[0].rsplit(
+        '<article class="agenda-card">', 1,
+    )[1]
+    assert "Lunes a sábado · 09:00–19:00" in card
+    assert "Todo el día" not in card
+
+    detail = client.get("/actividades/yoga-permanente").text
+    assert "<dt>Horarios / disponibilidad</dt><dd>Lunes a sábado · 09:00–19:00</dd>" in detail
+    assert "<dt>Momento</dt>" not in detail
+
+
+def test_event_detail_keeps_existing_time_and_moment_display(agenda_app):
+    html = agenda_app[0].get("/actividades/feria-hoy").text
+    assert "<dt>Hora</dt><dd>10:00 a 22:00</dd>" in html
+    assert "<dt>Momento</dt><dd>Día</dd>" in html
+
+
+@pytest.mark.parametrize(("instagram", "expected_href"), [
+    ("@marianalucia.yoga", "https://www.instagram.com/marianalucia.yoga/"),
+    ("https://instagram.com/marianalucia.yoga", "https://instagram.com/marianalucia.yoga"),
+])
+def test_activity_detail_renders_normalized_instagram_link(agenda_app, instagram, expected_href):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.instagram = instagram
+        db.commit()
+
+    html = client.get("/actividades/yoga-permanente").text
+    assert f'href="{expected_href}" target="_blank" rel="noopener">Instagram</a>' in html
+
+
+def test_activity_detail_does_not_render_unsafe_instagram_href(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.instagram = "javascript:alert(1)"
+        db.commit()
+
+    html = client.get("/actividades/yoga-permanente").text
+    assert "javascript:" not in html
+    assert ">Instagram</a>" not in html
 
 
 def test_detail_never_renders_none_or_blank_optional_content(agenda_app):
