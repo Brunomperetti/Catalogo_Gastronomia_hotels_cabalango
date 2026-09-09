@@ -148,6 +148,56 @@ def test_public_listing_and_detail_visibility(agenda_app):
         assert client.get(f"/actividades/{slug}").status_code == 404
 
 
+@pytest.mark.parametrize("place", [
+    "A confirmar (Domicilio / Aire Libre / Casa Alma)",
+    "Por confirmar",
+    "  pOr CoNfIrMaR  ",
+])
+def test_activity_card_hides_unconfirmed_placeholders(agenda_app, place):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.lugar = place
+        db.commit()
+
+    listing = client.get("/actividades").text
+    card = listing.split('href="/actividades/yoga-permanente"', 1)[0].rsplit(
+        '<article class="agenda-card">', 1,
+    )[1]
+    assert '<p class="agenda-card__meta">Bienestar</p>' in card
+    assert "A confirmar" not in card
+    assert "Por confirmar" not in card
+    assert "Domicilio" not in card
+    assert "Casa Alma" not in card
+
+
+def test_activity_card_shows_confirmed_place(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.lugar = "Casa Alma"
+        db.commit()
+
+    listing = client.get("/actividades").text
+    card = listing.split('href="/actividades/yoga-permanente"', 1)[0].rsplit(
+        '<article class="agenda-card">', 1,
+    )[1]
+    assert '<p class="agenda-card__meta">Bienestar · Casa Alma</p>' in card
+
+
+def test_activity_detail_keeps_full_unconfirmed_place(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.lugar = "A confirmar (Domicilio / Aire Libre / Casa Alma)"
+        item.direccion = "A confirmar"
+        db.commit()
+
+    detail = client.get("/actividades/yoga-permanente").text
+    assert "<dt>Lugar</dt><dd>A confirmar (Domicilio / Aire Libre / Casa Alma)</dd>" in detail
+    assert "<dt>Dirección</dt><dd>A confirmar</dd>" in detail
+
+
 @pytest.mark.parametrize(("query", "visible", "hidden"), [
     ("momento=noche", ("Feria de temporada",), ("Yoga permanente", "Música esta noche")),
     ("categoria=bienestar", ("Yoga permanente",), ("Feria de temporada", "Evento de mañana")),
