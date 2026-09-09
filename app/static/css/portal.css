@@ -5081,11 +5081,33 @@ body,
 .purchase-results-header h2 { font-size: clamp(1.8rem, 3.5vw, 2.6rem); }
 .purchase-results-header p { color: var(--muted-text-color); line-height: 1.55; margin: 7px 0 0; }
 .purchase-results-header + .prestadores-grid { margin-top: 18px; }
+.services-overview { margin-top: clamp(32px, 5vw, 56px); }
+.services-overview-group {
+  border-top: 1px solid var(--portal-line);
+  padding: clamp(30px, 5vw, 54px) 0 0;
+}
+.services-overview-group + .services-overview-group { margin-top: clamp(42px, 7vw, 76px); }
+.services-overview-heading {
+  align-items: end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.services-overview-heading h2 {
+  color: var(--portal-ink-strong);
+  font-family: var(--portal-serif);
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 0;
+}
+.services-overview-heading p { color: var(--muted-text-color); line-height: 1.55; margin: 5px 0 0; }
+.services-overview-heading > a { color: var(--portal-olive-dark); flex: 0 0 auto; font-weight: 800; padding-block: 8px; }
 @media (max-width: 480px) {
   .services-filters { margin-inline: -4px; }
   .services-filters a { padding: 9px 14px; }
   .purchase-type-options { grid-template-columns: 1fr; }
   .purchase-types { border-radius: 22px; padding: 18px; }
+  .services-overview-heading { align-items: start; flex-direction: column; gap: 8px; }
 }
 
 /* Public destination gallery: an airy, magazine-style composition. */
