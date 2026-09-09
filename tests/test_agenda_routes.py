@@ -22,6 +22,10 @@ STRUCTURED_SCHEDULE = (
     "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado | "
     "Horarios: 9 a 19hs | Todo el año: Sí"
 )
+FLYROCK_SCHEDULE = (
+    "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado, Domingo | "
+    "Horarios: De 9 hs a 19 | Todo el año: Sí"
+)
 
 
 def test_activity_schedule_formatter_compacts_days_and_hours_safely():
@@ -33,6 +37,45 @@ def test_activity_schedule_formatter_compacts_days_and_hours_safely():
     assert main_module.format_activity_schedule(every_day) == "Todos los días · 09:00–19:00"
     unrecognized = "Consultar horarios según el clima"
     assert main_module.format_activity_schedule(unrecognized) == unrecognized
+
+
+def test_activity_schedule_formatter_compacts_flyrock_schedule():
+    assert main_module.format_activity_schedule(FLYROCK_SCHEDULE) == "Todos los días · 09:00–19:00"
+
+
+@pytest.mark.parametrize("hours", [
+    "9 a 19",
+    "9 a 19hs",
+    "9 hs a 19",
+    "9hs a 19hs",
+    "De 9 a 19",
+    "De 9 hs a 19",
+    "De 9hs a 19hs",
+    "09:00 a 19:00",
+    "09:00–19:00",
+    "09:00 - 19:00",
+])
+def test_activity_schedule_formatter_normalizes_equivalent_hour_ranges(hours):
+    schedule = f"Días: Sábado | Horarios: {hours} | Todo el año: Sí"
+    assert main_module.format_activity_schedule(schedule) == "Sábado · 09:00–19:00"
+
+
+@pytest.mark.parametrize(("days", "expected"), [
+    ("Lunes, Martes, Miércoles, Jueves, Viernes", "Lunes a viernes · 09:00–19:00"),
+    ("Martes, Miércoles, Jueves", "Martes a jueves · 09:00–19:00"),
+    ("Sábado", "Sábado · 09:00–19:00"),
+])
+def test_activity_schedule_formatter_compacts_consecutive_days(days, expected):
+    schedule = f"Días: {days} | Horarios: 9 a 19 | Todo el año: Sí"
+    assert main_module.format_activity_schedule(schedule) == expected
+
+
+@pytest.mark.parametrize("schedule", [
+    "Días: Lunes, Miércoles, Viernes | Horarios: 9 a 19 | Todo el año: Sí",
+    "Días: Lunes | Horarios: De 25 hs a 30 | Todo el año: Sí",
+])
+def test_activity_schedule_formatter_preserves_unrecognized_or_invalid_values(schedule):
+    assert main_module.format_activity_schedule(schedule) == schedule
 
 
 @pytest.mark.parametrize(("value", "expected"), [
@@ -689,23 +732,28 @@ def test_detail_whatsapp_is_primary_and_conditional(agenda_app):
     assert "Consultar por WhatsApp" not in without_whatsapp
 
 
-def test_permanent_activity_uses_compact_schedule_in_card_and_detail(agenda_app):
+@pytest.mark.parametrize(("schedule", "expected"), [
+    (FLYROCK_SCHEDULE, "Todos los días · 09:00–19:00"),
+    (STRUCTURED_SCHEDULE, "Lunes a sábado · 09:00–19:00"),
+])
+def test_permanent_activity_uses_compact_schedule_in_card_and_detail(agenda_app, schedule, expected):
     client, TestingSession = agenda_app
     with TestingSession() as db:
         item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
         item.momento = "todo_el_dia"
-        item.horarios = STRUCTURED_SCHEDULE
+        item.horarios = schedule
         db.commit()
 
     listing = client.get("/actividades").text
     card = listing.split('href="/actividades/yoga-permanente"', 1)[0].rsplit(
         '<article class="agenda-card">', 1,
     )[1]
-    assert "Lunes a sábado · 09:00–19:00" in card
+    assert expected in card
+    assert "Días: Lunes, Martes" not in card
     assert "Todo el día" not in card
 
     detail = client.get("/actividades/yoga-permanente").text
-    assert "<dt>Horarios / disponibilidad</dt><dd>Lunes a sábado · 09:00–19:00</dd>" in detail
+    assert f"<dt>Horarios / disponibilidad</dt><dd>{expected}</dd>" in detail
     assert "<dt>Momento</dt>" not in detail
 
 
