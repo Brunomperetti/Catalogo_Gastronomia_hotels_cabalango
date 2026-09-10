@@ -2632,6 +2632,12 @@ SERVICIOS_FILTROS_PUBLICOS = {
         "filtered_description": "Encontrá alimentos, bebidas y todo lo práctico para tu estadía.",
         "cta": "Ver almacenes y kioscos",
     },
+    "panaderias": {
+        "label": "Panaderías",
+        "description": "Pan fresco, facturas y productos de panificación para tu estadía.",
+        "filtered_description": "Encontrá panaderías y productos de panificación en Cabalango.",
+        "cta": "Ver panaderías",
+    },
     "locales": {
         "label": "Productos locales y artesanías",
         "description": "Sabores, cosmética, cerámica y creaciones de emprendedores locales.",
@@ -2648,10 +2654,11 @@ SERVICIOS_FILTROS_PUBLICOS = {
         "description": "Dónde dejar el vehículo durante tu visita.",
         "cta": "Ver estacionamientos",
     },
-    "salud": {
-        "label": "Salud y bienestar",
-        "description": "Atención y servicios útiles durante tu estadía.",
-        "cta": "Ver salud y bienestar",
+    "farmacia": {
+        "label": "Farmacia",
+        "description": "Medicamentos y productos esenciales durante tu estadía.",
+        "filtered_description": "Encontrá la farmacia disponible en Cabalango.",
+        "cta": "Ver farmacia",
     },
     "lavanderia": {
         "label": "Lavandería",
@@ -2718,6 +2725,23 @@ def is_local_products_service(empresa: models.Empresa) -> bool:
     )
 
 
+def is_bakery_provider(empresa: models.Empresa) -> bool:
+    """Identify bakeries strictly from their persisted gastronomic taxonomy."""
+    return (
+        normalize_theme(empresa.theme) == "gastronomia"
+        and normalize_taxonomy_key(empresa.subtipo) == "panaderia"
+    )
+
+
+def is_pharmacy_service(empresa: models.Empresa) -> bool:
+    """Identify pharmacies strictly from their persisted service taxonomy."""
+    return (
+        normalize_theme(empresa.theme) == "servicios"
+        and service_group_key(empresa) == "salud"
+        and normalize_taxonomy_key(empresa.subtipo) == "farmacia"
+    )
+
+
 def is_laundry_service(empresa: models.Empresa) -> bool:
     """Identify laundries only from their existing structured taxonomy."""
     return (
@@ -2729,12 +2753,20 @@ def is_laundry_service(empresa: models.Empresa) -> bool:
 
 def public_service_category_key(empresa: models.Empresa) -> str:
     """Map the internal service taxonomy to one exclusive public category."""
+    if is_bakery_provider(empresa):
+        return "panaderias"
     group = service_group_key(empresa)
     if group == "compras":
         return "locales" if is_local_products_service(empresa) else "almacenes"
     if group == "otros":
         return "lavanderia" if is_laundry_service(empresa) else "otros"
-    return group
+    if group == "salud":
+        return "farmacia" if is_pharmacy_service(empresa) else "otros"
+    if group == "transporte":
+        return "transporte"
+    if group == "estacionamiento":
+        return "estacionamiento"
+    return "otros"
 
 
 def service_card_kicker(empresa: models.Empresa) -> str:
@@ -2751,6 +2783,15 @@ def service_card_kicker(empresa: models.Empresa) -> str:
     if not subtype_label or normalize_taxonomy_key(subtype_label) == normalize_taxonomy_key(group_label):
         return group_label
     return f"{group_label} · {subtype_label}"
+
+
+def public_service_card_kicker(empresa: models.Empresa) -> str:
+    """Present the new public directory labels without changing other surfaces."""
+    if is_bakery_provider(empresa):
+        return "Panadería"
+    if is_pharmacy_service(empresa):
+        return "Farmacia"
+    return service_card_kicker(empresa)
 
 
 def normalize_subgrupo_for_theme(value: str | None, theme: str | None) -> str | None:
@@ -3283,6 +3324,14 @@ def filter_alojamientos(empresas: list[models.Empresa], filters: dict) -> list[m
 
 def portal_section_context(request: Request, db: Session, *, title: str, eyebrow: str, description: str, themes: set[str], section: str, subgrupo: str | None = None):
     empresas = get_public_empresas_by_themes(db, themes)
+    if section == "gastronomia":
+        empresas = [empresa for empresa in empresas if not is_bakery_provider(empresa)]
+    elif section == "servicios":
+        # Bakeries retain their gastronomia theme; this is only a public projection.
+        empresas = [
+            empresa for empresa in empresas
+            if normalize_theme(empresa.theme) == "servicios" or is_bakery_provider(empresa)
+        ]
     alojamiento_filters = get_alojamiento_filters(request) if section == "alojamientos" else {}
     if section == "alojamientos":
         empresas = filter_alojamientos(empresas, alojamiento_filters)
@@ -3291,18 +3340,28 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
     active_service_group = ""
     active_purchase_type = ""
     active_public_service_filter = ""
+    active_public_service_presentation = None
     service_group_previews = []
     if section == "servicios":
         requested_public_filter = normalize_taxonomy_key(request.query_params.get("filtro"))
-        active_public_service_filter = (
-            requested_public_filter if requested_public_filter in SERVICIOS_FILTROS_PUBLICOS else ""
-        )
+        if requested_public_filter in SERVICIOS_FILTROS_PUBLICOS:
+            active_public_service_filter = requested_public_filter
+            active_public_service_presentation = SERVICIOS_FILTROS_PUBLICOS[requested_public_filter]
+        elif requested_public_filter == "salud":
+            # Historical public URL: keep resolving the complete internal group,
+            # without advertising it in the current public navigation.
+            active_public_service_filter = "salud"
+            active_public_service_presentation = {"label": "Salud y bienestar"}
         requested_group = normalize_taxonomy_key(request.query_params.get("grupo"))
         active_service_group = requested_group if requested_group in SERVICIOS_GRUPOS else ""
         if active_public_service_filter:
             empresas = [
                 empresa for empresa in empresas
-                if public_service_category_key(empresa) == active_public_service_filter
+                if (
+                    service_group_key(empresa) == "salud"
+                    if active_public_service_filter == "salud"
+                    else public_service_category_key(empresa) == active_public_service_filter
+                )
             ]
         elif active_service_group:
             empresas = [empresa for empresa in empresas if service_group_key(empresa) == active_service_group]
@@ -3337,11 +3396,11 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "active_subgrupo": subgrupo if section == "actividades" else None,
             "public_service_filters": SERVICIOS_FILTROS_PUBLICOS if section == "servicios" else {},
             "active_public_service_filter": active_public_service_filter,
-            "active_public_service_presentation": SERVICIOS_FILTROS_PUBLICOS.get(active_public_service_filter),
+            "active_public_service_presentation": active_public_service_presentation,
             "active_service_group": active_service_group,
             "active_purchase_type": active_purchase_type,
             "service_group_previews": service_group_previews,
-            "service_card_kicker": service_card_kicker,
+            "service_card_kicker": public_service_card_kicker,
             "service_group_key": service_group_key,
             "get_public_card_main_image": get_public_card_main_image,
             "get_empresa_logo_url": get_empresa_logo_url,
@@ -3587,7 +3646,7 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
         title="Compras y servicios",
         eyebrow="PARA VECINOS Y VISITANTES",
         description="Todo lo que podés necesitar durante tu estadía: compras, transporte, salud y servicios locales.",
-        themes={"servicios"},
+        themes={"servicios", "gastronomia"},
         section="servicios",
     )
 
