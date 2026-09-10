@@ -55,6 +55,18 @@ def test_assistant_assets_are_isolated_and_static_only():
     script = (ROOT / "app/static/js/portal-assistant.js").read_text(encoding="utf-8")
     for requirement in ("position: fixed", "@media (max-width: 600px)", "max-height: 78dvh", "safe-area-inset-bottom", "prefers-reduced-motion"):
         assert requirement in css
+    for portal_token in (
+        "--assistant-surface: var(--portal-card",
+        "--assistant-text: var(--portal-graphite",
+        "--assistant-muted: var(--portal-muted",
+        "--assistant-accent: var(--portal-olive",
+        "--assistant-border: var(--portal-line",
+        "var(--portal-font-sans",
+    ):
+        assert portal_token in css
+    font_declarations = re.findall(r"font:\s*([^;]+)", css)
+    assert font_declarations
+    assert all('var(--portal-font-sans, "Manrope", Inter, system-ui, sans-serif)' in declaration for declaration in font_declarations)
     for requirement in ('aria-expanded', 'Escape', 'hidden', 'trigger.focus()'):
         assert requirement in script
     for forbidden in ("fetch(", "localStorage", "sessionStorage", "WebSocket", "EventSource"):
