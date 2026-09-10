@@ -2673,6 +2673,57 @@ SERVICIOS_FILTROS_PUBLICOS = {
     },
 }
 
+GASTRONOMIA_FILTROS_PUBLICOS = {
+    "restaurantes": {
+        "label": "Restaurantes",
+        "description": "Lugares para sentarte a comer y disfrutar los sabores de Cabalango.",
+        "filtered_description": "Encontrá restaurantes para disfrutar una comida en Cabalango.",
+        "cta": "Ver restaurantes",
+    },
+    "parrillas": {
+        "label": "Parrillas",
+        "description": "Propuestas de parrilla y cocina al fuego.",
+        "filtered_description": "Encontrá parrillas y propuestas de cocina al fuego en Cabalango.",
+        "cta": "Ver parrillas",
+    },
+    "casas_comida": {
+        "label": "Casas de comida",
+        "description": "Comidas preparadas y opciones para resolver el almuerzo o la cena.",
+        "filtered_description": "Encontrá casas de comida disponibles en Cabalango.",
+        "cta": "Ver casas de comida",
+    },
+    "bares": {
+        "label": "Bares",
+        "description": "Bebidas, comidas y encuentros para disfrutar con tiempo.",
+        "filtered_description": "Encontrá bares para disfrutar en Cabalango.",
+        "cta": "Ver bares",
+    },
+    "cafeterias": {
+        "label": "Cafeterías",
+        "description": "Café, meriendas y propuestas para hacer una pausa.",
+        "filtered_description": "Encontrá cafeterías y lugares para merendar en Cabalango.",
+        "cta": "Ver cafeterías",
+    },
+    "rotiserias": {
+        "label": "Rotiserías",
+        "description": "Comidas listas para llevar y disfrutar donde quieras.",
+        "filtered_description": "Encontrá rotiserías y comidas para llevar en Cabalango.",
+        "cta": "Ver rotiserías",
+    },
+    "food_trucks": {
+        "label": "Food trucks",
+        "description": "Opciones informales y rápidas para comer durante tu visita.",
+        "filtered_description": "Encontrá food trucks y propuestas rápidas en Cabalango.",
+        "cta": "Ver food trucks",
+    },
+    "otros": {
+        "label": "Otros",
+        "description": "Otras propuestas gastronómicas disponibles en Cabalango.",
+        "filtered_description": "Descubrí otras propuestas gastronómicas de Cabalango.",
+        "cta": "Ver otras propuestas",
+    },
+}
+
 SERVICIOS_SUBTIPOS = {
     "proveeduria": ("compras", "Proveeduría"),
     "almacen": ("compras", "Almacén"),
@@ -2728,7 +2779,7 @@ def is_local_products_service(empresa: models.Empresa) -> bool:
 def is_bakery_provider(empresa: models.Empresa) -> bool:
     """Identify bakeries strictly from their persisted gastronomic taxonomy."""
     return (
-        normalize_theme(empresa.theme) == "gastronomia"
+        normalize_theme(empresa.theme) in {"gastronomia", "comida"}
         and normalize_taxonomy_key(empresa.subtipo) == "panaderia"
     )
 
@@ -2767,6 +2818,24 @@ def public_service_category_key(empresa: models.Empresa) -> str:
     if group == "estacionamiento":
         return "estacionamiento"
     return "otros"
+
+
+def public_gastronomy_category_key(empresa: models.Empresa) -> str | None:
+    """Map structured gastronomic taxonomy to one exclusive public category."""
+    if normalize_theme(empresa.theme) not in {"gastronomia", "comida"}:
+        return None
+    subtype = normalize_taxonomy_key(empresa.subtipo)
+    if subtype == "panaderia":
+        return None
+    return {
+        "restaurante": "restaurantes",
+        "parrilla": "parrillas",
+        "casa de comidas": "casas_comida",
+        "bar": "bares",
+        "cafeteria": "cafeterias",
+        "rotiseria": "rotiserias",
+        "food truck": "food_trucks",
+    }.get(subtype, "otros")
 
 
 def service_card_kicker(empresa: models.Empresa) -> str:
@@ -3324,8 +3393,29 @@ def filter_alojamientos(empresas: list[models.Empresa], filters: dict) -> list[m
 
 def portal_section_context(request: Request, db: Session, *, title: str, eyebrow: str, description: str, themes: set[str], section: str, subgrupo: str | None = None):
     empresas = get_public_empresas_by_themes(db, themes)
+    active_gastronomy_filter = ""
+    active_gastronomy_presentation = None
+    gastronomy_group_previews = []
     if section == "gastronomia":
         empresas = [empresa for empresa in empresas if not is_bakery_provider(empresa)]
+        requested_gastronomy_filter = normalize_taxonomy_key(request.query_params.get("filtro")).replace(" ", "_")
+        if requested_gastronomy_filter in GASTRONOMIA_FILTROS_PUBLICOS:
+            active_gastronomy_filter = requested_gastronomy_filter
+            active_gastronomy_presentation = GASTRONOMIA_FILTROS_PUBLICOS[requested_gastronomy_filter]
+            empresas = [
+                empresa for empresa in empresas
+                if public_gastronomy_category_key(empresa) == active_gastronomy_filter
+            ]
+        else:
+            for key, presentation in GASTRONOMIA_FILTROS_PUBLICOS.items():
+                group_items = [empresa for empresa in empresas if public_gastronomy_category_key(empresa) == key]
+                if group_items:
+                    gastronomy_group_previews.append({
+                        "key": key,
+                        **presentation,
+                        "items": group_items[:3],
+                        "total": len(group_items),
+                    })
     elif section == "servicios":
         # Bakeries retain their gastronomia theme; this is only a public projection.
         empresas = [
@@ -3400,6 +3490,10 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "active_service_group": active_service_group,
             "active_purchase_type": active_purchase_type,
             "service_group_previews": service_group_previews,
+            "gastronomy_filters": GASTRONOMIA_FILTROS_PUBLICOS if section == "gastronomia" else {},
+            "active_gastronomy_filter": active_gastronomy_filter,
+            "active_gastronomy_presentation": active_gastronomy_presentation,
+            "gastronomy_group_previews": gastronomy_group_previews,
             "service_card_kicker": public_service_card_kicker,
             "service_group_key": service_group_key,
             "get_public_card_main_image": get_public_card_main_image,
@@ -3646,7 +3740,7 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
         title="Compras y servicios",
         eyebrow="PARA VECINOS Y VISITANTES",
         description="Todo lo que podés necesitar durante tu estadía: compras, transporte, salud y servicios locales.",
-        themes={"servicios", "gastronomia"},
+        themes={"servicios", "gastronomia", "comida"},
         section="servicios",
     )
 
