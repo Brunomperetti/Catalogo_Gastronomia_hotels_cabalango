@@ -69,6 +69,16 @@ def test_services_taxonomy_filters_and_compatibility():
             "Todo", "Almacenes y kioscos", "Productos locales y artesanías", "Transporte",
             "Estacionamiento", "Salud y bienestar", "Lavandería", "Otros servicios",
         ]
+        assert re.findall(r'href="([^"]+)"', filters) == [
+            "/servicios",
+            "/servicios?filtro=almacenes",
+            "/servicios?filtro=locales",
+            "/servicios?filtro=transporte",
+            "/servicios?filtro=estacionamiento",
+            "/servicios?filtro=salud",
+            "/servicios?filtro=lavanderia",
+            "/servicios?filtro=otros",
+        ]
         assert ">Compras</a>" not in filters
         assert "Servicios útiles" not in response.text
         assert "PARA VECINOS Y VISITANTES" in response.text
@@ -245,8 +255,38 @@ def test_all_public_css_consumers_use_commerce_cache_key():
     ]
     for template in templates:
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
-        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260910-public-service-filters-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260910-mobile-service-pills-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source
+
+
+def test_service_filters_use_two_column_grid_only_on_mobile_without_reordering():
+    css = Path("app/static/css/portal.css").read_text(encoding="utf-8")
+    base_rule = re.search(r"\.services-filters \{([^}]*)\}", css).group(1)
+    mobile = css.split("@media (max-width: 480px) {", 1)[1].split(
+        "/* Public destination gallery", 1
+    )[0]
+    mobile_filters = re.search(r"\.services-filters \{([^}]*)\}", mobile).group(1)
+    mobile_links = re.search(r"\.services-filters a \{([^}]*)\}", mobile).group(1)
+
+    assert "display: flex;" in base_rule
+    assert "display: grid;" not in base_rule
+    assert "display: grid;" in mobile_filters
+    assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_filters
+    assert "display: flex;" in mobile_links
+    assert "min-height: 50px;" in mobile_links
+    assert "white-space: normal;" in mobile_links
+    assert "order:" not in mobile
+    assert "nth-child" not in mobile
+    assert "position: absolute" not in mobile
+
+    active_rule = re.search(
+        r"\.services-filters a:hover,\s*"
+        r"\.services-filters a:focus-visible,\s*"
+        r"\.services-filters a\.is-active \{([^}]*)\}",
+        css,
+    ).group(1)
+    assert "background: var(--portal-olive);" in active_rule
+    assert "color: var(--portal-cream);" in active_rule
 
 
 def test_commerce_card_product_facts_keep_editorial_order_and_pluralize():
