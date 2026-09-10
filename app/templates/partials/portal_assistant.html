@@ -1,0 +1,51 @@
+<link rel="stylesheet" href="{{ url_for('static', path='css/portal-assistant.css') }}?v=20260910-assistant-shell-1">
+
+<div class="cabalango-assistant" data-cabalango-assistant>
+    <button
+        type="button"
+        class="cabalango-assistant-trigger"
+        aria-haspopup="dialog"
+        aria-controls="cabalango-assistant"
+        aria-expanded="false"
+    >
+        <img class="cabalango-assistant-trigger-avatar" src="{{ url_for('static', path='images/asistente-cabalango-zorro.png') }}" alt="">
+        <span class="cabalango-assistant-trigger-label cabalango-assistant-trigger-label-desktop">¿Necesitás ayuda?</span>
+        <span class="cabalango-assistant-trigger-label cabalango-assistant-trigger-label-mobile">Ayuda</span>
+    </button>
+
+    <div class="cabalango-assistant-backdrop" data-assistant-backdrop hidden></div>
+    <section
+        class="cabalango-assistant-panel"
+        id="cabalango-assistant"
+        role="dialog"
+        aria-labelledby="cabalango-assistant-title"
+        hidden
+    >
+        <header class="cabalango-assistant-header">
+            <img class="cabalango-assistant-header-avatar" src="{{ url_for('static', path='images/asistente-cabalango-zorro.png') }}" alt="">
+            <div class="cabalango-assistant-identity">
+                <h2 id="cabalango-assistant-title">Asistente de Cabalango</h2>
+                <p>Tu guía rápida durante la visita.</p>
+            </div>
+            <button type="button" class="cabalango-assistant-close" aria-label="Cerrar asistente" data-assistant-close>×</button>
+        </header>
+
+        <div class="cabalango-assistant-content">
+            <p class="cabalango-assistant-eyebrow">Guía rápida</p>
+            <h3>¿Qué necesitás encontrar?</h3>
+            <p class="cabalango-assistant-intro">Elegí una opción y te llevamos a la información que necesitás.</p>
+            <nav class="cabalango-assistant-options" aria-label="Opciones del asistente">
+                <a href="/gastronomia">Dónde comer</a>
+                <a href="/alojamientos">Alojamientos</a>
+                <a href="/actividades">Qué hacer</a>
+                <a href="/servicios">Compras y servicios</a>
+                <a href="/agenda">Qué hay hoy</a>
+                <a href="/descubri-cabalango">Salud y emergencias</a>
+                <a href="/descubri-cabalango">Seguridad</a>
+                <a href="/como-llegar">Cómo llegar</a>
+            </nav>
+        </div>
+    </section>
+</div>
+
+<script src="{{ url_for('static', path='js/portal-assistant.js') }}?v=20260910-assistant-shell-1" defer></script>
