@@ -273,6 +273,7 @@ def test_service_filters_use_two_column_grid_only_on_mobile_without_reordering()
     assert "display: grid;" in mobile_filters
     assert "grid-template-columns: repeat(2, minmax(0, 1fr));" in mobile_filters
     assert "display: flex;" in mobile_links
+    assert "box-sizing: border-box;" in mobile_links
     assert "min-height: 50px;" in mobile_links
     assert "white-space: normal;" in mobile_links
     assert "order:" not in mobile

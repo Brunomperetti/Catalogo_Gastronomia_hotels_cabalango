@@ -5109,6 +5109,7 @@ body,
   }
   .services-filters a {
     align-items: center;
+    box-sizing: border-box;
     display: flex;
     justify-content: center;
     line-height: 1.35;
