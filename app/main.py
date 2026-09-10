@@ -2625,25 +2625,43 @@ SERVICIOS_GRUPOS = {
     "otros": "Otros servicios",
 }
 
-SERVICIOS_PORTADA = {
-    "compras": {
-        "description": "Todo lo práctico y local para tu estadía.",
-        "cta": "Ver todas las compras",
+SERVICIOS_FILTROS_PUBLICOS = {
+    "almacenes": {
+        "label": "Almacenes y kioscos",
+        "description": "Todo lo práctico para tu estadía.",
+        "filtered_description": "Encontrá alimentos, bebidas y todo lo práctico para tu estadía.",
+        "cta": "Ver almacenes y kioscos",
+    },
+    "locales": {
+        "label": "Productos locales y artesanías",
+        "description": "Sabores, cosmética, cerámica y creaciones de emprendedores locales.",
+        "filtered_description": "Descubrí sabores, objetos y productos creados por emprendedores de Cabalango.",
+        "cta": "Descubrir productos locales",
     },
     "transporte": {
+        "label": "Transporte",
         "description": "Opciones para moverte por Cabalango y la zona.",
         "cta": "Ver transporte",
     },
     "estacionamiento": {
+        "label": "Estacionamiento",
         "description": "Dónde dejar el vehículo durante tu visita.",
         "cta": "Ver estacionamientos",
     },
     "salud": {
+        "label": "Salud y bienestar",
         "description": "Atención y servicios útiles durante tu estadía.",
         "cta": "Ver salud y bienestar",
     },
+    "lavanderia": {
+        "label": "Lavandería",
+        "description": "Servicios de lavado para resolver lo cotidiano durante tu estadía.",
+        "filtered_description": "Servicios de lavado disponibles en Cabalango.",
+        "cta": "Ver lavandería",
+    },
     "otros": {
-        "description": "Más soluciones y propuestas locales.",
+        "label": "Otros servicios",
+        "description": "Más servicios útiles disponibles en Cabalango.",
         "cta": "Ver otros servicios",
     },
 }
@@ -2700,13 +2718,36 @@ def is_local_products_service(empresa: models.Empresa) -> bool:
     )
 
 
+def is_laundry_service(empresa: models.Empresa) -> bool:
+    """Identify laundries only from their existing structured taxonomy."""
+    return (
+        normalize_theme(empresa.theme) == "servicios"
+        and service_group_key(empresa) == "otros"
+        and normalize_taxonomy_key(empresa.subtipo) in {"lavadero", "lavadero de ropa"}
+    )
+
+
+def public_service_category_key(empresa: models.Empresa) -> str:
+    """Map the internal service taxonomy to one exclusive public category."""
+    group = service_group_key(empresa)
+    if group == "compras":
+        return "locales" if is_local_products_service(empresa) else "almacenes"
+    if group == "otros":
+        return "lavanderia" if is_laundry_service(empresa) else "otros"
+    return group
+
+
 def service_card_kicker(empresa: models.Empresa) -> str:
     group = service_group_key(empresa)
     group_label = SERVICIOS_GRUPOS[group]
     subtype_key = normalize_taxonomy_key(empresa.subtipo)
     if is_local_products_service(empresa):
         return "Productos locales y artesanías"
+    if is_laundry_service(empresa):
+        return "Lavandería"
     subtype_label = SERVICIOS_SUBTIPOS.get(subtype_key, (group, clean_text(empresa.subtipo, default="")))[1]
+    if group == "compras" and subtype_label:
+        return subtype_label
     if not subtype_label or normalize_taxonomy_key(subtype_label) == normalize_taxonomy_key(group_label):
         return group_label
     return f"{group_label} · {subtype_label}"
@@ -3249,25 +3290,33 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
         empresas = [empresa for empresa in empresas if (empresa.subgrupo or "").lower() == subgrupo]
     active_service_group = ""
     active_purchase_type = ""
+    active_public_service_filter = ""
     service_group_previews = []
     if section == "servicios":
+        requested_public_filter = normalize_taxonomy_key(request.query_params.get("filtro"))
+        active_public_service_filter = (
+            requested_public_filter if requested_public_filter in SERVICIOS_FILTROS_PUBLICOS else ""
+        )
         requested_group = normalize_taxonomy_key(request.query_params.get("grupo"))
         active_service_group = requested_group if requested_group in SERVICIOS_GRUPOS else ""
-        if active_service_group:
+        if active_public_service_filter:
+            empresas = [
+                empresa for empresa in empresas
+                if public_service_category_key(empresa) == active_public_service_filter
+            ]
+        elif active_service_group:
             empresas = [empresa for empresa in empresas if service_group_key(empresa) == active_service_group]
         else:
-            for key, label in SERVICIOS_GRUPOS.items():
-                group_items = [empresa for empresa in empresas if service_group_key(empresa) == key]
+            for key, presentation in SERVICIOS_FILTROS_PUBLICOS.items():
+                group_items = [empresa for empresa in empresas if public_service_category_key(empresa) == key]
                 if group_items:
                     service_group_previews.append({
                         "key": key,
-                        "label": label,
-                        "description": SERVICIOS_PORTADA[key]["description"],
-                        "cta": SERVICIOS_PORTADA[key]["cta"],
+                        **presentation,
                         "items": group_items[:3],
                         "total": len(group_items),
                     })
-        if active_service_group == "compras":
+        if not active_public_service_filter and active_service_group == "compras":
             requested_type = normalize_taxonomy_key(request.query_params.get("tipo"))
             active_purchase_type = requested_type if requested_type in {"almacenes", "locales"} else ""
             if active_purchase_type == "locales":
@@ -3286,7 +3335,9 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "theme_display_label": theme_display_label,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if section == "actividades" else {},
             "active_subgrupo": subgrupo if section == "actividades" else None,
-            "service_groups": SERVICIOS_GRUPOS if section == "servicios" else {},
+            "public_service_filters": SERVICIOS_FILTROS_PUBLICOS if section == "servicios" else {},
+            "active_public_service_filter": active_public_service_filter,
+            "active_public_service_presentation": SERVICIOS_FILTROS_PUBLICOS.get(active_public_service_filter),
             "active_service_group": active_service_group,
             "active_purchase_type": active_purchase_type,
             "service_group_previews": service_group_previews,
