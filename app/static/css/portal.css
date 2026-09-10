@@ -5020,14 +5020,13 @@ body,
   .agenda-facts > div { padding: .78rem .9rem; }
 }
 
-/* Compras y servicios: intent-level filters, horizontally scrollable on small screens. */
+/* Compras y servicios: public categories wrap deliberately at every viewport. */
 .services-filters {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: clamp(20px, 3vw, 32px) 0 0;
-  overflow-x: auto;
   padding: 2px 2px 8px;
-  scrollbar-width: thin;
 }
 .services-filters a {
   background: var(--portal-card);

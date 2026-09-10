@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -8,18 +9,25 @@ from sqlalchemy.pool import StaticPool
 from app.database import Base
 from app.main import (
     SERVICIOS_GRUPOS,
+    SERVICIOS_FILTROS_PUBLICOS,
     app,
     build_commerce_delivery_status,
     build_commerce_card_product_facts,
     build_commerce_card_schedule,
     build_public_card_chips,
     get_db,
+    is_laundry_service,
+    public_service_category_key,
+    service_card_kicker,
 )
 from app.models import Empresa
 
 
 def test_services_taxonomy_filters_and_compatibility():
     assert SERVICIOS_GRUPOS["compras"] == "Compras"
+    assert list(SERVICIOS_FILTROS_PUBLICOS) == [
+        "almacenes", "locales", "transporte", "estacionamiento", "salud", "lavanderia", "otros"
+    ]
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
@@ -27,13 +35,14 @@ def test_services_taxonomy_filters_and_compatibility():
     Base.metadata.create_all(engine)
     db = TestingSession()
     records = [
-        ("Proveeduría Tomaco", "tomaco", "compras", "Proveeduría", True),
+        ("Almacén del Río", "almacen-rio", "compras", "Almacén", True),
         ("Manos de Cabalango", "manos-cabalango", "compras", "  PRODUCTOS   REGIONALES ", True),
         ("Remis Cabalango", "remis-cabalango", "transporte", "Remis", True),
         ("Costa Norte", "costa-norte", "estacionamiento", "Playa de estacionamiento", True),
         ("Pregot Rosana", "pregot-rosana", "salud", "Kinesiología", True),
-        ("Lavadero Rita", "lavadero-rita", "otros", "Lavadero de ropa", True),
-        ("Histórico", "historico", "valor-antiguo", "Gomería", True),
+        ("Lavadero Rita", "lavadero-rita", "otros", "Lavadero", True),
+        ("Lavadero Centro", "lavadero-centro", "otros", "Lavadero de ropa", True),
+        ("Histórico", "historico", "otros", "Gomería", True),
         ("Comercio inactivo", "inactivo", "compras", "Kiosco", False),
     ]
     for nombre, slug, subgrupo, subtipo, activo in records:
@@ -54,18 +63,24 @@ def test_services_taxonomy_filters_and_compatibility():
         response = client.get("/servicios")
         assert response.status_code == 200
         assert "Compras y servicios" in response.text
-        assert 'href="/servicios?grupo=compras">Compras</a>' in response.text
+        assert 'href="/servicios?filtro=almacenes">Almacenes y kioscos</a>' in response.text
+        filters = response.text.split('<nav class="services-filters"', 1)[1].split("</nav>", 1)[0]
+        assert re.findall(r">([^<>]+)</a>", filters) == [
+            "Todo", "Almacenes y kioscos", "Productos locales y artesanías", "Transporte",
+            "Estacionamiento", "Salud y bienestar", "Lavandería", "Otros servicios",
+        ]
+        assert ">Compras</a>" not in filters
         assert "Servicios útiles" not in response.text
         assert "PARA VECINOS Y VISITANTES" in response.text
         assert "Comercio inactivo" not in response.text
         assert "Histórico" in response.text
 
         expectations = {
-            "compras": ("Proveeduría Tomaco", "Remis Cabalango"),
-            "transporte": ("Remis Cabalango", "Proveeduría Tomaco"),
+            "compras": ("Almacén del Río", "Remis Cabalango"),
+            "transporte": ("Remis Cabalango", "Almacén del Río"),
             "estacionamiento": ("Costa Norte", "Remis Cabalango"),
             "salud": ("Pregot Rosana", "Costa Norte"),
-            "otros": ("Lavadero Rita", "Proveeduría Tomaco"),
+            "otros": ("Lavadero Rita", "Almacén del Río"),
         }
         for group, (included, excluded) in expectations.items():
             filtered = client.get(f"/servicios?grupo={group}")
@@ -74,20 +89,39 @@ def test_services_taxonomy_filters_and_compatibility():
             assert excluded not in filtered.text
 
         compras = client.get("/servicios?grupo=compras")
-        assert 'href="/servicios?grupo=compras">Compras</a>' in compras.text
+        assert 'href="/servicios?filtro=almacenes">Almacenes y kioscos</a>' in compras.text
         assert "Almacenes y kioscos" in compras.text
         assert "Productos locales y artesanías" in compras.text
-        assert "Proveeduría Tomaco" in compras.text
+        assert "Almacén del Río" in compras.text
         assert "Manos de Cabalango" in compras.text
 
         locales = client.get("/servicios?grupo=compras&tipo=locales")
         assert "Manos de Cabalango" in locales.text
-        assert "Proveeduría Tomaco" not in locales.text
+        assert "Almacén del Río" not in locales.text
         assert "Descubrí sabores, objetos y productos creados por emprendedores de Cabalango." in locales.text
 
         almacenes = client.get("/servicios?grupo=compras&tipo=almacenes")
-        assert "Proveeduría Tomaco" in almacenes.text
+        assert "Almacén del Río" in almacenes.text
         assert "Manos de Cabalango" not in almacenes.text
+
+        public_expectations = {
+            "almacenes": ("Almacén del Río", "Manos de Cabalango"),
+            "locales": ("Manos de Cabalango", "Almacén del Río"),
+            "transporte": ("Remis Cabalango", "Costa Norte"),
+            "estacionamiento": ("Costa Norte", "Pregot Rosana"),
+            "salud": ("Pregot Rosana", "Lavadero Rita"),
+            "lavanderia": ("Lavadero Rita", "Histórico"),
+            "otros": ("Histórico", "Lavadero Rita"),
+        }
+        for public_filter, (included, excluded) in public_expectations.items():
+            filtered = client.get(f"/servicios?filtro={public_filter}")
+            assert included in filtered.text
+            assert excluded not in filtered.text
+        assert "¿Qué estás buscando?" not in client.get("/servicios?filtro=almacenes").text
+        assert "Almacén" in client.get("/servicios?filtro=almacenes").text
+        assert "Compras ·" not in client.get("/servicios?filtro=almacenes").text
+        assert "Productos locales y artesanías" in client.get("/servicios?filtro=locales").text
+        assert "Lavandería" in client.get("/servicios?filtro=lavanderia").text
 
         assert client.get("/prestador/remis-cabalango").status_code == 200
         for path in ["/gastronomia", "/alojamientos", "/actividades"]:
@@ -96,6 +130,29 @@ def test_services_taxonomy_filters_and_compatibility():
         app.dependency_overrides.pop(get_db, None)
         db.close()
         engine.dispose()
+
+
+def test_public_service_category_uses_only_structured_taxonomy():
+    cases = [
+        ("compras", "Almacén", "almacenes"),
+        ("compras", "Productos regionales", "locales"),
+        ("transporte", "Remis", "transporte"),
+        ("estacionamiento", "Estacionamiento", "estacionamiento"),
+        ("salud", "Farmacia", "salud"),
+        ("otros", "LAVADERO", "lavanderia"),
+        ("otros", "lavadero de ropa", "lavanderia"),
+        ("otros", "Gomería", "otros"),
+    ]
+    for group, subtype, expected in cases:
+        empresa = Empresa(theme="servicios", subgrupo=group, subtipo=subtype)
+        assert public_service_category_key(empresa) == expected
+    misleading = Empresa(
+        theme="servicios", subgrupo="otros", subtipo="Gomería",
+        nombre="Lavandería", descripcion="Lavado de ropa",
+    )
+    assert not is_laundry_service(misleading)
+    assert public_service_category_key(misleading) == "otros"
+    assert service_card_kicker(Empresa(theme="servicios", subgrupo="otros", subtipo="Lavadero")) == "Lavandería"
 
 
 def test_services_overview_groups_previews_without_changing_filtered_results():
@@ -134,25 +191,25 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
         html = overview.text
         assert '<a class="is-active" href="/servicios">Todo</a>' in html
         headings = [
-            'id="services-group-compras">Compras',
+            'id="services-group-almacenes">Almacenes y kioscos',
             'id="services-group-transporte">Transporte',
             'id="services-group-estacionamiento">Estacionamiento',
             'id="services-group-salud">Salud y bienestar',
-            'id="services-group-otros">Otros servicios',
+            'id="services-group-lavanderia">Lavandería',
         ]
         assert all(heading in html for heading in headings)
         assert [html.index(heading) for heading in headings] == sorted(html.index(heading) for heading in headings)
         expected_ctas = {
-            "compras": "Ver todas las compras",
+            "almacenes": "Ver almacenes y kioscos",
             "transporte": "Ver transporte",
             "estacionamiento": "Ver estacionamientos",
             "salud": "Ver salud y bienestar",
-            "otros": "Ver otros servicios",
+            "lavanderia": "Ver lavandería",
         }
         for key, copy in expected_ctas.items():
-            assert f'href="/servicios?grupo={key}">{copy}' in html
+            assert f'href="/servicios?filtro={key}">{copy}' in html
 
-        compras_block = html.split('id="services-group-compras"', 1)[1].split('id="services-group-transporte"', 1)[0]
+        compras_block = html.split('id="services-group-almacenes"', 1)[1].split('id="services-group-transporte"', 1)[0]
         estacionamiento_block = html.split('id="services-group-estacionamiento"', 1)[1].split('id="services-group-salud"', 1)[0]
         assert compras_block.count('class="prestador-card prestador-card-premium"') == 3
         assert "Parking portada" not in compras_block
@@ -169,12 +226,12 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
         assert "Almacenes y kioscos" in filtered.text
         assert "Productos locales y artesanías" in filtered.text
         assert '<a class="is-active" href="/servicios">Todo</a>' not in filtered.text
-        assert '<a class="is-active" href="/servicios?grupo=compras">Compras</a>' in filtered.text
+        assert 'href="/servicios?filtro=almacenes">Almacenes y kioscos</a>' in filtered.text
 
         db.query(Empresa).filter(Empresa.subgrupo == "otros").delete()
         db.commit()
         without_others = client.get("/servicios").text
-        assert 'id="services-group-otros"' not in without_others
+        assert 'id="services-group-lavanderia"' not in without_others
     finally:
         app.dependency_overrides.pop(get_db, None)
         db.close()
@@ -188,7 +245,7 @@ def test_all_public_css_consumers_use_commerce_cache_key():
     ]
     for template in templates:
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
-        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260909-services-overview-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260910-public-service-filters-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source
 
 

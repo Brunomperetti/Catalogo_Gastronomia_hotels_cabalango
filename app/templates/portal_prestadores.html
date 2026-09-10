@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260909-services-overview-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260910-public-service-filters-1">
 </head>
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
@@ -29,10 +29,10 @@
 
         {% if section == 'servicios' %}
         <nav class="services-filters" aria-label="Filtrar compras y servicios">
-            <a class="{% if not active_service_group %}is-active{% endif %}" href="/servicios">Todo</a>
-            {% for key, label in service_groups.items() %}<a class="{% if active_service_group == key %}is-active{% endif %}" href="/servicios?grupo={{ key }}">{{ label }}</a>{% endfor %}
+            <a class="{% if not active_service_group and not active_public_service_filter %}is-active{% endif %}" href="/servicios">Todo</a>
+            {% for key, item in public_service_filters.items() %}<a class="{% if active_public_service_filter == key %}is-active{% endif %}" href="/servicios?filtro={{ key }}">{{ item.label }}</a>{% endfor %}
         </nav>
-        {% if active_service_group == 'compras' %}
+        {% if not active_public_service_filter and active_service_group == 'compras' %}
         <section class="purchase-types" aria-labelledby="purchase-types-title">
             <div class="purchase-types-heading">
                 <p class="portal-kicker">Compras en Cabalango</p>
@@ -145,14 +145,19 @@
         </header>
         {% endif %}
 
-        {% if active_service_group == 'compras' %}
+        {% if active_public_service_filter %}
+        <header class="purchase-results-header">
+            <h2>{{ active_public_service_presentation.label }}</h2>
+            {% if active_public_service_presentation.filtered_description %}<p>{{ active_public_service_presentation.filtered_description }}</p>{% endif %}
+        </header>
+        {% elif active_service_group == 'compras' %}
         <header class="purchase-results-header">
             <h2>{% if active_purchase_type == 'almacenes' %}Almacenes y kioscos{% elif active_purchase_type == 'locales' %}Productos locales y artesanías{% else %}Compras{% endif %}</h2>
             {% if active_purchase_type == 'locales' %}<p>Descubrí sabores, objetos y productos creados por emprendedores de Cabalango.</p>{% endif %}
         </header>
         {% endif %}
 
-        {% if section == 'servicios' and not active_service_group and service_group_previews %}
+        {% if section == 'servicios' and not active_service_group and not active_public_service_filter and service_group_previews %}
         <div class="services-overview">
             {% for group in service_group_previews %}
             <section class="services-overview-group" aria-labelledby="services-group-{{ group.key }}">
@@ -161,7 +166,7 @@
                         <h2 id="services-group-{{ group.key }}">{{ group.label }}</h2>
                         <p>{{ group.description }}</p>
                     </div>
-                    <a href="/servicios?grupo={{ group.key }}">{{ group.cta }} <span aria-hidden="true">→</span></a>
+                    <a href="/servicios?filtro={{ group.key }}">{{ group.cta }} <span aria-hidden="true">→</span></a>
                 </header>
                 <div class="prestadores-grid prestadores-grid-premium" aria-label="{{ group.label }}">
                     {% for empresa in group['items'] %}
