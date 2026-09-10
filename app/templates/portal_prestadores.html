@@ -53,6 +53,13 @@
         {% endif %}
         {% endif %}
 
+        {% if section == 'gastronomia' %}
+        <nav class="services-filters" aria-label="Filtrar gastronomía">
+            <a class="services-filter-all{% if not active_gastronomy_filter %} is-active{% endif %}" href="/gastronomia">Todo</a>
+            {% for key, item in gastronomy_filters.items() %}<a class="{% if active_gastronomy_filter == key %}is-active{% endif %}" href="/gastronomia?filtro={{ key }}">{{ item.label }}</a>{% endfor %}
+        </nav>
+        {% endif %}
+
         {% if section == 'alojamientos' %}
         <section class="alojamientos-filter-panel" aria-label="Filtros de alojamientos">
             <div class="filter-heading">
@@ -157,7 +164,37 @@
         </header>
         {% endif %}
 
-        {% if section == 'servicios' and not active_service_group and not active_public_service_filter and service_group_previews %}
+        {% if active_gastronomy_filter %}
+        <header class="purchase-results-header">
+            <h2>{{ active_gastronomy_presentation.label }}</h2>
+            <p>{{ active_gastronomy_presentation.filtered_description }}</p>
+        </header>
+        {% endif %}
+
+        {% if section == 'gastronomia' and not active_gastronomy_filter and gastronomy_group_previews %}
+        <div class="services-overview">
+            {% for group in gastronomy_group_previews %}
+            <section class="services-overview-group" aria-labelledby="gastronomy-group-{{ group.key }}">
+                <header class="services-overview-heading">
+                    <div>
+                        <h2 id="gastronomy-group-{{ group.key }}">{{ group.label }}</h2>
+                        <p>{{ group.description }}</p>
+                    </div>
+                    <a href="/gastronomia?filtro={{ group.key }}">{{ group.cta }} <span aria-hidden="true">→</span></a>
+                </header>
+                <div class="prestadores-grid prestadores-grid-premium" aria-label="{{ group.label }}">
+                    {% for empresa in group['items'] %}
+                    {% set card_image = get_public_card_main_image(empresa) %}
+                    {% set logo_url = get_empresa_logo_url(empresa) %}
+                    {% set card_chips = build_public_card_chips(empresa, section) %}
+                    {% set clean_whatsapp = (empresa.whatsapp or '')|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') %}
+                    {% include "partials/service_card.html" %}
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+        {% elif section == 'servicios' and not active_service_group and not active_public_service_filter and service_group_previews %}
         <div class="services-overview">
             {% for group in service_group_previews %}
             <section class="services-overview-group" aria-labelledby="services-group-{{ group.key }}">
