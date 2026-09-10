@@ -5102,8 +5102,24 @@ body,
 .services-overview-heading p { color: var(--muted-text-color); line-height: 1.55; margin: 5px 0 0; }
 .services-overview-heading > a { color: var(--portal-olive-dark); flex: 0 0 auto; font-weight: 800; padding-block: 8px; }
 @media (max-width: 480px) {
-  .services-filters { margin-inline: -4px; }
-  .services-filters a { padding: 9px 14px; }
+  .services-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-inline: -4px;
+  }
+  .services-filters a {
+    align-items: center;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    line-height: 1.35;
+    min-height: 50px;
+    min-width: 0;
+    padding: 9px 12px;
+    text-align: center;
+    white-space: normal;
+    width: 100%;
+  }
   .purchase-type-options { grid-template-columns: 1fr; }
   .purchase-types { border-radius: 22px; padding: 18px; }
   .services-overview-heading { align-items: start; flex-direction: column; gap: 8px; }
