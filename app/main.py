@@ -2779,7 +2779,7 @@ def is_local_products_service(empresa: models.Empresa) -> bool:
 def is_bakery_provider(empresa: models.Empresa) -> bool:
     """Identify bakeries strictly from their persisted gastronomic taxonomy."""
     return (
-        normalize_theme(empresa.theme) == "gastronomia"
+        normalize_theme(empresa.theme) in {"gastronomia", "comida"}
         and normalize_taxonomy_key(empresa.subtipo) == "panaderia"
     )
 
@@ -3740,7 +3740,7 @@ def portal_servicios(request: Request, db: Session = Depends(get_db)):
         title="Compras y servicios",
         eyebrow="PARA VECINOS Y VISITANTES",
         description="Todo lo que podés necesitar durante tu estadía: compras, transporte, salud y servicios locales.",
-        themes={"servicios", "gastronomia"},
+        themes={"servicios", "gastronomia", "comida"},
         section="servicios",
     )
 

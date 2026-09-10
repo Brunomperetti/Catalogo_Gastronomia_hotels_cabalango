@@ -10,6 +10,7 @@ from app.main import (
     GASTRONOMIA_FILTROS_PUBLICOS,
     app,
     get_db,
+    is_bakery_provider,
     public_gastronomy_category_key,
 )
 from app.models import Empresa
@@ -136,6 +137,60 @@ def test_gastronomy_overview_omits_empty_categories():
         html = TestClient(app).get("/gastronomia").text
         assert 'id="gastronomy-group-bares"' in html
         assert 'id="gastronomy-group-restaurantes"' not in html
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        db.close()
+        engine.dispose()
+
+
+def test_legacy_comida_bakery_keeps_its_exclusive_public_placement():
+    engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    TestingSession = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = TestingSession()
+    historical_bakery = Empresa(
+        nombre="Panadería histórica", slug="panaderia-historica", theme="comida",
+        subtipo="Panadería", activo=True,
+    )
+    db.add(historical_bakery)
+    db.commit()
+
+    def override_db():
+        yield db
+
+    app.dependency_overrides[get_db] = override_db
+    client = TestClient(app)
+    try:
+        assert is_bakery_provider(historical_bakery) is True
+        assert public_gastronomy_category_key(historical_bakery) is None
+        gastronomy_with_only_bakery = client.get("/gastronomia").text
+        assert "Panadería histórica" not in gastronomy_with_only_bakery
+
+        db.add_all([
+            Empresa(
+                nombre="Restaurante histórico", slug="restaurante-historico", theme="comida",
+                subtipo="Restaurante", activo=True,
+            ),
+            Empresa(
+                nombre="Food truck histórico", slug="food-truck-historico", theme="comida",
+                subtipo="Food truck", activo=True,
+            ),
+        ])
+        db.commit()
+
+        bakery_services = client.get("/servicios?filtro=panaderias").text
+        assert "Panadería histórica" in bakery_services
+        assert "Restaurante histórico" not in bakery_services
+        assert "Food truck histórico" not in bakery_services
+
+        restaurants = client.get("/gastronomia?filtro=restaurantes").text
+        food_trucks = client.get("/gastronomia?filtro=food_trucks").text
+        assert "Restaurante histórico" in restaurants
+        assert "Food truck histórico" in food_trucks
+
+        all_services = client.get("/servicios").text
+        assert "Restaurante histórico" not in all_services
+        assert "Food truck histórico" not in all_services
     finally:
         app.dependency_overrides.pop(get_db, None)
         db.close()
