@@ -16,7 +16,10 @@ from app.main import (
     build_commerce_card_schedule,
     build_public_card_chips,
     get_db,
+    is_bakery_provider,
     is_laundry_service,
+    is_pharmacy_service,
+    public_service_card_kicker,
     public_service_category_key,
     service_card_kicker,
 )
@@ -26,7 +29,7 @@ from app.models import Empresa
 def test_services_taxonomy_filters_and_compatibility():
     assert SERVICIOS_GRUPOS["compras"] == "Compras"
     assert list(SERVICIOS_FILTROS_PUBLICOS) == [
-        "almacenes", "locales", "transporte", "estacionamiento", "salud", "lavanderia", "otros"
+        "almacenes", "panaderias", "locales", "transporte", "estacionamiento", "farmacia", "lavanderia", "otros"
     ]
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
@@ -39,6 +42,7 @@ def test_services_taxonomy_filters_and_compatibility():
         ("Manos de Cabalango", "manos-cabalango", "compras", "  PRODUCTOS   REGIONALES ", True),
         ("Remis Cabalango", "remis-cabalango", "transporte", "Remis", True),
         ("Costa Norte", "costa-norte", "estacionamiento", "Playa de estacionamiento", True),
+        ("Farmacia Cabalango", "farmacia-cabalango", "salud", "Farmacia", True),
         ("Pregot Rosana", "pregot-rosana", "salud", "Kinesiología", True),
         ("Lavadero Rita", "lavadero-rita", "otros", "Lavadero", True),
         ("Lavadero Centro", "lavadero-centro", "otros", "Lavadero de ropa", True),
@@ -47,6 +51,9 @@ def test_services_taxonomy_filters_and_compatibility():
     ]
     for nombre, slug, subgrupo, subtipo, activo in records:
         db.add(Empresa(nombre=nombre, slug=slug, theme="servicios", subgrupo=subgrupo, subtipo=subtipo, activo=activo))
+    db.add(Empresa(nombre="Panadería Cabalango", slug="panaderia-cabalango", theme="gastronomia", subtipo="PANADERÍA", activo=True))
+    db.add(Empresa(nombre="Cafetería Cabalango", slug="cafeteria-cabalango", theme="gastronomia", subtipo="Cafetería", activo=True))
+    db.add(Empresa(nombre="Restaurante Cabalango", slug="restaurante-cabalango", theme="gastronomia", subtipo="Restaurante", activo=True))
     db.add(Empresa(nombre="Food Truck", slug="food-truck", theme="gastronomia", subtipo="Food truck", activo=True))
     db.add(Empresa(nombre="Camping", slug="camping", theme="alojamiento", subtipo="Camping", activo=True))
     db.commit()
@@ -66,16 +73,17 @@ def test_services_taxonomy_filters_and_compatibility():
         assert 'href="/servicios?filtro=almacenes">Almacenes y kioscos</a>' in response.text
         filters = response.text.split('<nav class="services-filters"', 1)[1].split("</nav>", 1)[0]
         assert re.findall(r">([^<>]+)</a>", filters) == [
-            "Todo", "Almacenes y kioscos", "Productos locales y artesanías", "Transporte",
-            "Estacionamiento", "Salud y bienestar", "Lavandería", "Otros servicios",
+            "Todo", "Almacenes y kioscos", "Panaderías", "Productos locales y artesanías", "Transporte",
+            "Estacionamiento", "Farmacia", "Lavandería", "Otros servicios",
         ]
         assert re.findall(r'href="([^"]+)"', filters) == [
             "/servicios",
             "/servicios?filtro=almacenes",
+            "/servicios?filtro=panaderias",
             "/servicios?filtro=locales",
             "/servicios?filtro=transporte",
             "/servicios?filtro=estacionamiento",
-            "/servicios?filtro=salud",
+            "/servicios?filtro=farmacia",
             "/servicios?filtro=lavanderia",
             "/servicios?filtro=otros",
         ]
@@ -119,7 +127,8 @@ def test_services_taxonomy_filters_and_compatibility():
             "locales": ("Manos de Cabalango", "Almacén del Río"),
             "transporte": ("Remis Cabalango", "Costa Norte"),
             "estacionamiento": ("Costa Norte", "Pregot Rosana"),
-            "salud": ("Pregot Rosana", "Lavadero Rita"),
+            "farmacia": ("Farmacia Cabalango", "Pregot Rosana"),
+            "panaderias": ("Panadería Cabalango", "Cafetería Cabalango"),
             "lavanderia": ("Lavadero Rita", "Histórico"),
             "otros": ("Histórico", "Lavadero Rita"),
         }
@@ -132,6 +141,25 @@ def test_services_taxonomy_filters_and_compatibility():
         assert "Compras ·" not in client.get("/servicios?filtro=almacenes").text
         assert "Productos locales y artesanías" in client.get("/servicios?filtro=locales").text
         assert "Lavandería" in client.get("/servicios?filtro=lavanderia").text
+        assert "Pregot Rosana" in client.get("/servicios?filtro=otros").text
+        legacy_health = client.get("/servicios?filtro=salud").text
+        assert "Salud y bienestar" in legacy_health
+        assert "Farmacia Cabalango" in legacy_health
+        assert "Pregot Rosana" in legacy_health
+
+        bakery = client.get("/servicios?filtro=panaderias").text
+        assert bakery.count("Panadería Cabalango") >= 1
+        assert "Cafetería Cabalango" not in bakery
+        assert "Restaurante Cabalango" not in bakery
+        assert "Gastronomía ·" not in bakery
+        pharmacy = client.get("/servicios?filtro=farmacia").text
+        assert "Farmacia Cabalango" in pharmacy
+        assert "Pregot Rosana" not in pharmacy
+        assert "Salud y bienestar ·" not in pharmacy
+        gastronomy = client.get("/gastronomia").text
+        assert "Panadería Cabalango" not in gastronomy
+        assert "Cafetería Cabalango" in gastronomy
+        assert "Restaurante Cabalango" in gastronomy
 
         assert client.get("/prestador/remis-cabalango").status_code == 200
         for path in ["/gastronomia", "/alojamientos", "/actividades"]:
@@ -148,7 +176,8 @@ def test_public_service_category_uses_only_structured_taxonomy():
         ("compras", "Productos regionales", "locales"),
         ("transporte", "Remis", "transporte"),
         ("estacionamiento", "Estacionamiento", "estacionamiento"),
-        ("salud", "Farmacia", "salud"),
+        ("salud", "Farmacia", "farmacia"),
+        ("salud", "Kinesiología", "otros"),
         ("otros", "LAVADERO", "lavanderia"),
         ("otros", "lavadero de ropa", "lavanderia"),
         ("otros", "Gomería", "otros"),
@@ -163,6 +192,13 @@ def test_public_service_category_uses_only_structured_taxonomy():
     assert not is_laundry_service(misleading)
     assert public_service_category_key(misleading) == "otros"
     assert service_card_kicker(Empresa(theme="servicios", subgrupo="otros", subtipo="Lavadero")) == "Lavandería"
+    bakery = Empresa(theme="gastronomia", subtipo="panadería")
+    pharmacy = Empresa(theme="servicios", subgrupo="salud", subtipo="FARMACIA")
+    assert is_bakery_provider(bakery)
+    assert public_service_category_key(bakery) == "panaderias"
+    assert public_service_card_kicker(bakery) == "Panadería"
+    assert is_pharmacy_service(pharmacy)
+    assert public_service_card_kicker(pharmacy) == "Farmacia"
 
 
 def test_services_overview_groups_previews_without_changing_filtered_results():
@@ -184,7 +220,8 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
     records = purchases + [
         Empresa(nombre="Remis portada", slug="remis-portada", theme="servicios", subgrupo="transporte", subtipo="Remis", activo=True),
         Empresa(nombre="Parking portada", slug="parking-portada", theme="servicios", subgrupo="estacionamiento", subtipo="Estacionamiento", activo=True),
-        Empresa(nombre="Salud portada", slug="salud-portada", theme="servicios", subgrupo="salud", subtipo="Farmacia", activo=True),
+        Empresa(nombre="Farmacia portada", slug="farmacia-portada", theme="servicios", subgrupo="salud", subtipo="Farmacia", activo=True),
+        Empresa(nombre="Panadería portada", slug="panaderia-portada", theme="gastronomia", subtipo="Panadería", activo=True),
         Empresa(nombre="Lavadero portada", slug="lavadero-portada", theme="servicios", subgrupo="otros", subtipo="Lavadero", activo=True),
     ]
     db.add_all(records)
@@ -199,12 +236,13 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
         overview = client.get("/servicios")
         assert overview.status_code == 200
         html = overview.text
-        assert '<a class="is-active" href="/servicios">Todo</a>' in html
+        assert '<a class="services-filter-all is-active" href="/servicios">Todo</a>' in html
         headings = [
             'id="services-group-almacenes">Almacenes y kioscos',
+            'id="services-group-panaderias">Panaderías',
             'id="services-group-transporte">Transporte',
             'id="services-group-estacionamiento">Estacionamiento',
-            'id="services-group-salud">Salud y bienestar',
+            'id="services-group-farmacia">Farmacia',
             'id="services-group-lavanderia">Lavandería',
         ]
         assert all(heading in html for heading in headings)
@@ -213,14 +251,15 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
             "almacenes": "Ver almacenes y kioscos",
             "transporte": "Ver transporte",
             "estacionamiento": "Ver estacionamientos",
-            "salud": "Ver salud y bienestar",
+            "panaderias": "Ver panaderías",
+            "farmacia": "Ver farmacia",
             "lavanderia": "Ver lavandería",
         }
         for key, copy in expected_ctas.items():
             assert f'href="/servicios?filtro={key}">{copy}' in html
 
-        compras_block = html.split('id="services-group-almacenes"', 1)[1].split('id="services-group-transporte"', 1)[0]
-        estacionamiento_block = html.split('id="services-group-estacionamiento"', 1)[1].split('id="services-group-salud"', 1)[0]
+        compras_block = html.split('id="services-group-almacenes"', 1)[1].split('id="services-group-panaderias"', 1)[0]
+        estacionamiento_block = html.split('id="services-group-estacionamiento"', 1)[1].split('id="services-group-farmacia"', 1)[0]
         assert compras_block.count('class="prestador-card prestador-card-premium"') == 3
         assert "Parking portada" not in compras_block
         assert "Compra editorial" not in estacionamiento_block
@@ -235,7 +274,7 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
         assert "¿Qué estás buscando?" in filtered.text
         assert "Almacenes y kioscos" in filtered.text
         assert "Productos locales y artesanías" in filtered.text
-        assert '<a class="is-active" href="/servicios">Todo</a>' not in filtered.text
+        assert '<a class="services-filter-all is-active" href="/servicios">Todo</a>' not in filtered.text
         assert 'href="/servicios?filtro=almacenes">Almacenes y kioscos</a>' in filtered.text
 
         db.query(Empresa).filter(Empresa.subgrupo == "otros").delete()
@@ -255,7 +294,7 @@ def test_all_public_css_consumers_use_commerce_cache_key():
     ]
     for template in templates:
         source = (Path("app/templates") / template).read_text(encoding="utf-8")
-        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260910-mobile-service-pills-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
+        expected_version = "?v=20260908-home-photo-signature-1" if template == "descubri_cabalango.html" else "?v=20260904-provider-single-gallery-1" if template == "prestador.html" else "?v=20260901-agenda-card-alignment-2" if template == "actividades.html" else "?v=20260903-event-detail-flyer-contain-1" if template == "actividad_detalle.html" else "?v=20260910-bakery-pharmacy-services-1" if template == "portal_prestadores.html" else "?v=20260810-commerce-services-1"
         assert expected_version in source
 
 
@@ -276,6 +315,8 @@ def test_service_filters_use_two_column_grid_only_on_mobile_without_reordering()
     assert "box-sizing: border-box;" in mobile_links
     assert "min-height: 50px;" in mobile_links
     assert "white-space: normal;" in mobile_links
+    mobile_all = re.search(r"\.services-filter-all \{([^}]*)\}", mobile).group(1)
+    assert "grid-column: 1 / -1;" in mobile_all
     assert "order:" not in mobile
     assert "nth-child" not in mobile
     assert "position: absolute" not in mobile

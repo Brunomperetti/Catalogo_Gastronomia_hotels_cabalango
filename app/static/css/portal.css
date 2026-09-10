@@ -5120,6 +5120,9 @@ body,
     white-space: normal;
     width: 100%;
   }
+  .services-filter-all {
+    grid-column: 1 / -1;
+  }
   .purchase-type-options { grid-template-columns: 1fr; }
   .purchase-types { border-radius: 22px; padding: 18px; }
   .services-overview-heading { align-items: start; flex-direction: column; gap: 8px; }

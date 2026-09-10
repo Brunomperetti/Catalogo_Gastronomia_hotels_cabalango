@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260910-mobile-service-pills-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260910-bakery-pharmacy-services-1">
 </head>
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
@@ -29,7 +29,7 @@
 
         {% if section == 'servicios' %}
         <nav class="services-filters" aria-label="Filtrar compras y servicios">
-            <a class="{% if not active_service_group and not active_public_service_filter %}is-active{% endif %}" href="/servicios">Todo</a>
+            <a class="services-filter-all{% if not active_service_group and not active_public_service_filter %} is-active{% endif %}" href="/servicios">Todo</a>
             {% for key, item in public_service_filters.items() %}<a class="{% if active_public_service_filter == key %}is-active{% endif %}" href="/servicios?filtro={{ key }}">{{ item.label }}</a>{% endfor %}
         </nav>
         {% if not active_public_service_filter and active_service_group == 'compras' %}
