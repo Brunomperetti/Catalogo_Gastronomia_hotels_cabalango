@@ -624,7 +624,8 @@ def test_historical_pharmacy_is_inferred_in_admin_without_rewrite(admin_app):
     company = add_company(db, slug="farmacia", theme="servicios", subtipo="Farmacia", subgrupo=None, activo=True)
     response = client.get(f"/admin?empresa={company.slug}&tab=rubro")
     assert response.status_code == 200
-    assert '<option value="salud" selected>Salud y bienestar</option>' in response.text
+    assert '<option value="farmacia" selected>Farmacia</option>' in response.text
+    assert '<option value="Farmacia" selected>Farmacia</option>' in response.text
     assert "Salud y bienestar · Farmacia" in response.text
     db.refresh(company)
     assert company.subgrupo is None
@@ -635,7 +636,75 @@ def test_admin_uses_shopping_group_label_without_changing_value(admin_app):
     company = add_company(db, slug="almacen", theme="servicios", subtipo="Almacén", subgrupo="compras")
     response = client.get(f"/admin?empresa={company.slug}&tab=rubro")
     assert response.status_code == 200
-    assert '<option value="compras" selected>Compras</option>' in response.text
+    assert '<option value="almacenes" selected>Almacenes y kioscos</option>' in response.text
+
+
+@pytest.mark.parametrize(("group", "subtype", "category", "label"), [
+    ("otros", "Lavadero", "lavanderia", "Lavandería"),
+    ("salud", "Farmacia", "farmacia", "Farmacia"),
+    ("compras", "Proveeduría", "almacenes", "Almacenes y kioscos"),
+    ("compras", "Productos regionales", "locales", "Productos locales y artesanías"),
+    ("transporte", "Remis", "transporte", "Transporte"),
+    ("estacionamiento", "Estacionamiento", "estacionamiento", "Estacionamiento"),
+])
+def test_admin_displays_public_service_category_and_matching_type(
+    admin_app, group, subtype, category, label
+):
+    client, db, _ = admin_app
+    company = add_company(
+        db, slug=f"service-{category}", theme="servicios", subgrupo=group, subtipo=subtype
+    )
+
+    response = client.get(f"/admin?empresa={company.slug}&tab=rubro")
+
+    assert response.status_code == 200
+    assert f'<option value="{category}" selected>{label}</option>' in response.text
+    assert f'<option value="{subtype}" selected>{subtype}</option>' in response.text
+    assert "Categoría en la guía" in response.text
+    assert "Tipo de servicio" in response.text
+    assert "Las panaderías se cargan desde Gastronomía → Panadería" in response.text
+
+
+def test_admin_preserves_unknown_historical_service_type(admin_app):
+    client, db, _ = admin_app
+    company = add_company(
+        db, slug="gomeria-historica", theme="servicios", subgrupo="otros", subtipo="Gomería"
+    )
+
+    page = client.get(f"/admin?empresa={company.slug}&tab=rubro")
+    assert '<option value="otros" selected>Otros servicios</option>' in page.text
+    assert '<option value="Gomería" selected>Gomería (valor histórico)</option>' in page.text
+
+    response = edit_company(
+        client, company, categoria_guia="otros", subtipo="Gomería"
+    )
+    assert response.status_code == 303
+    db.refresh(company)
+    assert company.subgrupo == "otros"
+    assert company.subtipo == "Gomería"
+
+
+@pytest.mark.parametrize(("category", "subtype", "expected_group"), [
+    ("lavanderia", "Lavadero", "otros"),
+    ("farmacia", "Farmacia", "salud"),
+])
+def test_admin_public_service_category_maps_to_legacy_storage(
+    admin_app, category, subtype, expected_group
+):
+    client, db, _ = admin_app
+    company = add_company(
+        db, slug=f"save-{category}", theme="servicios", subgrupo="compras", subtipo="Otro"
+    )
+
+    response = edit_company(
+        client, company, categoria_guia=category, subtipo=subtype
+    )
+
+    assert response.status_code == 303
+    db.refresh(company)
+    assert company.theme == "servicios"
+    assert company.subgrupo == expected_group
+    assert company.subtipo == subtype
 
 
 @pytest.mark.parametrize(("subtype", "group"), [

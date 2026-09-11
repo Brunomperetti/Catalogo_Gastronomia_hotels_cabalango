@@ -2277,6 +2277,7 @@ def editar_empresa_panel(
     quinchos: str | None = Form(None),
     motorhome: str | None = Form(None),
     subgrupo: str | None = Form(None),
+    categoria_guia: str | None = Form(None),
     destacado: str = Form("0"),
     activo: str = Form("0"),
     theme: str = Form("default"),
@@ -2357,7 +2358,9 @@ def editar_empresa_panel(
             empresa.alojamiento_habitaciones_unidades = (
                 json.dumps(room_options, separators=(",", ":")) if room_options else None
             )
-    if subgrupo is not None or normalize_theme(theme) == "servicios":
+    if normalize_theme(theme) == "servicios" and categoria_guia is not None:
+        empresa.subgrupo = service_group_for_admin_category(categoria_guia, empresa.subgrupo)
+    elif subgrupo is not None or normalize_theme(theme) == "servicios":
         effective_subtype = subtipo if subtipo is not None else empresa.subtipo
         empresa.subgrupo = normalize_service_group_subtype(subgrupo, effective_subtype, theme)
     if destacado is not None:
@@ -2759,6 +2762,55 @@ SERVICIOS_SUBTIPOS = {
     "lavadero": ("otros", "Lavadero"),
     "lavadero de ropa": ("otros", "Lavadero de ropa"),
 }
+
+# The admin presents the public directory vocabulary while continuing to persist
+# the historical ``subgrupo``/``subtipo`` representation. Bakeries deliberately
+# remain outside this map because they are gastronomic providers.
+SERVICIOS_CATEGORIAS_ADMIN = {
+    "almacenes": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["almacenes"]["label"],
+        "subgrupo": "compras",
+        "subtipos": ["Proveeduría", "Almacén", "Minimercado", "Kiosco", "Fraccionamiento de productos secos"],
+    },
+    "locales": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["locales"]["label"],
+        "subgrupo": "compras",
+        "subtipos": ["Productos regionales"],
+    },
+    "transporte": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["transporte"]["label"],
+        "subgrupo": "transporte",
+        "subtipos": ["Remis", "Transporte"],
+    },
+    "estacionamiento": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["estacionamiento"]["label"],
+        "subgrupo": "estacionamiento",
+        "subtipos": ["Playa de estacionamiento", "Estacionamiento"],
+    },
+    "farmacia": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["farmacia"]["label"],
+        "subgrupo": "salud",
+        "subtipos": ["Farmacia"],
+    },
+    "lavanderia": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["lavanderia"]["label"],
+        "subgrupo": "otros",
+        "subtipos": ["Lavadero", "Lavadero de ropa"],
+    },
+    "otros": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["otros"]["label"],
+        "subgrupo": "otros",
+        "subtipos": ["Kinesiología", "Centro de salud", "Otro"],
+    },
+}
+
+
+def service_group_for_admin_category(category: str | None, fallback: str | None = None) -> str | None:
+    """Translate the admin's public category back to the legacy service group."""
+    category_config = SERVICIOS_CATEGORIAS_ADMIN.get(clean_text(category, default=""))
+    if category_config:
+        return category_config["subgrupo"]
+    return normalize_subgrupo_for_theme(fallback, "servicios")
 
 
 def service_group_for_subtype(value: str | None) -> str | None:
@@ -4705,6 +4757,8 @@ def admin_panel(
             "prestador_section_label": theme_display_label(empresa_activa.theme) if empresa_activa else "",
             "prestador_taxonomy_label": service_card_kicker(empresa_activa) if empresa_activa and normalize_theme(empresa_activa.theme) == "servicios" else clean_text(empresa_activa.subtipo, default="") if empresa_activa else "",
             "servicio_subtipo_grupos": {label: group for group, label in SERVICIOS_SUBTIPOS.values()},
+            "servicios_categorias_admin": SERVICIOS_CATEGORIAS_ADMIN,
+            "servicio_categoria_activa": public_service_category_key(empresa_activa) if empresa_activa and normalize_theme(empresa_activa.theme) == "servicios" else "",
         },
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
