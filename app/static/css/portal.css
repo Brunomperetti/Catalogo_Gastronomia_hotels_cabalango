@@ -6132,6 +6132,13 @@ body,
 .portal-body .prestador-page .provider-amenities__item { align-items: center; border-top: 1px solid var(--portal-border); display: flex; gap: 12px; min-width: 0; padding: 16px 0; }
 .portal-body .prestador-page .provider-amenities__icon { align-items: center; border: 1px solid color-mix(in srgb, var(--portal-water) 45%, var(--portal-border)); border-radius: 50%; color: var(--portal-water); display: flex; flex: 0 0 36px; height: 36px; justify-content: center; }
 .portal-body .prestador-page .provider-amenities__icon .provider-icon { height: 20px; width: 20px; }
+.portal-body .prestador-page .camping-facts h2 { margin-bottom: 22px; }
+.portal-body .prestador-page .camping-facts-grid { background: rgba(225, 216, 197, .38); border: 1px solid rgba(83, 91, 67, .16); border-radius: calc(var(--provider-radius) - 6px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0; overflow: hidden; }
+.portal-body .prestador-page .camping-fact { min-width: 0; padding: 20px 22px; }
+.portal-body .prestador-page .camping-fact:not(:nth-child(3n + 1)) { border-left: 1px solid var(--portal-border); }
+.portal-body .prestador-page .camping-fact:nth-child(n + 4) { border-top: 1px solid var(--portal-border); }
+.portal-body .prestador-page .camping-fact-label { margin-bottom: 6px; }
+.portal-body .prestador-page .camping-fact-value { font-size: .94rem; line-height: 1.5; }
 .portal-body .prestador-page .prestador-detail-grid > article { min-width: 0; overflow-wrap: anywhere; }
 .portal-body .prestador-page .prestador-detail-grid > article h2 { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 16px; }
 .portal-body .prestador-page .promo-highlight { align-items: flex-start; background: linear-gradient(135deg, #5A392B 0%, #4A2F25 55%, #3F281F 100%); border: 1px solid rgba(222, 190, 143, .32); border-left: 4px solid #D2AD73; border-radius: 4px 16px 16px 4px; box-shadow: 0 14px 30px rgba(50, 31, 23, .20); display: flex; gap: 18px; margin-top: 24px; padding: 24px 26px; }
@@ -6189,6 +6196,11 @@ body,
   .portal-body .prestador-page .tourism-heading-card h1 { font-size: clamp(3rem, 7vw, 4.5rem); }
   .portal-body .prestador-page .provider-key-summary { padding-inline: 26px; }
   .portal-body .prestador-page .provider-amenities__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal-body .prestador-page .camping-facts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portal-body .prestador-page .camping-fact:not(:nth-child(3n + 1)) { border-left: 0; }
+  .portal-body .prestador-page .camping-fact:nth-child(n + 4) { border-top: 0; }
+  .portal-body .prestador-page .camping-fact:nth-child(even) { border-left: 1px solid var(--portal-border); }
+  .portal-body .prestador-page .camping-fact:nth-child(n + 3) { border-top: 1px solid var(--portal-border); }
 }
 
 @media (max-width: 700px) {
@@ -6208,6 +6220,11 @@ body,
   .portal-body .prestador-page .provider-content-grid,
   .portal-body .prestador-page .provider-location-grid { grid-template-columns: 1fr; }
   .portal-body .prestador-page .provider-amenities { padding: 26px 20px; }
+  .portal-body .prestador-page .camping-facts h2 { margin-bottom: clamp(24px, 3vw, 34px); }
+  .portal-body .prestador-page .camping-facts-grid { grid-template-columns: 1fr; }
+  .portal-body .prestador-page .camping-fact { padding: 15px 22px; }
+  .portal-body .prestador-page .camping-fact:nth-child(even) { border-left: 0; }
+  .portal-body .prestador-page .camping-fact:nth-child(n + 2) { border-top: 1px solid var(--portal-border); }
   .portal-body .prestador-page .promo-highlight { gap: 13px; padding: 20px 18px; }
   .portal-body .prestador-page .promo-highlight > div > strong { font-size: clamp(1.3rem, 7vw, 1.55rem); }
   .portal-body .prestador-page .public-gallery__grid,

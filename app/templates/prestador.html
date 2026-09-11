@@ -135,10 +135,17 @@
         {% endif %}
 
         {% if alojamiento_camping and quick_facts %}
-        <section class="portal-card provider-amenities" aria-labelledby="camping-facts-title">
+        <section class="portal-card provider-amenities camping-facts" aria-labelledby="camping-facts-title">
             <p class="portal-card-label">INFORMACIÓN DEL CAMPING</p>
             <h2 id="camping-facts-title">Datos para organizar tu visita</h2>
-            <dl class="provider-key-summary"><div>{% for fact in quick_facts %}<span><dt>{{ fact.label }}</dt><dd>{{ fact.value }}</dd></span>{% endfor %}</div></dl>
+            <dl class="camping-facts-grid">
+                {% for fact in quick_facts %}
+                <div class="camping-fact">
+                    <dt class="camping-fact-label">{{ fact.label }}</dt>
+                    <dd class="camping-fact-value">{{ fact.value }}</dd>
+                </div>
+                {% endfor %}
+            </dl>
         </section>
         {% endif %}
 
