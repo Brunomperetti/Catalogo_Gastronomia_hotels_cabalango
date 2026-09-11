@@ -643,9 +643,14 @@ def test_admin_uses_shopping_group_label_without_changing_value(admin_app):
     ("otros", "Lavadero", "lavanderia", "Lavandería"),
     ("salud", "Farmacia", "farmacia", "Farmacia"),
     ("compras", "Proveeduría", "almacenes", "Almacenes y kioscos"),
+    ("compras", "Despensa", "almacenes", "Almacenes y kioscos"),
     ("compras", "Productos regionales", "locales", "Productos locales y artesanías"),
     ("transporte", "Remis", "transporte", "Transporte"),
+    ("transporte", "Taxi", "transporte", "Transporte"),
+    ("transporte", "Traslado turístico", "transporte", "Transporte"),
+    ("transporte", "Transfer", "transporte", "Transporte"),
     ("estacionamiento", "Estacionamiento", "estacionamiento", "Estacionamiento"),
+    ("salud", "Estética", "otros", "Otros servicios"),
 ])
 def test_admin_displays_public_service_category_and_matching_type(
     admin_app, group, subtype, category, label
@@ -684,9 +689,38 @@ def test_admin_preserves_unknown_historical_service_type(admin_app):
     assert company.subtipo == "Gomería"
 
 
+@pytest.mark.parametrize("subtype", ["Kinesiología", "Centro de salud"])
+def test_admin_keeps_health_group_when_saving_public_others_unchanged(admin_app, subtype):
+    client, db, _ = admin_app
+    company = add_company(
+        db,
+        slug=f"health-{subtype.lower().replace(' ', '-')}",
+        theme="servicios",
+        subgrupo="salud",
+        subtipo=subtype,
+    )
+
+    page = client.get(f"/admin?empresa={company.slug}&tab=rubro")
+    assert '<option value="otros" selected>Otros servicios</option>' in page.text
+    assert f'<option value="{subtype}" selected>{subtype}</option>' in page.text
+
+    response = edit_company(client, company, categoria_guia="otros", subtipo=subtype)
+    assert response.status_code == 303
+    db.refresh(company)
+    assert company.subgrupo == "salud"
+    assert company.subtipo == subtype
+
+
 @pytest.mark.parametrize(("category", "subtype", "expected_group"), [
     ("lavanderia", "Lavadero", "otros"),
     ("farmacia", "Farmacia", "salud"),
+    ("otros", "Estética", "salud"),
+    ("almacenes", "Despensa", "compras"),
+    ("transporte", "Taxi", "transporte"),
+    ("transporte", "Traslado turístico", "transporte"),
+    ("transporte", "Transfer", "transporte"),
+    ("transporte", "Otro", "transporte"),
+    ("otros", "Otro", "otros"),
 ])
 def test_admin_public_service_category_maps_to_legacy_storage(
     admin_app, category, subtype, expected_group

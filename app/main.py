@@ -2359,7 +2359,9 @@ def editar_empresa_panel(
                 json.dumps(room_options, separators=(",", ":")) if room_options else None
             )
     if normalize_theme(theme) == "servicios" and categoria_guia is not None:
-        empresa.subgrupo = service_group_for_admin_category(categoria_guia, empresa.subgrupo)
+        empresa.subgrupo = service_group_for_admin_category(
+            categoria_guia, empresa.subtipo, empresa.subgrupo
+        )
     elif subgrupo is not None or normalize_theme(theme) == "servicios":
         effective_subtype = subtipo if subtipo is not None else empresa.subtipo
         empresa.subgrupo = normalize_service_group_subtype(subgrupo, effective_subtype, theme)
@@ -2748,15 +2750,20 @@ GASTRONOMIA_FILTROS_PUBLICOS = {
 SERVICIOS_SUBTIPOS = {
     "proveeduria": ("compras", "Proveeduría"),
     "almacen": ("compras", "Almacén"),
+    "despensa": ("compras", "Despensa"),
     "minimercado": ("compras", "Minimercado"),
     "kiosco": ("compras", "Kiosco"),
     "regionales": ("compras", "Productos regionales"),
     "fraccionamiento de productos secos": ("compras", "Fraccionamiento de productos secos"),
     "remis": ("transporte", "Remis"),
+    "taxi": ("transporte", "Taxi"),
+    "traslado turistico": ("transporte", "Traslado turístico"),
+    "transfer": ("transporte", "Transfer"),
     "transporte": ("transporte", "Transporte"),
     "playa de estacionamiento": ("estacionamiento", "Playa de estacionamiento"),
     "estacionamiento": ("estacionamiento", "Estacionamiento"),
     "kinesiologia": ("salud", "Kinesiología"),
+    "estetica": ("salud", "Estética"),
     "centro de salud": ("salud", "Centro de salud"),
     "farmacia": ("salud", "Farmacia"),
     "lavadero": ("otros", "Lavadero"),
@@ -2770,7 +2777,7 @@ SERVICIOS_CATEGORIAS_ADMIN = {
     "almacenes": {
         "label": SERVICIOS_FILTROS_PUBLICOS["almacenes"]["label"],
         "subgrupo": "compras",
-        "subtipos": ["Proveeduría", "Almacén", "Minimercado", "Kiosco", "Fraccionamiento de productos secos"],
+        "subtipos": ["Almacén", "Despensa", "Kiosco", "Minimercado", "Proveeduría", "Fraccionamiento de productos secos"],
     },
     "locales": {
         "label": SERVICIOS_FILTROS_PUBLICOS["locales"]["label"],
@@ -2780,7 +2787,7 @@ SERVICIOS_CATEGORIAS_ADMIN = {
     "transporte": {
         "label": SERVICIOS_FILTROS_PUBLICOS["transporte"]["label"],
         "subgrupo": "transporte",
-        "subtipos": ["Remis", "Transporte"],
+        "subtipos": ["Remis", "Taxi", "Traslado turístico", "Transfer", "Transporte", "Otro"],
     },
     "estacionamiento": {
         "label": SERVICIOS_FILTROS_PUBLICOS["estacionamiento"]["label"],
@@ -2800,17 +2807,34 @@ SERVICIOS_CATEGORIAS_ADMIN = {
     "otros": {
         "label": SERVICIOS_FILTROS_PUBLICOS["otros"]["label"],
         "subgrupo": "otros",
-        "subtipos": ["Kinesiología", "Centro de salud", "Otro"],
+        "subtipos": ["Kinesiología", "Estética", "Centro de salud", "Otro"],
     },
 }
 
 
-def service_group_for_admin_category(category: str | None, fallback: str | None = None) -> str | None:
-    """Translate the admin's public category back to the legacy service group."""
-    category_config = SERVICIOS_CATEGORIAS_ADMIN.get(clean_text(category, default=""))
-    if category_config:
+def service_group_for_admin_category(
+    category: str | None, subtype: str | None, fallback: str | None = None
+) -> str | None:
+    """Translate an admin category and subtype back to their legacy group.
+
+    The public ``otros`` bucket contains both health and miscellaneous legacy
+    groups. Structured health subtypes retain ``salud``; an unknown historical
+    subtype keeps its current valid group rather than being silently rewritten.
+    """
+    category_key = clean_text(category, default="")
+    category_config = SERVICIOS_CATEGORIAS_ADMIN.get(category_key)
+    if not category_config:
+        return normalize_subgrupo_for_theme(fallback, "servicios")
+    if category_key != "otros":
         return category_config["subgrupo"]
-    return normalize_subgrupo_for_theme(fallback, "servicios")
+
+    subtype_key = normalize_taxonomy_key(subtype)
+    inferred_group = service_group_for_subtype(subtype)
+    if inferred_group == "salud" and subtype_key != "farmacia":
+        return "salud"
+    if subtype_key == "otro":
+        return "otros"
+    return normalize_subgrupo_for_theme(fallback, "servicios") or "otros"
 
 
 def service_group_for_subtype(value: str | None) -> str | None:
