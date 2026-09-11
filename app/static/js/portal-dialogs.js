@@ -1,6 +1,10 @@
 (function () {
+  const DEEP_LINK_DIALOG_IDS = new Set([
+    'destination-dialog-seguridad',
+    'destination-dialog-salud-emergencias',
+  ]);
   const openers = document.querySelectorAll('[data-dialog-open]');
-  if (!openers.length || typeof HTMLDialogElement === 'undefined') return;
+  if (typeof HTMLDialogElement === 'undefined') return;
 
   let activeTrigger = null;
 
@@ -14,13 +18,37 @@
     dialog.close();
   };
 
+  const openDialog = (dialog, trigger) => {
+    if (!dialog || typeof dialog.showModal !== 'function' || dialog.open) return;
+    if (trigger) activeTrigger = trigger;
+    dialog.showModal();
+    focusDialog(dialog);
+  };
+
   openers.forEach((opener) => {
     opener.addEventListener('click', () => {
       const dialog = document.getElementById(opener.dataset.dialogOpen);
-      if (!dialog || typeof dialog.showModal !== 'function') return;
-      activeTrigger = opener;
-      dialog.showModal();
-      focusDialog(dialog);
+      openDialog(dialog, opener);
+    });
+  });
+
+  const openDialogFromHash = () => {
+    const id = window.location.hash.slice(1);
+    if (!DEEP_LINK_DIALOG_IDS.has(id)) return;
+    openDialog(document.getElementById(id), null);
+  };
+
+  document.querySelectorAll('a[href^="/#"]').forEach((link) => {
+    const id = link.getAttribute('href').slice(2);
+    if (!DEEP_LINK_DIALOG_IDS.has(id)) return;
+
+    const dialog = document.getElementById(id);
+    if (!dialog) return;
+
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      if (window.location.hash !== `#${id}`) window.location.hash = id;
+      openDialog(dialog, link);
     });
   });
 
@@ -38,4 +66,7 @@
       button.addEventListener('click', () => closeDialog(dialog));
     });
   });
+
+  openDialogFromHash();
+  window.addEventListener('hashchange', openDialogFromHash);
 }());
