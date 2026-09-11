@@ -142,7 +142,11 @@
                 {% for fact in quick_facts %}
                 <div class="camping-fact">
                     <dt class="camping-fact-label">{{ fact.label }}</dt>
+                    {% if fact.label == "Horarios de atención" %}
+                    <dd class="camping-fact-value camping-fact-value--schedule">{% for part in fact.value.split(' | ') %}<span>{{ part }}</span>{% endfor %}</dd>
+                    {% else %}
                     <dd class="camping-fact-value">{{ fact.value }}</dd>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </dl>
