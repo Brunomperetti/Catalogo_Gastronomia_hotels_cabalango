@@ -41,6 +41,7 @@
     {% set provider_products = build_provider_products(empresa, kind) if build_provider_products is defined else [] %}
     <main class="portal-shell prestador-page">
         {% set active_section = 'alojamientos' if kind == 'alojamiento' else kind if kind in ['gastronomia', 'servicios', 'actividades'] else '' %}
+        {% set show_portal_assistant = false %}
         {% include "partials/portal_nav.html" %}
 
         {% if kind == 'servicios' %}

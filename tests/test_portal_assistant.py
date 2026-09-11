@@ -13,7 +13,19 @@ PARTIAL = ROOT / "app/templates/partials/portal_assistant.html"
 def test_assistant_partial_and_single_nav_include_exist():
     assert PARTIAL.exists()
     nav = (ROOT / "app/templates/partials/portal_nav.html").read_text(encoding="utf-8")
+    assert "show_portal_assistant|default(true)" in nav
     assert nav.count('partials/portal_assistant.html') == 1
+
+
+def test_detail_templates_disable_assistant_before_nav_include():
+    for template_name, nav_include in (
+        ("prestador.html", '{% include "partials/portal_nav.html" %}'),
+        ("actividad_detalle.html", "{% include 'partials/portal_nav.html' %}"),
+    ):
+        markup = (ROOT / f"app/templates/{template_name}").read_text(encoding="utf-8")
+        assistant_setting = "{% set show_portal_assistant = false %}"
+        assert assistant_setting in markup
+        assert markup.index(assistant_setting) < markup.index(nav_include)
 
 
 def test_assistant_renders_on_public_surfaces_only():

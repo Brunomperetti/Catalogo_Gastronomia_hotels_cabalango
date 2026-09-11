@@ -12,4 +12,6 @@
     <a class="{% if active_section == 'servicios' %}is-active{% endif %}" href="/servicios">Compras y servicios</a>
     <a class="{% if active_section == 'actividades' %}is-active{% endif %}" href="/actividades">Qué hacer</a>
 </nav>
-{% include "partials/portal_assistant.html" %}
+{% if show_portal_assistant|default(true) %}
+    {% include "partials/portal_assistant.html" %}
+{% endif %}
