@@ -107,7 +107,12 @@ def test_camping_facts_use_dedicated_responsive_grid():
 
     assert ".camping-facts-grid" in desktop and "repeat(3, minmax(0, 1fr))" in desktop
     assert ".camping-facts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }" in tablet
-    assert ".camping-facts-grid { grid-template-columns: 1fr; }" in mobile
+    mobile_grid = re.search(r"\.camping-facts-grid \{([^}]*)\}", mobile).group(1)
+    mobile_facts = " ".join(re.findall(r"\.camping-fact[^{}]*\{([^}]*)\}", mobile))
+    assert "grid-template-columns: 1fr" in mobile_grid
+    assert "border-top" not in mobile_facts and "border-left" not in mobile_facts
+    assert "border: 0" in mobile_facts
+    assert "min-height" not in mobile_grid and "min-height" not in mobile_facts
     assert "min-height" not in re.search(r"\.camping-facts-grid \{([^}]*)\}", desktop).group(1)
 
 

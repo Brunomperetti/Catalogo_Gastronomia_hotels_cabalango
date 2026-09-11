@@ -6221,10 +6221,10 @@ body,
   .portal-body .prestador-page .provider-location-grid { grid-template-columns: 1fr; }
   .portal-body .prestador-page .provider-amenities { padding: 26px 20px; }
   .portal-body .prestador-page .camping-facts h2 { margin-bottom: clamp(24px, 3vw, 34px); }
-  .portal-body .prestador-page .camping-facts-grid { grid-template-columns: 1fr; }
-  .portal-body .prestador-page .camping-fact { padding: 15px 22px; }
-  .portal-body .prestador-page .camping-fact:nth-child(even) { border-left: 0; }
-  .portal-body .prestador-page .camping-fact:nth-child(n + 2) { border-top: 1px solid var(--portal-border); }
+  .portal-body .prestador-page .camping-facts-grid { border: 0; border-radius: 0; gap: 22px; grid-template-columns: 1fr; padding: 30px 22px; }
+  .portal-body .prestador-page .camping-fact,
+  .portal-body .prestador-page .camping-fact:nth-child(even),
+  .portal-body .prestador-page .camping-fact:nth-child(n + 2) { border: 0; padding: 0; }
   .portal-body .prestador-page .promo-highlight { gap: 13px; padding: 20px 18px; }
   .portal-body .prestador-page .promo-highlight > div > strong { font-size: clamp(1.3rem, 7vw, 1.55rem); }
   .portal-body .prestador-page .public-gallery__grid,
