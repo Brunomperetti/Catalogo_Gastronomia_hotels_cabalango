@@ -5974,6 +5974,14 @@ def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict
         if is_camping(empresa):
             capacidad = alojamiento_fact_label(empresa.capacidad, "persona", "personas")
             _append_text_fact(rows, "Capacidad aproximada", f"Hasta {capacidad}" if capacidad and not capacidad.lower().startswith("hasta") else capacidad)
+            _append_text_fact(rows, "Horarios de atención", empresa.horarios)
+            for attr, label, value in [
+                ("rio", "Entorno", "Frente al río"),
+                ("motorhome", "Motorhome", "Acepta motorhome"),
+                ("mascotas", "Mascotas", "Acepta mascotas"),
+            ]:
+                if getattr(empresa, attr, None) is True:
+                    _append_text_fact(rows, label, value)
             return rows
         elif is_alojamiento_complejo(empresa):
             facts = build_alojamiento_key_facts(empresa)

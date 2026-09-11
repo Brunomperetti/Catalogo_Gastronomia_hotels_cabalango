@@ -70,12 +70,50 @@ def test_camping_option_listing_filter_and_existing_filters(camping_app):
 def test_camping_detail_uses_specific_facts_and_hides_irrelevant_data(camping_app):
     client, _db, _camping, _cabin = camping_app
     html = client.get("/prestador/camping-el-socavon").text
-    for value in ("Camping", "Hasta 400 personas", "Tarifa orientativa", "$10.000 por persona", "Duchas", "Agua caliente", "Electricidad", "Acepta motorhome", "Quinchos", "Horarios de atención", "Invierno: 10:00 a 18:00", "Verano: 9:00 a 20:30"):
+    for value in ("Camping", "Hasta 400 personas", "Tarifa orientativa", "$10.000 por persona", "Duchas", "Agua caliente", "Electricidad", "Frente al río", "Acepta motorhome", "Acepta mascotas", "Quinchos", "Horarios de atención", "Invierno: 10:00 a 18:00", "Verano: 9:00 a 20:30"):
         assert value in html
+    facts = re.search(r'<section class="portal-card provider-amenities camping-facts".*?</section>', html, re.DOTALL).group(0)
+    assert facts.index("Tarifa orientativa") < facts.index("Capacidad aproximada") < facts.index("Horarios de atención")
+    assert facts.index("Horarios de atención") < facts.index("Entorno") < facts.index("Motorhome") < facts.index("Mascotas")
+    assert "SERVICIOS Y COMODIDADES" in html
     assert "Habitaciones</dt>" not in html
     assert "Check-in" not in html
     conventional = main.build_prestador_quick_facts(_cabin, "alojamiento")
     assert {fact["label"]: fact["value"] for fact in conventional}["Habitaciones"] == "2"
+
+
+def test_camping_quick_facts_omit_false_none_and_empty_values(camping_app):
+    _client, _db, camping, cabin = camping_app
+    camping.precio_desde = ""
+    camping.capacidad = None
+    camping.horarios = ""
+    camping.rio = False
+    camping.motorhome = None
+    camping.mascotas = False
+
+    assert main.build_prestador_quick_facts(camping, "alojamiento") == []
+    conventional = main.build_prestador_quick_facts(cabin, "alojamiento")
+    assert not {"Entorno", "Motorhome", "Horarios de atención"} & {
+        fact["label"] for fact in conventional
+    }
+
+
+def test_camping_facts_use_dedicated_responsive_grid():
+    css = open("app/static/css/portal.css", encoding="utf-8").read()
+    provider_css = css.split("/* PUBLIC PROVIDER PAGE", 1)[1]
+    desktop = provider_css.split("@media (max-width: 900px)", 1)[0]
+    tablet = provider_css.split("@media (max-width: 900px)", 1)[1].split("@media (max-width: 700px)", 1)[0]
+    mobile = provider_css.split("@media (max-width: 700px)", 1)[1].split("@media (max-width: 480px)", 1)[0]
+
+    assert ".camping-facts-grid" in desktop and "repeat(3, minmax(0, 1fr))" in desktop
+    assert ".camping-facts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }" in tablet
+    mobile_grid = re.search(r"\.camping-facts-grid \{([^}]*)\}", mobile).group(1)
+    mobile_facts = " ".join(re.findall(r"\.camping-fact[^{}]*\{([^}]*)\}", mobile))
+    assert "grid-template-columns: 1fr" in mobile_grid
+    assert "border-top" not in mobile_facts and "border-left" not in mobile_facts
+    assert "border: 0" in mobile_facts
+    assert "min-height" not in mobile_grid and "min-height" not in mobile_facts
+    assert "min-height" not in re.search(r"\.camping-facts-grid \{([^}]*)\}", desktop).group(1)
 
 
 def test_admin_edits_camping_and_normalizes_type(camping_app):
