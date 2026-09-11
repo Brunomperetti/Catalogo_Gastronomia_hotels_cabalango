@@ -51,7 +51,7 @@ def test_assistant_accessible_shell_and_exact_navigation():
         ("health", "assistant-view-health", "Salud y emergencias"),
     ]
     assert re.findall(r'<a href="([^"]+)">([^<]+)</a>', root) == [
-        ("/descubri-cabalango", "Seguridad"), ("/como-llegar", "Cómo llegar")
+        ("/#destination-dialog-seguridad", "Seguridad"), ("/como-llegar", "Cómo llegar")
     ]
     assert "<input" not in markup and "<textarea" not in markup
 
@@ -104,7 +104,9 @@ def test_assistant_submenus_use_exact_public_urls():
         "/servicios?filtro=lavanderia", "/servicios?filtro=otros", "/servicios",
     ]
     assert urls("agenda") == ["/agenda?cuando=hoy", "/agenda"]
-    assert urls("health") == ["/servicios?filtro=farmacia", "/descubri-cabalango"]
+    assert urls("health") == [
+        "/servicios?filtro=farmacia", "/#destination-dialog-salud-emergencias",
+    ]
 
 
 def test_assistant_assets_are_isolated_and_static_only():

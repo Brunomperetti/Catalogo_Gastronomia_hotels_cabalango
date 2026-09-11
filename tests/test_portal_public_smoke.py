@@ -111,6 +111,21 @@ def test_portal_home_smoke():
     assert "Si buscás más movimiento" not in response.text
 
 
+def test_portal_dialog_script_supports_destination_deep_links():
+    script = __import__("pathlib").Path("app/static/js/portal-dialogs.js").read_text(encoding="utf-8")
+
+    for requirement in (
+        "destination-dialog-seguridad",
+        "destination-dialog-salud-emergencias",
+        "window.location.hash",
+        "hashchange",
+        "data-dialog-open",
+        "showModal()",
+        "data-dialog-close",
+    ):
+        assert requirement in script
+
+
 def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     client = TestClient(app)
     home = client.get("/").text
