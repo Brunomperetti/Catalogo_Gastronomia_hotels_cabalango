@@ -1,4 +1,4 @@
-<link rel="stylesheet" href="{{ url_for('static', path='css/portal-assistant.css') }}?v=20260910-assistant-shell-1">
+<link rel="stylesheet" href="{{ url_for('static', path='css/portal-assistant.css') }}?v=20260911-assistant-navigation-1">
 
 <div class="cabalango-assistant" data-cabalango-assistant>
     <button
@@ -31,21 +31,98 @@
         </header>
 
         <div class="cabalango-assistant-content">
-            <p class="cabalango-assistant-eyebrow">Guía rápida</p>
-            <h3>¿Qué necesitás encontrar?</h3>
-            <p class="cabalango-assistant-intro">Elegí una opción y te llevamos a la información que necesitás.</p>
-            <nav class="cabalango-assistant-options" aria-label="Opciones del asistente">
-                <a href="/gastronomia">Dónde comer</a>
-                <a href="/alojamientos">Alojamientos</a>
-                <a href="/actividades">Qué hacer</a>
-                <a href="/servicios">Compras y servicios</a>
-                <a href="/agenda">Qué hay hoy</a>
-                <a href="/descubri-cabalango">Salud y emergencias</a>
-                <a href="/descubri-cabalango">Seguridad</a>
-                <a href="/como-llegar">Cómo llegar</a>
-            </nav>
+            <section id="assistant-view-root" data-assistant-view="root">
+                <p class="cabalango-assistant-eyebrow">Guía rápida</p>
+                <h3>¿Qué necesitás encontrar?</h3>
+                <p class="cabalango-assistant-intro">Elegí una opción y te llevamos a la información que necesitás.</p>
+                <nav class="cabalango-assistant-options" aria-label="Opciones del asistente">
+                    <button type="button" data-assistant-target="gastronomy" aria-controls="assistant-view-gastronomy">Dónde comer</button>
+                    <button type="button" data-assistant-target="accommodation" aria-controls="assistant-view-accommodation">Alojamientos</button>
+                    <button type="button" data-assistant-target="activities" aria-controls="assistant-view-activities">Qué hacer</button>
+                    <button type="button" data-assistant-target="services" aria-controls="assistant-view-services">Compras y servicios</button>
+                    <button type="button" data-assistant-target="agenda" aria-controls="assistant-view-agenda">Qué hay hoy</button>
+                    <button type="button" data-assistant-target="health" aria-controls="assistant-view-health">Salud y emergencias</button>
+                    <a href="/descubri-cabalango">Seguridad</a>
+                    <a href="/como-llegar">Cómo llegar</a>
+                </nav>
+            </section>
+
+            <section id="assistant-view-gastronomy" data-assistant-view="gastronomy" hidden>
+                <button type="button" class="cabalango-assistant-back" data-assistant-back><span aria-hidden="true">←</span> Volver</button>
+                <p class="cabalango-assistant-eyebrow">DÓNDE COMER</p>
+                <h3 id="assistant-gastronomy-title" tabindex="-1">¿Qué te gustaría encontrar?</h3>
+                <p class="cabalango-assistant-intro">Elegí una categoría y te llevamos directo a las propuestas disponibles.</p>
+                <nav class="cabalango-assistant-options" aria-label="Opciones de gastronomía">
+                    <a href="/gastronomia?filtro=restaurantes">Restaurantes</a><a href="/gastronomia?filtro=parrillas">Parrillas</a>
+                    <a href="/gastronomia?filtro=casas_comida">Casas de comida</a><a href="/gastronomia?filtro=bares">Bares</a>
+                    <a href="/gastronomia?filtro=cafeterias">Cafeterías</a><a href="/gastronomia?filtro=rotiserias">Rotiserías</a>
+                    <a href="/gastronomia?filtro=food_trucks">Food trucks</a><a href="/gastronomia?filtro=otros">Otros</a>
+                    <a href="/gastronomia">Ver toda la gastronomía</a>
+                </nav>
+            </section>
+
+            <section id="assistant-view-accommodation" data-assistant-view="accommodation" hidden>
+                <button type="button" class="cabalango-assistant-back" data-assistant-back><span aria-hidden="true">←</span> Volver</button>
+                <p class="cabalango-assistant-eyebrow">ALOJAMIENTOS</p>
+                <h3 id="assistant-accommodation-title" tabindex="-1">¿Qué tipo de alojamiento buscás?</h3>
+                <p class="cabalango-assistant-intro">Elegí una opción para empezar tu búsqueda.</p>
+                <nav class="cabalango-assistant-options" aria-label="Opciones de alojamientos">
+                    <a href="/alojamientos?tipo=cabaña">Cabañas</a><a href="/alojamientos?tipo=casa">Casas</a>
+                    <a href="/alojamientos?tipo=hotel">Hoteles</a><a href="/alojamientos?tipo=departamento">Departamentos</a>
+                    <a href="/alojamientos?tipo=complejo">Complejos</a><a href="/alojamientos?tipo=hospedaje">Hospedajes</a>
+                    <a href="/alojamientos">Ver todos los alojamientos</a>
+                </nav>
+            </section>
+
+            <section id="assistant-view-activities" data-assistant-view="activities" hidden>
+                <button type="button" class="cabalango-assistant-back" data-assistant-back><span aria-hidden="true">←</span> Volver</button>
+                <p class="cabalango-assistant-eyebrow">QUÉ HACER</p>
+                <h3 id="assistant-activities-title" tabindex="-1">¿Qué te gustaría hacer?</h3>
+                <p class="cabalango-assistant-intro">Explorá actividades y experiencias según lo que tengas ganas de vivir.</p>
+                <nav class="cabalango-assistant-options" aria-label="Opciones de actividades">
+                    <a href="/actividades?categoria=naturaleza">Naturaleza</a><a href="/actividades?categoria=bienestar">Bienestar</a>
+                    <a href="/actividades?categoria=cultura">Cultura</a><a href="/actividades?categoria=entretenimiento">Entretenimiento</a>
+                    <a href="/actividades?categoria=familiar">Para chicos</a><a href="/actividades?categoria=deporte">Deporte</a>
+                    <a href="/actividades?categoria=artesania">Artesanía</a><a href="/actividades?categoria=musica">Música</a>
+                    <a href="/actividades?categoria=otros">Otros</a><a href="/actividades">Ver todas las actividades</a>
+                </nav>
+            </section>
+
+            <section id="assistant-view-services" data-assistant-view="services" hidden>
+                <button type="button" class="cabalango-assistant-back" data-assistant-back><span aria-hidden="true">←</span> Volver</button>
+                <p class="cabalango-assistant-eyebrow">COMPRAS Y SERVICIOS</p>
+                <h3 id="assistant-services-title" tabindex="-1">¿Qué necesitás encontrar?</h3>
+                <p class="cabalango-assistant-intro">Elegí una categoría para resolver rápidamente lo que necesitás durante tu visita.</p>
+                <nav class="cabalango-assistant-options" aria-label="Opciones de servicios">
+                    <a href="/servicios?filtro=almacenes">Almacenes y kioscos</a><a href="/servicios?filtro=panaderias">Panaderías</a>
+                    <a href="/servicios?filtro=locales">Productos locales y artesanías</a><a href="/servicios?filtro=transporte">Transporte</a>
+                    <a href="/servicios?filtro=estacionamiento">Estacionamiento</a><a href="/servicios?filtro=farmacia">Farmacia</a>
+                    <a href="/servicios?filtro=lavanderia">Lavandería</a><a href="/servicios?filtro=otros">Otros servicios</a>
+                    <a href="/servicios">Ver todos los servicios</a>
+                </nav>
+            </section>
+
+            <section id="assistant-view-agenda" data-assistant-view="agenda" hidden>
+                <button type="button" class="cabalango-assistant-back" data-assistant-back><span aria-hidden="true">←</span> Volver</button>
+                <p class="cabalango-assistant-eyebrow">AGENDA</p>
+                <h3 id="assistant-agenda-title" tabindex="-1">¿Qué querés consultar?</h3>
+                <p class="cabalango-assistant-intro">Revisá lo que sucede hoy o los próximos encuentros de Cabalango.</p>
+                <nav class="cabalango-assistant-options" aria-label="Opciones de agenda">
+                    <a href="/agenda?cuando=hoy">Qué hay hoy</a><a href="/agenda">Próximos eventos</a>
+                </nav>
+            </section>
+
+            <section id="assistant-view-health" data-assistant-view="health" hidden>
+                <button type="button" class="cabalango-assistant-back" data-assistant-back><span aria-hidden="true">←</span> Volver</button>
+                <p class="cabalango-assistant-eyebrow">SALUD Y EMERGENCIAS</p>
+                <h3 id="assistant-health-title" tabindex="-1">¿Qué información necesitás?</h3>
+                <p class="cabalango-assistant-intro">Accedé rápidamente a servicios e información útil para tu estadía.</p>
+                <nav class="cabalango-assistant-options" aria-label="Opciones de salud y emergencias">
+                    <a href="/servicios?filtro=farmacia">Farmacia</a><a href="/descubri-cabalango">Dispensario y emergencias</a>
+                </nav>
+            </section>
         </div>
     </section>
 </div>
 
-<script src="{{ url_for('static', path='js/portal-assistant.js') }}?v=20260910-assistant-shell-1" defer></script>
+<script src="{{ url_for('static', path='js/portal-assistant.js') }}?v=20260911-assistant-navigation-1" defer></script>
