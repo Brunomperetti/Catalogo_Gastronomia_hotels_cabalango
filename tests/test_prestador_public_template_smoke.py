@@ -109,6 +109,10 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
     )
 
 
+def test_provider_detail_does_not_render_portal_assistant():
+    assert 'id="cabalango-assistant"' not in render_prestador()
+
+
 def test_commerce_delivery_row_uses_explicit_tri_state_without_affecting_whatsapp():
     available = render_prestador("servicios", identity_overrides={"subgrupo": "compras", "delivery": True})
     unavailable = render_prestador("servicios", identity_overrides={"subgrupo": "compras", "delivery": False})

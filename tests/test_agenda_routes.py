@@ -184,9 +184,15 @@ def login_admin(client):
 
 def test_public_listing_and_detail_visibility(agenda_app):
     client, _ = agenda_app
-    assert client.get("/actividades").status_code == 200
-    assert client.get("/actividades/yoga-permanente").status_code == 200
-    assert client.get("/actividades/feria-hoy").status_code == 200
+    listing = client.get("/actividades")
+    activity_detail = client.get("/actividades/yoga-permanente")
+    event_detail = client.get("/actividades/feria-hoy")
+    assert listing.status_code == 200
+    assert listing.text.count('id="cabalango-assistant"') == 1
+    assert activity_detail.status_code == 200
+    assert 'id="cabalango-assistant"' not in activity_detail.text
+    assert event_detail.status_code == 200
+    assert 'id="cabalango-assistant"' not in event_detail.text
     for slug in ("evento-vencido", "evento-borrador", "evento-despublicado", "no-existe"):
         assert client.get(f"/actividades/{slug}").status_code == 404
 
