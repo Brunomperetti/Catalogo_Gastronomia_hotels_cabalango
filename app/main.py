@@ -195,6 +195,13 @@ def ensure_empresa_media_columns():
             "parrilla": "BOOLEAN",
             "aire_acondicionado": "BOOLEAN",
             "calefaccion": "BOOLEAN",
+            "duchas": "BOOLEAN",
+            "agua_caliente": "BOOLEAN",
+            "electricidad": "BOOLEAN",
+            "proveeduria": "BOOLEAN",
+            "mesas": "BOOLEAN",
+            "quinchos": "BOOLEAN",
+            "motorhome": "BOOLEAN",
             "galeria_urls": "TEXT",
             "menu_fotos_urls": "TEXT",
             "rating_promedio": "FLOAT",
@@ -2262,6 +2269,13 @@ def editar_empresa_panel(
     parrilla: str | None = Form(None),
     aire_acondicionado: str | None = Form(None),
     calefaccion: str | None = Form(None),
+    duchas: str | None = Form(None),
+    agua_caliente: str | None = Form(None),
+    electricidad: str | None = Form(None),
+    proveeduria: str | None = Form(None),
+    mesas: str | None = Form(None),
+    quinchos: str | None = Form(None),
+    motorhome: str | None = Form(None),
     subgrupo: str | None = Form(None),
     destacado: str = Form("0"),
     activo: str = Form("0"),
@@ -2328,6 +2342,8 @@ def editar_empresa_panel(
     for attr, raw_value in optional_text_fields.items():
         if raw_value is not None:
             setattr(empresa, attr, clean_text(raw_value, default="") or None)
+    if normalize_theme(theme) == "alojamiento" and is_camping_subtype(empresa.subtipo):
+        empresa.subtipo = "Camping"
     if normalize_theme(theme) == "alojamiento":
         if alojamiento_modalidad is not None:
             empresa.alojamiento_modalidad = normalize_alojamiento_modalidad(alojamiento_modalidad)
@@ -2352,6 +2368,8 @@ def editar_empresa_panel(
         "delivery": delivery, "take_away": take_away, "comer_en_lugar": comer_en_lugar,
         "pileta": pileta, "rio": rio, "mascotas": mascotas, "cochera": cochera, "wifi": wifi,
         "parrilla": parrilla, "aire_acondicionado": aire_acondicionado, "calefaccion": calefaccion,
+        "duchas": duchas, "agua_caliente": agua_caliente, "electricidad": electricidad,
+        "proveeduria": proveeduria, "mesas": mesas, "quinchos": quinchos, "motorhome": motorhome,
     }.items():
         if raw_value is not None:
             setattr(empresa, attr, str(raw_value) == "1")
@@ -2996,13 +3014,29 @@ def is_alojamiento_complejo(empresa: models.Empresa) -> bool:
     )
 
 
+def is_camping_subtype(value: str | None) -> bool:
+    """Recognize legacy casing/accents while persisting the canonical label."""
+    return normalize_taxonomy_key(value) in {"camping", "campings"}
+
+
+def is_camping(empresa: models.Empresa) -> bool:
+    return normalize_theme(getattr(empresa, "theme", None)) == "alojamiento" and is_camping_subtype(
+        getattr(empresa, "subtipo", None)
+    )
+
+
 def get_alojamiento_card_type(empresa: models.Empresa) -> str:
+    if is_camping(empresa):
+        return "Camping"
     if is_alojamiento_complejo(empresa):
         return "COMPLEJO"
     return clean_text(empresa.subtipo, default="") or theme_display_label(empresa.theme)
 
 
 def build_alojamiento_key_facts(empresa: models.Empresa) -> list[str]:
+    if is_camping(empresa):
+        capacidad = alojamiento_fact_label(empresa.capacidad, "persona", "personas")
+        return [f"Hasta {capacidad}" if capacidad and not capacidad.lower().startswith("hasta") else capacidad] if capacidad else []
     if is_alojamiento_complejo(empresa):
         facts = []
         detail = clean_text(getattr(empresa, "alojamiento_detalle_unidades", None), default="")
@@ -3141,7 +3175,10 @@ def build_public_card_chips(empresa: models.Empresa, section: str) -> list[str]:
     chips: list[str] = []
     kind = "alojamiento" if section == "alojamientos" else get_prestador_kind(empresa)
     if kind == "alojamiento":
-        for attr, label in [("pileta", "Pileta"), ("rio", "Cerca del río"), ("mascotas", "Mascotas"), ("cochera", "Cochera"), ("wifi", "WiFi"), ("parrilla", "Parrilla")]:
+        amenities = [("pileta", "Pileta"), ("rio", "Frente al río"), ("mascotas", "Mascotas"), ("cochera", "Estacionamiento"), ("wifi", "Wi-Fi"), ("parrilla", "Parrillas")]
+        if is_camping(empresa):
+            amenities += [("motorhome", "Motorhome"), ("duchas", "Duchas"), ("electricidad", "Electricidad")]
+        for attr, label in amenities:
             if getattr(empresa, attr, None) is True:
                 chips.append(label)
     elif kind == "gastronomia":
@@ -3180,6 +3217,16 @@ PROVIDER_AMENITIES = {
         ("take_away", "Take away", "bag"),
     ],
 }
+
+CAMPING_AMENITIES = [
+    ("banos", "Baños", "type"), ("duchas", "Duchas", "water"),
+    ("agua_caliente", "Agua caliente", "heat"), ("electricidad", "Electricidad", "spark"),
+    ("parrilla", "Parrillas", "grill"), ("proveeduria", "Proveeduría", "bag"),
+    ("wifi", "Wi-Fi", "wifi"), ("cochera", "Estacionamiento", "car"),
+    ("mesas", "Mesas", "type"), ("quinchos", "Quinchos", "type"),
+    ("pileta", "Pileta", "water"), ("rio", "Frente al río", "water"),
+    ("motorhome", "Acepta motorhome", "car"), ("mascotas", "Acepta mascotas", "paw"),
+]
 
 PROVIDER_PRODUCT_CATEGORIES = [
     ("carne vacuna", "Carne vacuna"),
@@ -3314,6 +3361,12 @@ def build_commerce_delivery_status(empresa: models.Empresa) -> dict[str, str] | 
 
 def build_provider_amenities(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
     """Return persisted public amenities in their editorial display order."""
+    if kind == "alojamiento" and is_camping(empresa):
+        return [
+            {"key": key, "label": label, "icon": icon}
+            for key, label, icon in CAMPING_AMENITIES
+            if (bool(clean_text(getattr(empresa, key, None), default="")) if key == "banos" else getattr(empresa, key, None) is True)
+        ]
     return [
         {"key": key, "label": label, "icon": icon}
         for key, label, icon in PROVIDER_AMENITIES.get(kind, [])
@@ -3329,6 +3382,10 @@ ALOJAMIENTO_FILTER_AMENITIES = [
     ("wifi", "WiFi"),
     ("parrilla", "Parrilla"),
 ]
+ALOJAMIENTO_CAMPING_FILTER_AMENITIES = [
+    ("motorhome", "Acepta motorhome"), ("duchas", "Duchas"),
+    ("electricidad", "Electricidad"),
+]
 
 
 def get_alojamiento_filters(request: Request) -> dict:
@@ -3340,7 +3397,7 @@ def get_alojamiento_filters(request: Request) -> dict:
         "precio_max": params.get("precio_max", ""),
         "orden": params.get("orden", "destacados"),
     }
-    for key, _label in ALOJAMIENTO_FILTER_AMENITIES:
+    for key, _label in ALOJAMIENTO_FILTER_AMENITIES + ALOJAMIENTO_CAMPING_FILTER_AMENITIES:
         filters[key] = params.get(key, "")
     return filters
 
@@ -3376,7 +3433,7 @@ def filter_alojamientos(empresas: list[models.Empresa], filters: dict) -> list[m
         results = [e for e in results if parse_public_price(e.precio_desde) is not None and parse_public_price(e.precio_desde) > 100000]
     elif precio_max:
         results = [e for e in results if parse_public_price(e.precio_desde) is not None and parse_public_price(e.precio_desde) <= precio_max]
-    for key, _label in ALOJAMIENTO_FILTER_AMENITIES:
+    for key, _label in ALOJAMIENTO_FILTER_AMENITIES + ALOJAMIENTO_CAMPING_FILTER_AMENITIES:
         if filters.get(key) == "1":
             results = [e for e in results if getattr(e, key, None) is True]
     orden = filters.get("orden")
@@ -3507,6 +3564,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "alojamiento_initials": alojamiento_initials,
             "alojamiento_filters": alojamiento_filters,
             "alojamiento_amenities": ALOJAMIENTO_FILTER_AMENITIES,
+            "camping_amenities": ALOJAMIENTO_CAMPING_FILTER_AMENITIES,
         },
     )
 
@@ -5912,8 +5970,12 @@ def _append_bool_fact(rows: list[dict], label: str, value):
 def build_prestador_quick_facts(empresa: models.Empresa, kind: str) -> list[dict]:
     rows: list[dict] = []
     if kind == "alojamiento":
-        _append_text_fact(rows, "Precio desde", empresa.precio_desde)
-        if is_alojamiento_complejo(empresa):
+        _append_text_fact(rows, "Tarifa orientativa" if is_camping(empresa) else "Precio desde", empresa.precio_desde)
+        if is_camping(empresa):
+            capacidad = alojamiento_fact_label(empresa.capacidad, "persona", "personas")
+            _append_text_fact(rows, "Capacidad aproximada", f"Hasta {capacidad}" if capacidad and not capacidad.lower().startswith("hasta") else capacidad)
+            return rows
+        elif is_alojamiento_complejo(empresa):
             facts = build_alojamiento_key_facts(empresa)
             if facts:
                 _append_text_fact(rows, "Unidades", facts[0])
@@ -6032,6 +6094,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "has_real_photos": has_real_photos,
             "theme_display_label": theme_display_label,
             "is_alojamiento_complejo": is_alojamiento_complejo,
+            "is_camping": is_camping,
             "get_alojamiento_card_type": get_alojamiento_card_type,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,

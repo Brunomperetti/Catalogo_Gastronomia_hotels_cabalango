@@ -39,6 +39,7 @@
     {% set review_submitted = review_submitted|default(false) %}
     {% set provider_amenities = build_provider_amenities(empresa, kind) %}
     {% set provider_products = build_provider_products(empresa, kind) if build_provider_products is defined else [] %}
+    {% set alojamiento_camping = kind == 'alojamiento' and is_camping is defined and is_camping(empresa) %}
     <main class="portal-shell prestador-page">
         {% set active_section = 'alojamientos' if kind == 'alojamiento' else kind if kind in ['gastronomia', 'servicios', 'actividades'] else '' %}
         {% set show_portal_assistant = false %}
@@ -86,7 +87,7 @@
                       <div>{{ provider_icon('type') }}<span><dt>Propuesta</dt><dd>{{ provider_category }}</dd></span></div>
                       {% if alojamiento_complejo and alojamiento_unidades %}<div>{{ provider_icon('type') }}<span><dt>Unidades</dt><dd>{{ alojamiento_unidades }}</dd></span></div>{% endif %}
                       {% if alojamiento_complejo and alojamiento_rooms_summary %}<div>{{ provider_icon('type') }}<span><dt>Habitaciones</dt><dd>{{ alojamiento_rooms_summary }}</dd></span></div>{% endif %}
-                      {% if empresa.horarios %}<div>{{ provider_icon('clock') }}<span><dt>Horarios</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{% set clean_part = part.replace('Días: ', '').replace('Horarios: ', '') %}{% if 'lunes a domingo' in clean_part|lower or 'lunes, martes, miércoles, jueves, viernes, sábado, domingo' in clean_part|lower %}Todos los días{% else %}{{ clean_part.replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}{% endif %}</span>{% endfor %}</dd></span></div>{% endif %}
+                      {% if empresa.horarios %}<div>{{ provider_icon('clock') }}<span><dt>{% if alojamiento_camping %}Horarios de atención{% else %}Horarios{% endif %}</dt><dd class="provider-schedule-text">{% for part in empresa.horarios.split(' | ') %}<span>{% set clean_part = part.replace('Días: ', '').replace('Horarios: ', '') %}{% if 'lunes a domingo' in clean_part|lower or 'lunes, martes, miércoles, jueves, viernes, sábado, domingo' in clean_part|lower %}Todos los días{% else %}{{ clean_part.replace('Todo el año: Sí', 'Abierto todo el año').replace('Todo el año: No', 'Temporada limitada') }}{% endif %}</span>{% endfor %}</dd></span></div>{% endif %}
                       {% if commerce_delivery_status %}<div>{{ provider_icon(commerce_delivery_status.icon) }}<span><dt>Delivery</dt><dd>{{ commerce_delivery_status.detail_label }}</dd></span></div>{% endif %}
                       {% if empresa.direccion %}<div>{{ provider_icon('pin') }}<span><dt>Ubicación</dt><dd>{{ empresa.direccion }}</dd></span></div>{% endif %}
                       {% if empresa.telefono or empresa.whatsapp %}<div>{{ provider_icon('phone') }}<span><dt>Contacto directo</dt><dd>{{ empresa.telefono or empresa.whatsapp }}</dd></span></div>{% endif %}
@@ -130,6 +131,14 @@
                 <li class="provider-amenities__item"><span class="provider-amenities__icon">{{ provider_icon(product.icon) }}</span><span>{{ product.label }}</span></li>
                 {% endfor %}
             </ul>
+        </section>
+        {% endif %}
+
+        {% if alojamiento_camping and quick_facts %}
+        <section class="portal-card provider-amenities" aria-labelledby="camping-facts-title">
+            <p class="portal-card-label">INFORMACIÓN DEL CAMPING</p>
+            <h2 id="camping-facts-title">Datos para organizar tu visita</h2>
+            <dl class="provider-key-summary"><div>{% for fact in quick_facts %}<span><dt>{{ fact.label }}</dt><dd>{{ fact.value }}</dd></span>{% endfor %}</div></dl>
         </section>
         {% endif %}
 

@@ -74,7 +74,7 @@
                 {% set advanced_count = amenity_state.count + (1 if alojamiento_filters.get('habitaciones') else 0) %}
                 <div class="filter-control"><label for="filter-tipo">Tipo</label>
                     <select id="filter-tipo" name="tipo">
-                        {% for value, label in [('todos','Todos'),('cabaña','Cabaña'),('casa','Casa'),('hotel','Hotel'),('departamento','Departamento'),('complejo','Complejo'),('hospedaje','Hospedaje')] %}
+                        {% for value, label in [('todos','Todos'),('cabaña','Cabaña'),('casa','Casa'),('departamento','Departamento'),('hotel','Hotel'),('hostería','Hostería'),('hostel','Hostel'),('complejo','Complejo'),('posada','Posada'),('hospedaje','Hospedaje'),('camping','Camping')] %}
                         <option value="{{ value }}" {% if alojamiento_filters.get('tipo') == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
@@ -113,6 +113,7 @@
                             <label class="amenity-pill"><input type="checkbox" name="{{ key }}" value="1" {% if alojamiento_filters.get(key) == '1' %}checked{% endif %}> <span>{{ label }}</span></label>
                             {% endfor %}
                         </div>
+                        {% if alojamiento_filters.get('tipo') == 'camping' %}<h3 class="accommodation-amenities-title">Servicios de camping</h3><div class="filter-amenities" role="group" aria-label="Servicios de camping">{% for key, label in camping_amenities %}<label class="amenity-pill"><input type="checkbox" name="{{ key }}" value="1" {% if alojamiento_filters.get(key) == '1' %}checked{% endif %}> <span>{{ label }}</span></label>{% endfor %}</div>{% endif %}
                         </div>
                     </details>
                     <div class="filter-actions"><button class="portal-button" type="submit">Aplicar filtros</button><a class="accommodation-clear-filters" href="/alojamientos">Limpiar</a></div>
@@ -140,7 +141,7 @@
             <form class="accommodation-results-order" method="get" action="/alojamientos">
                 {% for key in ['tipo', 'capacidad', 'precio_max'] %}{% if alojamiento_filters.get(key) %}<input type="hidden" name="{{ key }}" value="{{ alojamiento_filters.get(key) }}">{% endif %}{% endfor %}
                 {% if alojamiento_filters.get('habitaciones') %}<input type="hidden" name="habitaciones" value="{{ alojamiento_filters.get('habitaciones') }}">{% endif %}
-                {% for key, label in alojamiento_amenities %}{% if alojamiento_filters.get(key) == '1' %}<input type="hidden" name="{{ key }}" value="1">{% endif %}{% endfor %}
+                {% for key, label in alojamiento_amenities + camping_amenities %}{% if alojamiento_filters.get(key) == '1' %}<input type="hidden" name="{{ key }}" value="1">{% endif %}{% endfor %}
                 <label for="results-order">Ordenar por</label>
                 <select id="results-order" name="orden">
                     {% for value, label in [('destacados','Recomendados / destacados'),('precio_asc','Menor precio'),('precio_desc','Mayor precio'),('capacidad_desc','Mayor capacidad')] %}
