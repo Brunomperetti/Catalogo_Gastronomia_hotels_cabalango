@@ -20,7 +20,7 @@ def camping_app(monkeypatch):
     db.add(Usuario(username="admin-camping", password_hash=main.hash_password("secret"), rol="admin", activo=True))
     camping = Empresa(
         nombre="Camping El Socavón", slug="camping-el-socavon", theme="alojamiento",
-        subtipo="Camping", activo=True, capacidad="400", habitaciones="0", horarios="Invierno: 10:00 a 18:00 | Verano: 9:00 a 20:30",
+        subtipo="Camping", activo=True, capacidad="400", habitaciones="0", horarios="Todos los días | Invierno: 10:00 a 18:00 | Verano: 9:00 a 20:30 | Abierto todo el año",
         banos="Baños disponibles", precio_desde="$10.000 por persona", rio=True,
         duchas=True, agua_caliente=True, electricidad=True, parrilla=True,
         proveeduria=True, wifi=True, cochera=True, mesas=True, quinchos=True,
@@ -80,6 +80,32 @@ def test_camping_detail_uses_specific_facts_and_hides_irrelevant_data(camping_ap
     assert "Check-in" not in html
     conventional = main.build_prestador_quick_facts(_cabin, "alojamiento")
     assert {fact["label"]: fact["value"] for fact in conventional}["Habitaciones"] == "2"
+
+
+def test_camping_schedule_renders_each_part_on_its_own_line(camping_app):
+    client, _db, _camping, _cabin = camping_app
+    html = client.get("/prestador/camping-el-socavon").text
+    facts = re.search(r'<section class="portal-card provider-amenities camping-facts".*?</section>', html, re.DOTALL).group(0)
+    schedule = re.search(
+        r'<dt class="camping-fact-label">Horarios de atención</dt>\s*<dd class="camping-fact-value camping-fact-value--schedule">(.*?)</dd>',
+        facts,
+        re.DOTALL,
+    ).group(1)
+
+    assert re.findall(r"<span>(.*?)</span>", schedule, re.DOTALL) == [
+        "Todos los días",
+        "Invierno: 10:00 a 18:00",
+        "Verano: 9:00 a 20:30",
+        "Abierto todo el año",
+    ]
+    assert "|" not in schedule
+    capacity = re.search(
+        r'<dt class="camping-fact-label">Capacidad aproximada</dt>\s*<dd class="camping-fact-value">(.*?)</dd>',
+        facts,
+        re.DOTALL,
+    ).group(1)
+    assert capacity == "Hasta 400 personas"
+    assert "<span>" not in capacity
 
 
 def test_camping_quick_facts_omit_false_none_and_empty_values(camping_app):
