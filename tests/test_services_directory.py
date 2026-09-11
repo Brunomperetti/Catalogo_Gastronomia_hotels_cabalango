@@ -173,11 +173,16 @@ def test_services_taxonomy_filters_and_compatibility():
 def test_public_service_category_uses_only_structured_taxonomy():
     cases = [
         ("compras", "Almacén", "almacenes"),
+        (None, "Despensa", "almacenes"),
         ("compras", "Productos regionales", "locales"),
         ("transporte", "Remis", "transporte"),
+        (None, "Taxi", "transporte"),
+        (None, "Traslado turístico", "transporte"),
+        (None, "Transfer", "transporte"),
         ("estacionamiento", "Estacionamiento", "estacionamiento"),
         ("salud", "Farmacia", "farmacia"),
         ("salud", "Kinesiología", "otros"),
+        (None, "Estética", "otros"),
         ("otros", "LAVADERO", "lavanderia"),
         ("otros", "lavadero de ropa", "lavanderia"),
         ("otros", "Gomería", "otros"),

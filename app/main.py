@@ -2277,6 +2277,7 @@ def editar_empresa_panel(
     quinchos: str | None = Form(None),
     motorhome: str | None = Form(None),
     subgrupo: str | None = Form(None),
+    categoria_guia: str | None = Form(None),
     destacado: str = Form("0"),
     activo: str = Form("0"),
     theme: str = Form("default"),
@@ -2357,7 +2358,11 @@ def editar_empresa_panel(
             empresa.alojamiento_habitaciones_unidades = (
                 json.dumps(room_options, separators=(",", ":")) if room_options else None
             )
-    if subgrupo is not None or normalize_theme(theme) == "servicios":
+    if normalize_theme(theme) == "servicios" and categoria_guia is not None:
+        empresa.subgrupo = service_group_for_admin_category(
+            categoria_guia, empresa.subtipo, empresa.subgrupo
+        )
+    elif subgrupo is not None or normalize_theme(theme) == "servicios":
         effective_subtype = subtipo if subtipo is not None else empresa.subtipo
         empresa.subgrupo = normalize_service_group_subtype(subgrupo, effective_subtype, theme)
     if destacado is not None:
@@ -2745,20 +2750,91 @@ GASTRONOMIA_FILTROS_PUBLICOS = {
 SERVICIOS_SUBTIPOS = {
     "proveeduria": ("compras", "Proveeduría"),
     "almacen": ("compras", "Almacén"),
+    "despensa": ("compras", "Despensa"),
     "minimercado": ("compras", "Minimercado"),
     "kiosco": ("compras", "Kiosco"),
     "regionales": ("compras", "Productos regionales"),
     "fraccionamiento de productos secos": ("compras", "Fraccionamiento de productos secos"),
     "remis": ("transporte", "Remis"),
+    "taxi": ("transporte", "Taxi"),
+    "traslado turistico": ("transporte", "Traslado turístico"),
+    "transfer": ("transporte", "Transfer"),
     "transporte": ("transporte", "Transporte"),
     "playa de estacionamiento": ("estacionamiento", "Playa de estacionamiento"),
     "estacionamiento": ("estacionamiento", "Estacionamiento"),
     "kinesiologia": ("salud", "Kinesiología"),
+    "estetica": ("salud", "Estética"),
     "centro de salud": ("salud", "Centro de salud"),
     "farmacia": ("salud", "Farmacia"),
     "lavadero": ("otros", "Lavadero"),
     "lavadero de ropa": ("otros", "Lavadero de ropa"),
 }
+
+# The admin presents the public directory vocabulary while continuing to persist
+# the historical ``subgrupo``/``subtipo`` representation. Bakeries deliberately
+# remain outside this map because they are gastronomic providers.
+SERVICIOS_CATEGORIAS_ADMIN = {
+    "almacenes": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["almacenes"]["label"],
+        "subgrupo": "compras",
+        "subtipos": ["Almacén", "Despensa", "Kiosco", "Minimercado", "Proveeduría", "Fraccionamiento de productos secos"],
+    },
+    "locales": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["locales"]["label"],
+        "subgrupo": "compras",
+        "subtipos": ["Productos regionales"],
+    },
+    "transporte": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["transporte"]["label"],
+        "subgrupo": "transporte",
+        "subtipos": ["Remis", "Taxi", "Traslado turístico", "Transfer", "Transporte", "Otro"],
+    },
+    "estacionamiento": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["estacionamiento"]["label"],
+        "subgrupo": "estacionamiento",
+        "subtipos": ["Playa de estacionamiento", "Estacionamiento"],
+    },
+    "farmacia": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["farmacia"]["label"],
+        "subgrupo": "salud",
+        "subtipos": ["Farmacia"],
+    },
+    "lavanderia": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["lavanderia"]["label"],
+        "subgrupo": "otros",
+        "subtipos": ["Lavadero", "Lavadero de ropa"],
+    },
+    "otros": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["otros"]["label"],
+        "subgrupo": "otros",
+        "subtipos": ["Kinesiología", "Estética", "Centro de salud", "Otro"],
+    },
+}
+
+
+def service_group_for_admin_category(
+    category: str | None, subtype: str | None, fallback: str | None = None
+) -> str | None:
+    """Translate an admin category and subtype back to their legacy group.
+
+    The public ``otros`` bucket contains both health and miscellaneous legacy
+    groups. Structured health subtypes retain ``salud``; an unknown historical
+    subtype keeps its current valid group rather than being silently rewritten.
+    """
+    category_key = clean_text(category, default="")
+    category_config = SERVICIOS_CATEGORIAS_ADMIN.get(category_key)
+    if not category_config:
+        return normalize_subgrupo_for_theme(fallback, "servicios")
+    if category_key != "otros":
+        return category_config["subgrupo"]
+
+    subtype_key = normalize_taxonomy_key(subtype)
+    inferred_group = service_group_for_subtype(subtype)
+    if inferred_group == "salud" and subtype_key != "farmacia":
+        return "salud"
+    if subtype_key == "otro":
+        return "otros"
+    return normalize_subgrupo_for_theme(fallback, "servicios") or "otros"
 
 
 def service_group_for_subtype(value: str | None) -> str | None:
@@ -4705,6 +4781,8 @@ def admin_panel(
             "prestador_section_label": theme_display_label(empresa_activa.theme) if empresa_activa else "",
             "prestador_taxonomy_label": service_card_kicker(empresa_activa) if empresa_activa and normalize_theme(empresa_activa.theme) == "servicios" else clean_text(empresa_activa.subtipo, default="") if empresa_activa else "",
             "servicio_subtipo_grupos": {label: group for group, label in SERVICIOS_SUBTIPOS.values()},
+            "servicios_categorias_admin": SERVICIOS_CATEGORIAS_ADMIN,
+            "servicio_categoria_activa": public_service_category_key(empresa_activa) if empresa_activa and normalize_theme(empresa_activa.theme) == "servicios" else "",
         },
     )
     response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
