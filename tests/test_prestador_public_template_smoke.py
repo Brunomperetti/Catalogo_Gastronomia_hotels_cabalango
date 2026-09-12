@@ -11,6 +11,7 @@ from app.main import (
     build_commerce_delivery_status,
     build_provider_amenities,
     build_provider_products,
+    build_public_schedule_lines,
     normalize_commerce_product_categories,
     parse_commerce_product_categories,
 )
@@ -104,6 +105,7 @@ def render_prestador(theme="alojamiento", galeria_urls=None, identity_overrides=
         build_alojamiento_rooms_summary=build_alojamiento_rooms_summary,
         build_provider_amenities=build_provider_amenities,
         build_provider_products=build_provider_products,
+        build_public_schedule_lines=build_public_schedule_lines,
         commerce_delivery_status=build_commerce_delivery_status(empresa) if theme == "servicios" else None,
         actividad_subgrupos={},
     )
