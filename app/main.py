@@ -169,7 +169,7 @@ def _normalize_public_schedule_hours(value: str) -> str:
         flags=re.IGNORECASE,
     )
     return re.sub(
-        r"\b(\d{1,2})(?::(\d{2}))?\s*hs\.?\b",
+        r"\b(\d{1,2})(?::(\d{2}))?\s*hs\b\.?",
         lambda match: f"{int(match.group(1))}:{match.group(2) or '00'}",
         value,
         flags=re.IGNORECASE,

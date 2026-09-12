@@ -21,6 +21,19 @@ def test_public_schedule_safe_normalizations(schedule, expected):
     assert build_public_schedule_lines(schedule) == expected
 
 
+@pytest.mark.parametrize(
+    ("schedule", "expected"),
+    [
+        ("9 hs.", "9:00"),
+        ("20:30 hs.", "20:30"),
+        ("9 hs", "9:00"),
+        ("20:30 hs", "20:30"),
+    ],
+)
+def test_public_schedule_hours_consume_optional_period(schedule, expected):
+    assert build_public_schedule_lines(schedule) == [expected]
+
+
 def test_lavadero_rita_reuses_confirmed_saturday_hours():
     schedule = (
         "Días: Lunes, Martes, Miércoles, Jueves, Viernes, Sábado |\n"
