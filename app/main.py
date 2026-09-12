@@ -140,6 +140,81 @@ _startup_db_maintenance_started = False
 _startup_db_maintenance_lock = threading.Lock()
 
 
+_PUBLIC_SCHEDULE_DAY_SEQUENCES = {
+    ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"): "Todos los días",
+    ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado"): "Lunes a sábado",
+    ("lunes", "martes", "miercoles", "jueves", "viernes"): "Lunes a viernes",
+}
+
+
+def _normalize_public_schedule_days(value: str) -> str:
+    """Collapse only complete, explicitly supported day sequences."""
+    compact = re.sub(r"\s+", " ", value.strip())
+    normalized = normalize_taxonomy_key(compact)
+    if normalized == "lunes a domingo":
+        return "Todos los días"
+    days = tuple(normalize_taxonomy_key(day.strip()) for day in compact.split(","))
+    return _PUBLIC_SCHEDULE_DAY_SEQUENCES.get(days, compact)
+
+
+def _normalize_public_schedule_hours(value: str) -> str:
+    """Normalize unambiguous hour notation without interpreting free text."""
+    value = re.sub(
+        r"\bde\s+(\d{1,2})(?::(\d{2}))?\s+a\s+(\d{1,2})(?::(\d{2}))?\b",
+        lambda match: (
+            f"{int(match.group(1))}:{match.group(2) or '00'} a "
+            f"{int(match.group(3))}:{match.group(4) or '00'}"
+        ),
+        value,
+        flags=re.IGNORECASE,
+    )
+    return re.sub(
+        r"\b(\d{1,2})(?::(\d{2}))?\s*hs\b\.?",
+        lambda match: f"{int(match.group(1))}:{match.group(2) or '00'}",
+        value,
+        flags=re.IGNORECASE,
+    )
+
+
+def build_public_schedule_lines(raw_schedule: str | None) -> list[str]:
+    """Return read-only, conservatively normalized public schedule lines."""
+    if not raw_schedule or not raw_schedule.strip():
+        return []
+
+    parts = [part.strip() for part in re.split(r"\s*\|\s*", raw_schedule) if part.strip()]
+    declared_days = ""
+    for part in parts:
+        match = re.match(r"^D[ií]as:\s*(.*)$", part, re.IGNORECASE)
+        if match:
+            declared_days = _normalize_public_schedule_days(match.group(1))
+            break
+
+    lines: list[str] = []
+    repeated_saturday = re.compile(
+        r"^lunes\s+a\s+viernes\s+(de\s+.+?)\.\s*s[aá]bados?\s+el\s+mismo\s+horario\s*\.?$",
+        re.IGNORECASE,
+    )
+    for part in parts:
+        days_match = re.match(r"^D[ií]as:\s*(.*)$", part, re.IGNORECASE)
+        hours_match = re.match(r"^Horarios:\s*(.*)$", part, re.IGNORECASE)
+        year_match = re.fullmatch(r"Todo\s+el\s+año:\s*(S[ií]|No)", part, re.IGNORECASE)
+        if days_match:
+            line = _normalize_public_schedule_days(days_match.group(1))
+        elif year_match:
+            line = "Abierto todo el año" if normalize_taxonomy_key(year_match.group(1)) == "si" else "Temporada limitada"
+        else:
+            line = hours_match.group(1).strip() if hours_match else part
+            repeated_match = repeated_saturday.fullmatch(line)
+            if repeated_match and declared_days == "Lunes a sábado":
+                line = repeated_match.group(1)
+            line = _normalize_public_schedule_hours(line)
+            if not hours_match:
+                line = _normalize_public_schedule_days(line)
+        if line:
+            lines.append(line)
+    return lines
+
+
 def ensure_empresa_media_columns():
     inspector = inspect(engine)
     columns = {col["name"] for col in inspector.get_columns("empresas")}
@@ -6186,6 +6261,7 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "build_provider_amenities": build_provider_amenities,
             "build_provider_products": build_provider_products,
+            "build_public_schedule_lines": build_public_schedule_lines,
             "commerce_delivery_status": build_commerce_delivery_status(empresa) if kind == "servicios" else None,
             "actividad_subgrupos": ACTIVIDADES_SUBGRUPOS if kind == "actividades" else {},
             "service_card_kicker": service_card_kicker,
