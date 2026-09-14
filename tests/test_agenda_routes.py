@@ -1078,6 +1078,133 @@ def test_activity_gallery_upload_render_and_delete(agenda_app, tmp_path, monkeyp
     assert not (tmp_path / first_url.removeprefix("/media/")).exists()
 
 
+def test_activity_gallery_reorder_persists_complete_permutations(agenda_app):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.imagen_url = "/principal-sin-cambios.jpg"
+        item.fotos.extend([
+            ActividadAgendaFoto(image_url=f"/secondary-{index}.jpg", orden=index)
+            for index in range(4)
+        ])
+        db.commit()
+        item_id = item.id
+        original = {
+            photo.id: (photo.image_url, photo.actividad_id) for photo in item.fotos
+        }
+        initial_ids = [photo.id for photo in item.fotos]
+
+    response = client.post(
+        f"/admin/actividades/{item_id}/fotos/reordenar", data={"orden": "3,0,1,2"}
+    )
+    assert response.status_code == 200
+    assert response.json() == {"ok": True}
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert [photo.id for photo in item.fotos] == [initial_ids[3], *initial_ids[:3]]
+        assert [photo.orden for photo in item.fotos] == [0, 1, 2, 3]
+        assert {photo.id: (photo.image_url, photo.actividad_id) for photo in item.fotos} == original
+        assert item.imagen_url == "/principal-sin-cambios.jpg"
+
+    second = client.post(
+        f"/admin/actividades/{item_id}/fotos/reordenar", data={"orden": "1,2,3,0"}
+    )
+    assert second.status_code == 200
+    with TestingSession() as db:
+        item = db.get(ActividadAgenda, item_id)
+        assert [photo.id for photo in item.fotos] == initial_ids
+        detail = client.get("/actividades/yoga-permanente").text
+        positions = [detail.index(f'/secondary-{index}.jpg') for index in range(4)]
+        assert positions == sorted(positions)
+
+
+@pytest.mark.parametrize("order", ["0,0,1,2", "0,1,2,9", "0,1", "0,one,2,3"])
+def test_activity_gallery_reorder_rejects_invalid_orders(agenda_app, order):
+    client, TestingSession = agenda_app
+    login_admin(client)
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.fotos.extend([
+            ActividadAgendaFoto(image_url=f"/invalid-{index}.jpg", orden=index)
+            for index in range(4)
+        ])
+        db.commit()
+        item_id = item.id
+    response = client.post(
+        f"/admin/actividades/{item_id}/fotos/reordenar", data={"orden": order}
+    )
+    assert response.status_code == 400
+
+
+def test_activity_gallery_reorder_auth_not_found_and_ownership(agenda_app):
+    client, TestingSession = agenda_app
+    with TestingSession() as db:
+        activities = db.query(ActividadAgenda).order_by(ActividadAgenda.id).limit(2).all()
+        first, second = activities
+        first.fotos.append(ActividadAgendaFoto(image_url="/owned.jpg", orden=0))
+        second.fotos.append(ActividadAgendaFoto(image_url="/other.jpg", orden=0))
+        db.commit()
+        first_id, second_photo_id = first.id, second.fotos[0].id
+    unauthenticated = client.post(
+        f"/admin/actividades/{first_id}/fotos/reordenar",
+        data={"orden": "0"}, follow_redirects=False,
+    )
+    assert unauthenticated.status_code == 303
+    login_admin(client)
+    assert client.post(
+        "/admin/actividades/999999/fotos/reordenar", data={"orden": "0"}
+    ).status_code == 404
+    assert client.post(
+        f"/admin/actividades/{first_id}/fotos/reordenar", data={"orden": "0,1"}
+    ).status_code == 400
+    with TestingSession() as db:
+        assert db.get(ActividadAgendaFoto, second_photo_id).orden == 0
+
+
+def test_activity_gallery_delete_normalizes_and_upload_appends(agenda_app, tmp_path, monkeypatch):
+    client, TestingSession = agenda_app
+    monkeypatch.setattr(main_module, "STORAGE_DIR", tmp_path)
+    login_admin(client)
+    with TestingSession() as db:
+        item = db.query(ActividadAgenda).filter_by(slug="yoga-permanente").one()
+        item.fotos.extend([
+            ActividadAgendaFoto(image_url=f"/existing-{index}.jpg", orden=index)
+            for index in range(4)
+        ])
+        db.commit()
+        item_id, delete_id = item.id, item.fotos[1].id
+    assert client.post(
+        f"/admin/actividades/{item_id}/fotos/{delete_id}/eliminar",
+        follow_redirects=False,
+    ).status_code == 303
+    with TestingSession() as db:
+        assert [photo.orden for photo in db.get(ActividadAgenda, item_id).fotos] == [0, 1, 2]
+    response = client.post(
+        "/admin/actividades/guardar",
+        data={"id": str(item_id), "tipo": "actividad", "titulo": "Yoga permanente",
+              "categoria": "bienestar", "momento": "dia", "publicado": "1"},
+        files=[("galeria", ("new.jpg", b"new-photo", "image/jpeg"))],
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    with TestingSession() as db:
+        assert [photo.orden for photo in db.get(ActividadAgenda, item_id).fotos] == [0, 1, 2, 3]
+
+
+def test_activity_admin_gallery_uses_shared_sorter_markup():
+    template = Path("app/templates/admin_actividades.html").read_text(encoding="utf-8")
+    script = Path("app/static/js/admin-gallery-sort.js").read_text(encoding="utf-8")
+    for marker in (
+        "data-admin-gallery-sort", "data-reorder-url", 'draggable="true"',
+        'data-gallery-move="left"', 'data-gallery-move="right"',
+        "data-gallery-sort-status", "admin-gallery-sort.js",
+    ):
+        assert marker in template
+    assert "data-gallery-position-label" in template
+    assert "[data-gallery-position-label]" in script
+
+
 
 def test_activity_detail_normalizes_literal_breaks_and_keeps_html_escaped(agenda_app):
     client, TestingSession = agenda_app
