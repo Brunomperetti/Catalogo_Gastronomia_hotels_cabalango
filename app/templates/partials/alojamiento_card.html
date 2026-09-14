@@ -1,4 +1,6 @@
 {% set accommodation_type = get_alojamiento_card_type(empresa) %}
+{% set card_summary = build_accommodation_card_summary(empresa) %}
+{% set card_rate = build_accommodation_card_rate(empresa) %}
 {% set visible_chips = card_chips[:3] %}
 {% set remaining_chips = (card_chips|length) - (visible_chips|length) %}
 <article class="accommodation-card">
@@ -15,7 +17,7 @@
     <div class="accommodation-card-body">
         <h3 class="accommodation-card-title"><a href="/prestador/{{ empresa.slug }}">{{ empresa.nombre }}</a></h3>
         {% if empresa.direccion %}<p class="accommodation-card-location">{{ empresa.direccion }}</p>{% endif %}
-        {% if key_facts %}<ul class="accommodation-facts" aria-label="Datos principales">{% for fact in key_facts[:3] %}<li>{{ fact }}</li>{% endfor %}</ul>{% endif %}
+        <div class="accommodation-card-summary">{% if card_summary %}<p>{{ card_summary }}</p>{% endif %}</div>
         {% if visible_chips %}
         <div class="accommodation-amenities" aria-label="Servicios destacados">
             {% for chip in visible_chips %}<span>{{ chip }}</span>{% endfor %}
@@ -23,7 +25,11 @@
         </div>
         {% endif %}
         <footer class="accommodation-card-footer">
-            {% if empresa.precio_desde %}<p class="accommodation-card-price">Desde {{ empresa.precio_desde|replace('Desde', '')|trim }}</p>{% endif %}
+            <div class="accommodation-card-rate" data-rate-kind="{{ card_rate.kind }}">
+                <span class="accommodation-card-rate-label">Tarifa</span>
+                <strong>{{ card_rate.value }}</strong>
+                {% if card_rate.note %}<small>{{ card_rate.note }}</small>{% endif %}
+            </div>
             <div class="accommodation-card-actions">
                 <a class="accommodation-primary-action" href="/prestador/{{ empresa.slug }}">Ver alojamiento</a>
                 {% if clean_whatsapp %}<a class="accommodation-secondary-action" href="https://wa.me/{{ clean_whatsapp }}" target="_blank" rel="noopener">Consultar por WhatsApp</a>{% endif %}
