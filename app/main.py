@@ -46,6 +46,8 @@ MEDIA_URL_PREFIX = (os.getenv("MEDIA_URL", "/media").strip() or "/media").rstrip
 STORAGE_DIR = Path(MEDIA_ROOT_ENV or os.getenv("STORAGE_DIR", "app/storage")).resolve()
 MEDIA_BASE_DIR = STORAGE_DIR / "empresas"
 INTAKE_MEDIA_DIR = STORAGE_DIR / "intake"
+SYSTEM_STORAGE_DIR = STORAGE_DIR / "system"
+WEATHER_SNAPSHOT_PATH = SYSTEM_STORAGE_DIR / "weather_snapshot.json"
 PRODUCTOS_MEDIA_TYPE = "productos"
 ALLOWED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp"}
 LUGAR_CATEGORIES = {"balneario": "Balneario", "naturaleza": "Naturaleza", "cascadas": "Cascadas", "paseo": "Paseo"}
@@ -64,10 +66,13 @@ app.add_middleware(
 )
 
 @app.middleware("http")
-async def keep_intake_staging_private(request: Request, call_next):
-    """The legacy media mount is public; staging is never served through it."""
-    media_intake_prefix = f"{MEDIA_URL_PREFIX}/intake"
-    if request.url.path == media_intake_prefix or request.url.path.startswith(media_intake_prefix + "/"):
+async def keep_internal_storage_private(request: Request, call_next):
+    """The legacy media mount is public; staging and internal state never are."""
+    private_prefixes = (f"{MEDIA_URL_PREFIX}/intake", f"{MEDIA_URL_PREFIX}/system")
+    if any(
+        request.url.path == prefix or request.url.path.startswith(prefix + "/")
+        for prefix in private_prefixes
+    ):
         return JSONResponse({"detail": "Not Found"}, status_code=404)
     return await call_next(request)
 
@@ -1081,7 +1086,91 @@ _weather_cache = {
     "last_success_at": None,
     "retry_after": None,
 }
+_weather_persisted_snapshot_loaded = False
+_weather_persisted_snapshot_valid = False
+_weather_snapshot_lock = threading.Lock()
 WEATHER_CODE_LABELS = {0: "Despejado", 1: "Mayormente despejado", 2: "Parcialmente nublado", 3: "Nublado", 45: "Neblina", 48: "Neblina", 51: "Llovizna", 53: "Llovizna", 55: "Llovizna", 61: "Lluvia", 63: "Lluvia", 65: "Lluvia intensa", 80: "Chaparrones", 95: "Tormenta"}
+
+
+def _parse_weather_timestamp(value: Any) -> datetime:
+    if not isinstance(value, str):
+        raise ValueError("last_success_at must be an ISO timestamp")
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValueError("last_success_at must include a timezone")
+    return parsed.astimezone(timezone.utc)
+
+
+def load_persisted_weather_snapshot(now: datetime | None = None) -> bool:
+    """Hydrate the cache once from a recent, real Open-Meteo snapshot."""
+    global _weather_persisted_snapshot_loaded, _weather_persisted_snapshot_valid
+    with _weather_snapshot_lock:
+        if _weather_persisted_snapshot_loaded:
+            return _weather_persisted_snapshot_valid
+        _weather_persisted_snapshot_loaded = True
+        _weather_persisted_snapshot_valid = False
+        try:
+            payload = json.loads(WEATHER_SNAPSHOT_PATH.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict) or not isinstance(payload.get("data"), dict):
+                raise ValueError("unexpected snapshot structure")
+            data = payload["data"]
+            if data.get("available") is not True:
+                raise ValueError("snapshot is not available weather")
+            last_success_at = _parse_weather_timestamp(payload.get("last_success_at"))
+            current_time = now or utc_now()
+            age = current_time - last_success_at
+            if age < timedelta(0) or age > WEATHER_STALE_TTL:
+                raise ValueError("snapshot is outside the usable age window")
+            _weather_cache.update({
+                "data": data,
+                "expires_at": last_success_at + WEATHER_FRESH_TTL,
+                "stale_until": last_success_at + WEATHER_STALE_TTL,
+                "last_success_at": last_success_at,
+                "retry_after": None,
+            })
+            _weather_persisted_snapshot_valid = True
+            return True
+        except FileNotFoundError:
+            logger.warning("No persisted Open-Meteo snapshot found; starting with an empty weather cache")
+        except Exception as exc:
+            logger.warning(
+                "Persisted Open-Meteo snapshot ignored (%s: %s)",
+                type(exc).__name__,
+                exc,
+            )
+        return False
+
+
+def persist_weather_snapshot(data: dict, last_success_at: datetime) -> bool:
+    """Atomically save only a validated, available Open-Meteo response."""
+    global _weather_persisted_snapshot_valid
+    if not isinstance(data, dict) or data.get("available") is not True:
+        return False
+    path = WEATHER_SNAPSHOT_PATH
+    temporary_path = path.with_name(
+        f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp"
+    )
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {
+            "saved_at": utc_now().isoformat(),
+            "last_success_at": last_success_at.astimezone(timezone.utc).isoformat(),
+            "data": data,
+        }
+        with temporary_path.open("w", encoding="utf-8") as snapshot_file:
+            json.dump(payload, snapshot_file, ensure_ascii=False)
+            snapshot_file.flush()
+            os.fsync(snapshot_file.fileno())
+        os.replace(temporary_path, path)
+        _weather_persisted_snapshot_valid = True
+        return True
+    except Exception as exc:
+        logger.warning("Could not persist Open-Meteo snapshot (%s: %s)", type(exc).__name__, exc)
+        try:
+            temporary_path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        return False
 
 
 def _weather_for_display(data: dict, *, is_stale: bool) -> dict:
@@ -1118,6 +1207,7 @@ def _weather_failure_result(now: datetime, fallback: dict) -> dict:
 
 def get_cabalango_weather(force_refresh: bool = False) -> dict:
     now = utc_now()
+    load_persisted_weather_snapshot(now)
     cached = _weather_cache["data"]
     if not force_refresh and cached:
         if _weather_cache["expires_at"] and _weather_cache["expires_at"] > now:
@@ -1152,9 +1242,15 @@ def get_cabalango_weather(force_refresh: bool = False) -> dict:
                 and now <= _weather_cache["stale_until"]
             )
             logger.warning(
-                "Open-Meteo attempt %s/2 failed (%s); stale cache %s be used",
+                "Open-Meteo attempt %s/2 failed (%s); exception=%s memory_snapshot=%s "
+                "persisted_snapshot=%s last_success_age_minutes=%s; stale cache %s be used",
                 attempt + 1,
                 type(exc).__name__,
+                exc,
+                bool(cached and cached.get("available")),
+                _weather_persisted_snapshot_valid,
+                round((now - _weather_cache["last_success_at"]).total_seconds() / 60, 1)
+                if _weather_cache["last_success_at"] else None,
                 "can" if can_use_stale else "cannot",
             )
             if attempt == 1:
@@ -1207,8 +1303,14 @@ def get_cabalango_weather(force_refresh: bool = False) -> dict:
             and now <= _weather_cache["stale_until"]
         )
         logger.warning(
-            "Open-Meteo response processing failed (%s); stale cache %s be used",
+            "Open-Meteo response processing failed (%s: %s); memory_snapshot=%s "
+            "persisted_snapshot=%s last_success_age_minutes=%s; stale cache %s be used",
             type(exc).__name__,
+            exc,
+            bool(cached and cached.get("available")),
+            _weather_persisted_snapshot_valid,
+            round((now - _weather_cache["last_success_at"]).total_seconds() / 60, 1)
+            if _weather_cache["last_success_at"] else None,
             "can" if can_use_stale else "cannot",
         )
         return _weather_failure_result(now, fallback)
@@ -1219,6 +1321,7 @@ def get_cabalango_weather(force_refresh: bool = False) -> dict:
         "last_success_at": now,
         "retry_after": None,
     })
+    persist_weather_snapshot(weather, now)
     return _weather_for_display(weather, is_stale=False)
 
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
