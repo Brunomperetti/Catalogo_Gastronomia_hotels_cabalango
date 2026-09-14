@@ -17,7 +17,7 @@ from app.main import (
     build_public_card_chips,
     get_db,
     is_bakery_provider,
-    is_legacy_service_bakery,
+    is_legacy_gastronomy_bakery,
     is_laundry_service,
     is_pharmacy_service,
     normalize_legacy_bakery_taxonomy,
@@ -28,7 +28,7 @@ from app.main import (
 from app.models import Empresa
 
 
-def test_legacy_service_bakery_normalization_is_lossless_idempotent_and_public():
+def test_legacy_gastronomy_bakery_normalization_is_lossless_idempotent_and_public():
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
@@ -37,7 +37,7 @@ def test_legacy_service_bakery_normalization_is_lossless_idempotent_and_public()
     db = TestingSession()
     bakery = Empresa(
         nombre="Panadería San Diego", slug="panaderia-san-diego",
-        theme="servicios", subgrupo="otros", subtipo="  PANADERÍA ", activo=True,
+        theme="gastronomia", subgrupo=None, subtipo="  PANADERÍA ", activo=True,
         descripcion="Recetas de siempre", descripcion_corta="Pan casero",
         telefono="3541-555555", whatsapp="5493541555555",
         instagram="panaderiasandiego", facebook="san-diego", web_url="https://example.test",
@@ -57,19 +57,20 @@ def test_legacy_service_bakery_normalization_is_lossless_idempotent_and_public()
     bakery_id = bakery.id
     preserved = {
         key: getattr(bakery, key) for key in (
-            "nombre", "slug", "subgrupo", "subtipo", "descripcion", "descripcion_corta",
+            "nombre", "slug", "subtipo", "descripcion", "descripcion_corta",
             "telefono", "whatsapp", "instagram", "facebook", "web_url", "horarios",
             "direccion", "maps_url", "logo_url", "banner_url", "promocion", "activo", "destacado",
         )
     }
 
-    assert is_legacy_service_bakery(bakery)
+    assert is_legacy_gastronomy_bakery(bakery)
     assert is_bakery_provider(bakery)  # Defensive support before maintenance completes.
-    assert not is_legacy_service_bakery(misleading)
+    assert not is_legacy_gastronomy_bakery(misleading)
     assert normalize_legacy_bakery_taxonomy(db) == 1
     db.refresh(bakery)
     assert bakery.id == bakery_id
-    assert bakery.theme == "gastronomia"
+    assert bakery.theme == "servicios"
+    assert bakery.subgrupo == "compras"
     assert {key: getattr(bakery, key) for key in preserved} == preserved
     assert normalize_legacy_bakery_taxonomy(db) == 0
     db.refresh(restaurant)
@@ -117,7 +118,7 @@ def test_services_taxonomy_filters_and_compatibility():
     ]
     for nombre, slug, subgrupo, subtipo, activo in records:
         db.add(Empresa(nombre=nombre, slug=slug, theme="servicios", subgrupo=subgrupo, subtipo=subtipo, activo=activo))
-    db.add(Empresa(nombre="Panadería Cabalango", slug="panaderia-cabalango", theme="gastronomia", subtipo="PANADERÍA", activo=True))
+    db.add(Empresa(nombre="Panadería Cabalango", slug="panaderia-cabalango", theme="servicios", subgrupo="compras", subtipo="PANADERÍA", activo=True))
     db.add(Empresa(nombre="Cafetería Cabalango", slug="cafeteria-cabalango", theme="gastronomia", subtipo="Cafetería", activo=True))
     db.add(Empresa(nombre="Restaurante Cabalango", slug="restaurante-cabalango", theme="gastronomia", subtipo="Restaurante", activo=True))
     db.add(Empresa(nombre="Food Truck", slug="food-truck", theme="gastronomia", subtipo="Food truck", activo=True))
@@ -187,6 +188,7 @@ def test_services_taxonomy_filters_and_compatibility():
         almacenes = client.get("/servicios?grupo=compras&tipo=almacenes")
         assert "Almacén del Río" in almacenes.text
         assert "Manos de Cabalango" not in almacenes.text
+        assert "Panadería Cabalango" not in almacenes.text
 
         public_expectations = {
             "almacenes": ("Almacén del Río", "Manos de Cabalango"),
@@ -239,6 +241,8 @@ def test_services_taxonomy_filters_and_compatibility():
 def test_public_service_category_uses_only_structured_taxonomy():
     cases = [
         ("compras", "Almacén", "almacenes"),
+        ("compras", "Panadería", "panaderias"),
+        (None, "PANADERÍA", "panaderias"),
         (None, "Despensa", "almacenes"),
         ("compras", "Productos regionales", "locales"),
         ("transporte", "Remis", "transporte"),
@@ -263,7 +267,7 @@ def test_public_service_category_uses_only_structured_taxonomy():
     assert not is_laundry_service(misleading)
     assert public_service_category_key(misleading) == "otros"
     assert service_card_kicker(Empresa(theme="servicios", subgrupo="otros", subtipo="Lavadero")) == "Lavandería"
-    bakery = Empresa(theme="gastronomia", subtipo="panadería")
+    bakery = Empresa(theme="servicios", subgrupo="compras", subtipo="panadería")
     pharmacy = Empresa(theme="servicios", subgrupo="salud", subtipo="FARMACIA")
     assert is_bakery_provider(bakery)
     assert public_service_category_key(bakery) == "panaderias"
@@ -292,7 +296,7 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
         Empresa(nombre="Remis portada", slug="remis-portada", theme="servicios", subgrupo="transporte", subtipo="Remis", activo=True),
         Empresa(nombre="Parking portada", slug="parking-portada", theme="servicios", subgrupo="estacionamiento", subtipo="Estacionamiento", activo=True),
         Empresa(nombre="Farmacia portada", slug="farmacia-portada", theme="servicios", subgrupo="salud", subtipo="Farmacia", activo=True),
-        Empresa(nombre="Panadería portada", slug="panaderia-portada", theme="gastronomia", subtipo="Panadería", activo=True),
+        Empresa(nombre="Panadería portada", slug="panaderia-portada", theme="servicios", subgrupo="compras", subtipo="Panadería", activo=True),
         Empresa(nombre="Lavadero portada", slug="lavadero-portada", theme="servicios", subgrupo="otros", subtipo="Lavadero", activo=True),
     ]
     db.add_all(records)
@@ -341,7 +345,8 @@ def test_services_overview_groups_previews_without_changing_filtered_results():
 
         filtered = client.get("/servicios?grupo=compras")
         assert filtered.status_code == 200
-        assert filtered.text.count('class="prestador-card prestador-card-premium"') == 5
+        assert filtered.text.count('class="prestador-card prestador-card-premium"') == 6
+        assert "Panadería portada" in filtered.text
         assert "¿Qué estás buscando?" in filtered.text
         assert "Almacenes y kioscos" in filtered.text
         assert "Productos locales y artesanías" in filtered.text
