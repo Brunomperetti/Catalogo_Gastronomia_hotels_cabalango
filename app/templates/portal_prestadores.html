@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', path='css/themes.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260910-bakery-pharmacy-services-1">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/portal.css') }}?v=20260914-accommodation-cards-1">
 </head>
 <body class="catalog-theme-default portal-body">
     <main class="portal-shell">
@@ -226,7 +226,6 @@
             {% set card_chips = build_public_card_chips(empresa, section) %}
             {% set clean_whatsapp = (empresa.whatsapp or '')|replace('+', '')|replace(' ', '')|replace('-', '')|replace('(', '')|replace(')', '') %}
             {% if section == 'alojamientos' %}
-            {% set key_facts = build_alojamiento_key_facts(empresa) %}
             {% include "partials/alojamiento_card.html" %}
             {% else %}
             {% include "partials/service_card.html" %}

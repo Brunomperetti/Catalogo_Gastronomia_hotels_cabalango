@@ -3441,6 +3441,84 @@ def build_alojamiento_key_facts(empresa: models.Empresa) -> list[str]:
     return facts
 
 
+def build_accommodation_card_summary(empresa: models.Empresa) -> str:
+    """Return the short, read-only comparison summary used only by listing cards."""
+    facts = build_alojamiento_key_facts(empresa)
+    if is_camping(empresa):
+        return facts[0] if facts else ""
+    if not is_alojamiento_complejo(empresa):
+        return " · ".join(facts[:3])
+
+    # Complexes already have dedicated, structured room parsing in the existing
+    # facts helper. Keep its safe unit description rather than interpreting free
+    # text to manufacture minimum/maximum values.
+    return " · ".join(facts[:2])
+
+
+ACCOMMODATION_CARD_CONSULT_VALUES = {
+    "consultar", "consultar precio", "precio a consultar", "tarifa a consultar",
+    "a consultar", "consultar tarifa",
+}
+ACCOMMODATION_CARD_MONTHS = {
+    "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+    "septiembre", "setiembre", "octubre", "noviembre", "diciembre",
+}
+
+
+def _format_argentine_pesos(value: str) -> str:
+    number = int(re.sub(r"\D", "", value))
+    return f"${number:,}".replace(",", ".")
+
+
+def build_accommodation_card_rate(empresa: models.Empresa) -> dict[str, str]:
+    """Normalize only unambiguous card-rate patterns without changing stored data."""
+    raw_value = clean_text(getattr(empresa, "precio_desde", None), default="")
+    if not raw_value:
+        return {"value": "A consultar", "note": "", "kind": "consult"}
+
+    normalized = normalize_taxonomy_key(raw_value)
+    if normalized in ACCOMMODATION_CARD_CONSULT_VALUES:
+        return {"value": "A consultar", "note": "", "kind": "consult"}
+
+    # An explicit foreign currency is deliberately left untouched: this helper
+    # formats Argentine pesos, but never infers currencies or exchange rates.
+    if re.search(r"(?:\b(?:USD|EUR)\b|US\$|€)", raw_value, re.IGNORECASE):
+        return {"value": raw_value, "note": "", "kind": "text"}
+
+    value_without_season = raw_value
+    note = ""
+    season_match = re.search(r"\s*\(([^()]*)\)\s*$", raw_value)
+    if season_match and normalize_taxonomy_key(season_match.group(1)) in ACCOMMODATION_CARD_MONTHS:
+        season = clean_text(season_match.group(1), default="").lower()
+        value_without_season = raw_value[:season_match.start()].strip()
+        note = f"Valor informado para {season}"
+
+    amount = r"\$?\s*\d[\d.]*"
+    suffix = r"(?:\s+por\s+(?:persona|noche|día|dia|estadía|estadia))?"
+    range_match = re.fullmatch(
+        rf"Entre\s+({amount})\s+y\s+({amount})({suffix})",
+        value_without_season,
+        re.IGNORECASE,
+    )
+    if range_match:
+        value = (
+            f"{_format_argentine_pesos(range_match.group(1))}–"
+            f"{_format_argentine_pesos(range_match.group(2))}{range_match.group(3)}"
+        )
+        return {"value": value, "note": note, "kind": "range"}
+
+    simple_match = re.fullmatch(
+        rf"(?:Desde\s+)?({amount})({suffix})",
+        value_without_season,
+        re.IGNORECASE,
+    )
+    if simple_match:
+        value = f"Desde {_format_argentine_pesos(simple_match.group(1))}{simple_match.group(2)}"
+        return {"value": value, "note": note, "kind": "from"}
+
+    return {"value": raw_value, "note": "", "kind": "text"}
+
+
 COMMERCE_CARD_DAY_ABBREVIATIONS = {
     "lunes": "Lun",
     "martes": "Mar",
@@ -4005,6 +4083,8 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             "build_commerce_card_product_facts": build_commerce_card_product_facts,
             "build_commerce_delivery_status": build_commerce_delivery_status,
             "build_alojamiento_key_facts": build_alojamiento_key_facts,
+            "build_accommodation_card_summary": build_accommodation_card_summary,
+            "build_accommodation_card_rate": build_accommodation_card_rate,
             "build_alojamiento_rooms_summary": build_alojamiento_rooms_summary,
             "get_alojamiento_card_type": get_alojamiento_card_type,
             "alojamiento_initials": alojamiento_initials,

@@ -4283,13 +4283,18 @@ button:disabled {
 .accommodation-card-title a { color: var(--portal-ink-strong); display: -webkit-box; overflow: hidden; text-decoration: none; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .accommodation-card-location { color: var(--portal-muted); font-size: .88rem; margin: 5px 0 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .accommodation-card-location::before { content: "— "; }
+.accommodation-card-summary { color: var(--portal-ink); font-size: .85rem; line-height: 1.45; margin-top: 13px; min-block-size: 2.5em; }
+.accommodation-card-summary p { margin: 0; }
 .accommodation-facts { color: var(--portal-ink); display: flex; flex-wrap: wrap; font-size: .85rem; gap: 0; list-style: none; margin: 13px 0 0; padding: 0; }
 .accommodation-facts li + li::before { color: var(--portal-earth); content: "·"; margin: 0 8px; }
-.accommodation-amenities { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 12px; }
+.accommodation-amenities { align-content: flex-start; display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 12px; min-block-size: 2.35em; }
 .accommodation-amenities span { color: var(--portal-muted); font-size: .8rem; }
 .accommodation-more-amenities { color: var(--portal-olive-dark) !important; font-weight: 800; }
 .accommodation-card-footer { border-top: 1px solid rgba(64,85,63,.14); margin-top: auto; padding-top: 14px; }
-.accommodation-card-price { color: var(--portal-ink-strong); font-size: .95rem; font-weight: 800; margin: 0 0 12px; }
+.accommodation-card-rate { display: flex; flex-direction: column; margin: 0 0 12px; min-block-size: 3.7em; }
+.accommodation-card-rate-label { color: var(--portal-muted); font-size: .66rem; font-weight: 800; letter-spacing: .1em; line-height: 1.2; margin-bottom: 4px; text-transform: uppercase; }
+.accommodation-card-rate strong { color: var(--portal-ink-strong); font-size: .95rem; font-weight: 800; line-height: 1.35; }
+.accommodation-card-rate small { color: var(--portal-muted); font-size: .72rem; line-height: 1.3; margin-top: 2px; }
 .accommodation-card-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px 14px; }
 .accommodation-primary-action, .accommodation-secondary-action { border-radius: 999px; font-size: .82rem; font-weight: 800; padding: 8px 12px; text-decoration: none; }
 .accommodation-primary-action,
@@ -4321,6 +4326,7 @@ button:disabled {
   .accommodation-results-order { align-items: stretch; flex-direction: column; margin-top: 0; width: 100%; }
   .accommodation-results-order select { box-sizing: border-box; min-width: 0; width: 100%; }
   .accommodation-results-order button { align-self: flex-start; }
+  .accommodation-card-summary, .accommodation-amenities, .accommodation-card-rate { min-block-size: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   .accommodation-card { transition: none; }
@@ -4800,7 +4806,7 @@ body,
 
 .accommodation-facts { color: var(--portal-text); }
 .accommodation-more-amenities { color: var(--portal-primary) !important; }
-.accommodation-card-price { color: var(--portal-text-strong); }
+.accommodation-card-rate strong { color: var(--portal-text-strong); }
 
 .destination-dialog {
   background: var(--portal-surface-soft);
