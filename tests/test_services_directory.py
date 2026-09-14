@@ -28,7 +28,7 @@ from app.main import (
 from app.models import Empresa
 
 
-def test_legacy_gastronomy_bakery_normalization_is_lossless_idempotent_and_public():
+def test_san_diego_service_bakery_normalization_is_lossless_idempotent_and_public():
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
@@ -37,7 +37,7 @@ def test_legacy_gastronomy_bakery_normalization_is_lossless_idempotent_and_publi
     db = TestingSession()
     bakery = Empresa(
         nombre="Panadería San Diego", slug="panaderia-san-diego",
-        theme="gastronomia", subgrupo=None, subtipo="  PANADERÍA ", activo=True,
+        theme="servicios", subgrupo="otros", subtipo="  PANADERÍA ", activo=True,
         descripcion="Recetas de siempre", descripcion_corta="Pan casero",
         telefono="3541-555555", whatsapp="5493541555555",
         instagram="panaderiasandiego", facebook="san-diego", web_url="https://example.test",
@@ -63,8 +63,8 @@ def test_legacy_gastronomy_bakery_normalization_is_lossless_idempotent_and_publi
         )
     }
 
-    assert is_legacy_gastronomy_bakery(bakery)
-    assert is_bakery_provider(bakery)  # Defensive support before maintenance completes.
+    assert not is_legacy_gastronomy_bakery(bakery)
+    assert not is_bakery_provider(bakery)
     assert not is_legacy_gastronomy_bakery(misleading)
     assert normalize_legacy_bakery_taxonomy(db) == 1
     db.refresh(bakery)
@@ -91,6 +91,56 @@ def test_legacy_gastronomy_bakery_normalization_is_lossless_idempotent_and_publi
         app.dependency_overrides.pop(get_db, None)
         db.close()
         engine.dispose()
+
+
+def test_bakery_normalization_covers_every_structured_legacy_representation():
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    TestingSession = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = TestingSession()
+    bakeries = [
+        Empresa(nombre="Legacy gastronomía", slug="legacy-gastronomia", theme="gastronomia", subgrupo=None, subtipo="Panadería"),
+        Empresa(nombre="Legacy comida", slug="legacy-comida", theme="comida", subgrupo=None, subtipo="Panadería"),
+        Empresa(nombre="Panadería San Diego", slug="panaderia-san-diego", theme="servicios", subgrupo="otros", subtipo="Panadería"),
+        Empresa(nombre="Servicio sin grupo", slug="servicio-sin-grupo", theme="servicios", subgrupo=None, subtipo="PANADERÍA"),
+    ]
+    canonical = Empresa(
+        nombre="Canónica", slug="canonica", theme="servicios", subgrupo="compras", subtipo="Panadería"
+    )
+    unrelated = Empresa(
+        nombre="Gomería", slug="gomeria", theme="servicios", subgrupo="otros", subtipo="Gomería"
+    )
+    misleading = Empresa(
+        nombre="Panadería algo", slug="panaderia-algo", theme="servicios", subgrupo="otros", subtipo="Kiosco"
+    )
+    db.add_all([*bakeries, canonical, unrelated, misleading])
+    db.commit()
+
+    assert normalize_legacy_bakery_taxonomy(db) == 4
+    for bakery in bakeries:
+        db.refresh(bakery)
+        assert (bakery.theme, bakery.subgrupo, bakery.subtipo.strip().lower()) == (
+            "servicios", "compras", "panadería"
+        )
+        assert is_bakery_provider(bakery)
+        assert public_service_category_key(bakery) == "panaderias"
+    db.refresh(canonical)
+    db.refresh(unrelated)
+    db.refresh(misleading)
+    assert (canonical.theme, canonical.subgrupo, canonical.subtipo) == (
+        "servicios", "compras", "Panadería"
+    )
+    assert (unrelated.theme, unrelated.subgrupo, unrelated.subtipo) == (
+        "servicios", "otros", "Gomería"
+    )
+    assert (misleading.theme, misleading.subgrupo, misleading.subtipo) == (
+        "servicios", "otros", "Kiosco"
+    )
+    assert normalize_legacy_bakery_taxonomy(db) == 0
+    db.close()
+    engine.dispose()
 
 
 def test_services_taxonomy_filters_and_compatibility():

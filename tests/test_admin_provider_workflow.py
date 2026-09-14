@@ -694,7 +694,7 @@ def test_admin_shows_normalized_legacy_bakery_as_service(admin_app):
     client, db, _ = admin_app
     company = add_company(
         db, nombre="Panadería San Diego", slug="panaderia-san-diego",
-        theme="gastronomia", subgrupo=None, subtipo="Panadería",
+        theme="servicios", subgrupo="otros", subtipo="Panadería",
     )
 
     assert main.normalize_legacy_bakery_taxonomy(db) == 1
@@ -706,6 +706,7 @@ def test_admin_shows_normalized_legacy_bakery_as_service(admin_app):
     assert "Tipo de servicio" in response.text
     assert '<option value="Panadería" selected>Panadería</option>' in response.text
     assert "Panadería (valor histórico)" not in response.text
+    assert '<option value="otros" selected>Otros servicios</option>' not in response.text
 
 
 @pytest.mark.parametrize("subtype", ["Kinesiología", "Centro de salud"])

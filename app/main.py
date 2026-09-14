@@ -2977,7 +2977,7 @@ def is_legacy_gastronomy_bakery(empresa: models.Empresa) -> bool:
 
 
 def normalize_legacy_bakery_taxonomy(db: Session | None = None) -> int:
-    """Move legacy gastronomic bakeries to their canonical service taxonomy.
+    """Move every structured legacy bakery to its canonical service taxonomy.
 
     Only ``Empresa.theme`` and ``Empresa.subgrupo`` are changed, so row identity,
     slug, content and related records remain untouched.  The structured predicate
@@ -2988,10 +2988,12 @@ def normalize_legacy_bakery_taxonomy(db: Session | None = None) -> int:
     changed = 0
     try:
         candidates = db.query(models.Empresa).filter(
-            func.lower(func.trim(models.Empresa.theme)).in_({"gastronomia", "comida"})
+            func.lower(func.trim(models.Empresa.theme)).in_({"gastronomia", "comida", "servicios"})
         ).all()
         for empresa in candidates:
-            if not is_legacy_gastronomy_bakery(empresa):
+            if normalize_taxonomy_key(empresa.subtipo) != "panaderia":
+                continue
+            if empresa.theme == "servicios" and empresa.subgrupo == "compras":
                 continue
             empresa.theme = "servicios"
             empresa.subgrupo = "compras"
