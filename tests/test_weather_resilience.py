@@ -40,7 +40,7 @@ class Response:
 
 
 @pytest.fixture(autouse=True)
-def reset_weather_cache(monkeypatch):
+def reset_weather_cache(monkeypatch, tmp_path):
     main._weather_cache.update({
         "data": None,
         "expires_at": None,
@@ -48,6 +48,9 @@ def reset_weather_cache(monkeypatch):
         "last_success_at": None,
         "retry_after": None,
     })
+    monkeypatch.setattr(main, "WEATHER_SNAPSHOT_PATH", tmp_path / "system" / "weather_snapshot.json")
+    monkeypatch.setattr(main, "_weather_persisted_snapshot_loaded", False)
+    monkeypatch.setattr(main, "_weather_persisted_snapshot_valid", False)
     monkeypatch.setattr(main, "utc_now", lambda: NOW)
 
 
