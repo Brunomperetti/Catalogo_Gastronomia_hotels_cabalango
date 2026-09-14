@@ -640,6 +640,7 @@ def test_admin_uses_shopping_group_label_without_changing_value(admin_app):
 
 
 @pytest.mark.parametrize(("group", "subtype", "category", "label"), [
+    ("compras", "Panadería", "panaderias", "Panaderías"),
     ("otros", "Lavadero", "lavanderia", "Lavandería"),
     ("salud", "Farmacia", "farmacia", "Farmacia"),
     ("compras", "Proveeduría", "almacenes", "Almacenes y kioscos"),
@@ -667,7 +668,7 @@ def test_admin_displays_public_service_category_and_matching_type(
     assert f'<option value="{subtype}" selected>{subtype}</option>' in response.text
     assert "Categoría en la guía" in response.text
     assert "Tipo de servicio" in response.text
-    assert "Las panaderías se cargan desde Gastronomía → Panadería" in response.text
+    assert "Las panaderías se cargan desde Gastronomía → Panadería" not in response.text
 
 
 def test_admin_preserves_unknown_historical_service_type(admin_app):
@@ -687,6 +688,25 @@ def test_admin_preserves_unknown_historical_service_type(admin_app):
     db.refresh(company)
     assert company.subgrupo == "otros"
     assert company.subtipo == "Gomería"
+
+
+def test_admin_shows_normalized_legacy_bakery_as_service(admin_app):
+    client, db, _ = admin_app
+    company = add_company(
+        db, nombre="Panadería San Diego", slug="panaderia-san-diego",
+        theme="servicios", subgrupo="otros", subtipo="Panadería",
+    )
+
+    assert main.normalize_legacy_bakery_taxonomy(db) == 1
+    response = client.get(f"/admin?empresa={company.slug}&tab=rubro")
+
+    assert response.status_code == 200
+    assert '<span class="active-provider-section">Compras y servicios</span>' in response.text
+    assert '<option value="panaderias" selected>Panaderías</option>' in response.text
+    assert "Tipo de servicio" in response.text
+    assert '<option value="Panadería" selected>Panadería</option>' in response.text
+    assert "Panadería (valor histórico)" not in response.text
+    assert '<option value="otros" selected>Otros servicios</option>' not in response.text
 
 
 @pytest.mark.parametrize("subtype", ["Kinesiología", "Centro de salud"])
@@ -712,6 +732,7 @@ def test_admin_keeps_health_group_when_saving_public_others_unchanged(admin_app,
 
 
 @pytest.mark.parametrize(("category", "subtype", "expected_group"), [
+    ("panaderias", "Panadería", "compras"),
     ("lavanderia", "Lavadero", "otros"),
     ("farmacia", "Farmacia", "salud"),
     ("otros", "Estética", "salud"),

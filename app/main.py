@@ -92,6 +92,7 @@ def run_startup_db_maintenance():
         ensure_lugares_tables()
         ensure_actividad_agenda_table()
         ensure_solicitud_prestador_table()
+        normalize_legacy_bakery_taxonomy()
         backfill_commerce_product_categories_from_intake()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
@@ -2828,6 +2829,7 @@ SERVICIOS_SUBTIPOS = {
     "despensa": ("compras", "Despensa"),
     "minimercado": ("compras", "Minimercado"),
     "kiosco": ("compras", "Kiosco"),
+    "panaderia": ("compras", "Panadería"),
     "regionales": ("compras", "Productos regionales"),
     "fraccionamiento de productos secos": ("compras", "Fraccionamiento de productos secos"),
     "remis": ("transporte", "Remis"),
@@ -2846,13 +2848,17 @@ SERVICIOS_SUBTIPOS = {
 }
 
 # The admin presents the public directory vocabulary while continuing to persist
-# the historical ``subgrupo``/``subtipo`` representation. Bakeries deliberately
-# remain outside this map because they are gastronomic providers.
+# the structured ``subgrupo``/``subtipo`` representation.
 SERVICIOS_CATEGORIAS_ADMIN = {
     "almacenes": {
         "label": SERVICIOS_FILTROS_PUBLICOS["almacenes"]["label"],
         "subgrupo": "compras",
         "subtipos": ["Almacén", "Despensa", "Kiosco", "Minimercado", "Proveeduría", "Fraccionamiento de productos secos"],
+    },
+    "panaderias": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["panaderias"]["label"],
+        "subgrupo": "compras",
+        "subtipos": ["Panadería"],
     },
     "locales": {
         "label": SERVICIOS_FILTROS_PUBLICOS["locales"]["label"],
@@ -2946,11 +2952,61 @@ def is_local_products_service(empresa: models.Empresa) -> bool:
 
 
 def is_bakery_provider(empresa: models.Empresa) -> bool:
-    """Identify bakeries strictly from their persisted gastronomic taxonomy."""
+    """Identify service bakeries, with temporary read support for legacy rows.
+
+    New and normalized records use the ``servicios``/``compras`` taxonomy.
+    Recognizing the old gastronomic representation prevents a legacy row from
+    disappearing from the bakery filter while startup maintenance is running.
+    """
+    return (
+        (
+            normalize_theme(empresa.theme) == "servicios"
+            and service_group_key(empresa) == "compras"
+            and normalize_taxonomy_key(empresa.subtipo) == "panaderia"
+        )
+        or is_legacy_gastronomy_bakery(empresa)
+    )
+
+
+def is_legacy_gastronomy_bakery(empresa: models.Empresa) -> bool:
+    """Detect the historical gastronomic representation using taxonomy only."""
     return (
         normalize_theme(empresa.theme) in {"gastronomia", "comida"}
         and normalize_taxonomy_key(empresa.subtipo) == "panaderia"
     )
+
+
+def normalize_legacy_bakery_taxonomy(db: Session | None = None) -> int:
+    """Move every structured legacy bakery to its canonical service taxonomy.
+
+    Only ``Empresa.theme`` and ``Empresa.subgrupo`` are changed, so row identity,
+    slug, content and related records remain untouched.  The structured predicate
+    and resulting values make this idempotent on SQLite and PostgreSQL.
+    """
+    owns_session = db is None
+    db = db or SessionLocal()
+    changed = 0
+    try:
+        candidates = db.query(models.Empresa).filter(
+            func.lower(func.trim(models.Empresa.theme)).in_({"gastronomia", "comida", "servicios"})
+        ).all()
+        for empresa in candidates:
+            if normalize_taxonomy_key(empresa.subtipo) != "panaderia":
+                continue
+            if empresa.theme == "servicios" and empresa.subgrupo == "compras":
+                continue
+            empresa.theme = "servicios"
+            empresa.subgrupo = "compras"
+            changed += 1
+        if changed:
+            db.commit()
+        return changed
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        if owns_session:
+            db.close()
 
 
 def is_pharmacy_service(empresa: models.Empresa) -> bool:
@@ -3625,7 +3681,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
                         "total": len(group_items),
                     })
     elif section == "servicios":
-        # Bakeries retain their gastronomia theme; this is only a public projection.
+        # Legacy gastronomic bakeries remain visible until maintenance normalizes them.
         empresas = [
             empresa for empresa in empresas
             if normalize_theme(empresa.theme) == "servicios" or is_bakery_provider(empresa)
@@ -3679,7 +3735,10 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
             if active_purchase_type == "locales":
                 empresas = [empresa for empresa in empresas if is_local_products_service(empresa)]
             elif active_purchase_type == "almacenes":
-                empresas = [empresa for empresa in empresas if not is_local_products_service(empresa)]
+                empresas = [
+                    empresa for empresa in empresas
+                    if not is_local_products_service(empresa) and not is_bakery_provider(empresa)
+                ]
     return templates.TemplateResponse(
         "portal_prestadores.html",
         {
