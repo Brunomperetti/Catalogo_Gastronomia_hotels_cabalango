@@ -17,13 +17,79 @@ from app.main import (
     build_public_card_chips,
     get_db,
     is_bakery_provider,
+    is_legacy_service_bakery,
     is_laundry_service,
     is_pharmacy_service,
+    normalize_legacy_bakery_taxonomy,
     public_service_card_kicker,
     public_service_category_key,
     service_card_kicker,
 )
 from app.models import Empresa
+
+
+def test_legacy_service_bakery_normalization_is_lossless_idempotent_and_public():
+    engine = create_engine(
+        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
+    )
+    TestingSession = sessionmaker(bind=engine)
+    Base.metadata.create_all(engine)
+    db = TestingSession()
+    bakery = Empresa(
+        nombre="Panadería San Diego", slug="panaderia-san-diego",
+        theme="servicios", subgrupo="otros", subtipo="  PANADERÍA ", activo=True,
+        descripcion="Recetas de siempre", descripcion_corta="Pan casero",
+        telefono="3541-555555", whatsapp="5493541555555",
+        instagram="panaderiasandiego", facebook="san-diego", web_url="https://example.test",
+        horarios="Todos los días", direccion="Calle 1", maps_url="https://maps.example/test",
+        logo_url="/logo.jpg", banner_url="/banner.jpg", promocion="Dos por uno", destacado=True,
+    )
+    restaurant = Empresa(
+        nombre="Restaurante", slug="restaurante", theme="gastronomia",
+        subtipo="Restaurante", activo=True,
+    )
+    misleading = Empresa(
+        nombre="Panadería en el nombre", slug="nombre-panaderia", theme="servicios",
+        subgrupo="otros", subtipo="Gomería", descripcion="No es una panadería", activo=True,
+    )
+    db.add_all([bakery, restaurant, misleading])
+    db.commit()
+    bakery_id = bakery.id
+    preserved = {
+        key: getattr(bakery, key) for key in (
+            "nombre", "slug", "subgrupo", "subtipo", "descripcion", "descripcion_corta",
+            "telefono", "whatsapp", "instagram", "facebook", "web_url", "horarios",
+            "direccion", "maps_url", "logo_url", "banner_url", "promocion", "activo", "destacado",
+        )
+    }
+
+    assert is_legacy_service_bakery(bakery)
+    assert is_bakery_provider(bakery)  # Defensive support before maintenance completes.
+    assert not is_legacy_service_bakery(misleading)
+    assert normalize_legacy_bakery_taxonomy(db) == 1
+    db.refresh(bakery)
+    assert bakery.id == bakery_id
+    assert bakery.theme == "gastronomia"
+    assert {key: getattr(bakery, key) for key in preserved} == preserved
+    assert normalize_legacy_bakery_taxonomy(db) == 0
+    db.refresh(restaurant)
+    db.refresh(misleading)
+    assert restaurant.theme == "gastronomia"
+    assert misleading.theme == "servicios"
+
+    def override_db():
+        yield db
+
+    app.dependency_overrides[get_db] = override_db
+    client = TestClient(app)
+    try:
+        assert "Panadería San Diego" in client.get("/servicios?filtro=panaderias").text
+        assert "Panadería San Diego" not in client.get("/servicios?filtro=otros").text
+        assert "Panadería San Diego" not in client.get("/gastronomia").text
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        db.close()
+        engine.dispose()
 
 
 def test_services_taxonomy_filters_and_compatibility():

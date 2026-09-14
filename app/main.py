@@ -92,6 +92,7 @@ def run_startup_db_maintenance():
         ensure_lugares_tables()
         ensure_actividad_agenda_table()
         ensure_solicitud_prestador_table()
+        normalize_legacy_bakery_taxonomy()
         backfill_commerce_product_categories_from_intake()
         ensure_default_admin_user()
         print("[catalogo] db maintenance completed")
@@ -2946,11 +2947,57 @@ def is_local_products_service(empresa: models.Empresa) -> bool:
 
 
 def is_bakery_provider(empresa: models.Empresa) -> bool:
-    """Identify bakeries strictly from their persisted gastronomic taxonomy."""
+    """Identify canonical bakeries, with temporary read support for legacy rows.
+
+    New and normalized records still use the ``gastronomia`` theme.  Recognizing
+    the old service representation here prevents an unnormalized row from being
+    projected into "Otros servicios" while startup maintenance is running.
+    """
     return (
-        normalize_theme(empresa.theme) in {"gastronomia", "comida"}
+        (
+            normalize_theme(empresa.theme) in {"gastronomia", "comida"}
+            and normalize_taxonomy_key(empresa.subtipo) == "panaderia"
+        )
+        or is_legacy_service_bakery(empresa)
+    )
+
+
+def is_legacy_service_bakery(empresa: models.Empresa) -> bool:
+    """Detect the historical bakery representation using taxonomy only."""
+    return (
+        normalize_theme(empresa.theme) == "servicios"
         and normalize_taxonomy_key(empresa.subtipo) == "panaderia"
     )
+
+
+def normalize_legacy_bakery_taxonomy(db: Session | None = None) -> int:
+    """Move legacy service bakeries to their canonical gastronomic theme.
+
+    Only ``Empresa.theme`` is changed, so the row identity, slug, content and
+    related records remain untouched.  The structured predicate and resulting
+    value make this maintenance safe and idempotent on SQLite and PostgreSQL.
+    """
+    owns_session = db is None
+    db = db or SessionLocal()
+    changed = 0
+    try:
+        candidates = db.query(models.Empresa).filter(
+            func.lower(func.trim(models.Empresa.theme)) == "servicios"
+        ).all()
+        for empresa in candidates:
+            if not is_legacy_service_bakery(empresa):
+                continue
+            empresa.theme = "gastronomia"
+            changed += 1
+        if changed:
+            db.commit()
+        return changed
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        if owns_session:
+            db.close()
 
 
 def is_pharmacy_service(empresa: models.Empresa) -> bool:
