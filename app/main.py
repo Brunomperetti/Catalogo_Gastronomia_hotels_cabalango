@@ -3456,6 +3456,65 @@ PROVIDER_PRODUCT_CATEGORIES = [
     ("golosinas", "Golosinas"),
 ]
 
+BAKERY_PRODUCT_CATEGORY_GROUPS = [
+    ("Panes", [
+        ("pan tradicional", "Pan tradicional"),
+        ("pan casero artesanal", "Pan casero / artesanal"),
+        ("pan integral", "Pan integral"),
+        ("pan de salvado", "Pan de salvado"),
+        ("pan saborizado", "Pan saborizado"),
+        ("pan de miga", "Pan de miga"),
+        ("pan hamburguesa panchos", "Pan para hamburguesas / panchos"),
+        ("grisines", "Grisines"),
+    ]),
+    ("Panadería clásica", [
+        ("criollos", "Criollos"), ("facturas", "Facturas"),
+        ("medialunas", "Medialunas"), ("chipa", "Chipá"),
+        ("pastelitos", "Pastelitos"),
+        ("masitas masas secas", "Masitas / masas secas"),
+        ("galletas", "Galletas"),
+    ]),
+    ("Pastelería y dulces", [
+        ("pan dulce", "Pan dulce"), ("budines", "Budines"),
+        ("roscas", "Roscas"), ("pasteleria", "Pastelería"),
+        ("tortas", "Tortas"), ("tartas dulces", "Tartas dulces"),
+        ("alfajores", "Alfajores"),
+    ]),
+    ("Salados", [
+        ("sandwiches", "Sándwiches"),
+        ("sandwiches de miga", "Sándwiches de miga"),
+        ("prepizzas", "Prepizzas"), ("pizzas", "Pizzas"),
+        ("empanadas", "Empanadas"),
+        ("otros salados", "Otros productos salados"),
+    ]),
+    ("Especiales", [
+        ("productos integrales", "Productos integrales"),
+        ("sin tacc", "Productos sin TACC"),
+    ]),
+    ("Bebidas", [("cafe infusiones", "Café / infusiones"), ("bebidas", "Bebidas")]),
+    ("Otros", [("otros productos", "Otros productos")]),
+]
+BAKERY_PRODUCT_CATEGORIES = [
+    category for _group, categories in BAKERY_PRODUCT_CATEGORY_GROUPS for category in categories
+]
+
+
+def _unique_product_categories(*catalogs) -> list[tuple[str, str]]:
+    """Combine editorial catalogs into the canonical persistence vocabulary."""
+    result = []
+    seen = set()
+    for catalog in catalogs:
+        for key, label in catalog:
+            if key not in seen:
+                result.append((key, label))
+                seen.add(key)
+    return result
+
+
+COMMERCE_PRODUCT_CATEGORIES = _unique_product_categories(
+    PROVIDER_PRODUCT_CATEGORIES, BAKERY_PRODUCT_CATEGORIES
+)
+
 COMMERCE_PRODUCT_TAXONOMY_VERSION = 2
 COMMERCE_PRODUCT_V2_CATEGORIES = {
     "carne vacuna", "pollo", "articulos de libreria y fotocopias",
@@ -3476,16 +3535,16 @@ def _commerce_product_key(value: Any) -> str:
 
 
 def normalize_commerce_product_categories(values) -> list[str]:
-    """Normalize submitted/intake labels to the one canonical editorial taxonomy."""
+    """Normalize labels against the master vocabulary shared by all catalogs."""
     if isinstance(values, str):
         values = re.split(r"[,;\n]+", values)
     if not isinstance(values, (list, tuple, set)):
         return []
     known = {
-        _commerce_product_key(key): key for key, _label in PROVIDER_PRODUCT_CATEGORIES
+        _commerce_product_key(key): key for key, _label in COMMERCE_PRODUCT_CATEGORIES
     }
     known.update({
-        _commerce_product_key(label): key for key, label in PROVIDER_PRODUCT_CATEGORIES
+        _commerce_product_key(label): key for key, label in COMMERCE_PRODUCT_CATEGORIES
     })
     aliases = {
         "carne": "carne vacuna", "carnes": "carne vacuna",
@@ -3505,7 +3564,7 @@ def normalize_commerce_product_categories(values) -> list[str]:
             selected.update({"carne vacuna", "pollo"})
         elif key in known:
             selected.add(known[key])
-    return [key for key, _label in PROVIDER_PRODUCT_CATEGORIES if key in selected]
+    return [key for key, _label in COMMERCE_PRODUCT_CATEGORIES if key in selected]
 
 
 def parse_commerce_product_categories(raw) -> list[str]:
@@ -3528,6 +3587,11 @@ def serialize_commerce_product_categories(values) -> str | None:
     return json.dumps(normalized, ensure_ascii=False, separators=(",", ":")) if normalized else None
 
 
+def get_provider_product_categories(empresa: models.Empresa) -> list[tuple[str, str]]:
+    """Select the editorial product catalog from the provider taxonomy."""
+    return BAKERY_PRODUCT_CATEGORIES if is_bakery_provider(empresa) else PROVIDER_PRODUCT_CATEGORIES
+
+
 def build_provider_products(empresa: models.Empresa, kind: str) -> list[dict[str, str]]:
     """Build commerce metadata; the real product catalog is intentionally unrelated."""
     if kind != "servicios" or service_group_key(empresa) != "compras":
@@ -3537,7 +3601,7 @@ def build_provider_products(empresa: models.Empresa, kind: str) -> list[dict[str
     ))
     return [
         {"key": key, "label": label, "icon": "bag"}
-        for key, label in PROVIDER_PRODUCT_CATEGORIES if key in selected
+        for key, label in get_provider_product_categories(empresa) if key in selected
     ]
 
 
@@ -4874,10 +4938,24 @@ def admin_panel(
             "empresa_logo_url": get_empresa_logo_url(empresa_activa),
             "empresa_banner_url": get_empresa_banner_url(empresa_activa),
             "parse_alojamiento_room_options": parse_alojamiento_room_options,
-            "provider_product_categories": PROVIDER_PRODUCT_CATEGORIES,
+            "provider_product_categories": (
+                get_provider_product_categories(empresa_activa) if empresa_activa else PROVIDER_PRODUCT_CATEGORIES
+            ),
+            "provider_product_catalogs": {
+                "general": PROVIDER_PRODUCT_CATEGORIES,
+                "bakery": BAKERY_PRODUCT_CATEGORIES,
+            },
+            "bakery_product_category_groups": BAKERY_PRODUCT_CATEGORY_GROUPS,
+            "commerce_product_labels": dict(COMMERCE_PRODUCT_CATEGORIES),
             "commerce_product_categories_selected": set(parse_commerce_product_categories(
                 empresa_activa.compras_productos_disponibles
             )) if empresa_activa else set(),
+            "commerce_product_categories_previous": [
+                (key, label) for key, label in COMMERCE_PRODUCT_CATEGORIES
+                if empresa_activa
+                and key in set(parse_commerce_product_categories(empresa_activa.compras_productos_disponibles))
+                and key not in dict(get_provider_product_categories(empresa_activa))
+            ],
             "galeria_urls": get_empresa_gallery_urls(empresa_activa) if empresa_activa else [],
             "menu_fotos_urls": get_empresa_menu_photo_urls(empresa_activa) if empresa_activa else [],
             "pending_reviews": db.query(models.Review).filter(models.Review.estado == "pendiente").order_by(models.Review.created_at.desc()).limit(30).all(),
