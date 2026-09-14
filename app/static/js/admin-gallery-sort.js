@@ -15,6 +15,8 @@
       if (input) input.value = String(index);
       const left = item.querySelector('[data-gallery-move="left"]');
       const right = item.querySelector('[data-gallery-move="right"]');
+      const positionLabel = item.querySelector("[data-gallery-position-label]");
+      if (positionLabel) positionLabel.textContent = `Foto ${index + 1}`;
       left.hidden = index === 0;
       right.hidden = index === all.length - 1;
       left.setAttribute("aria-label", `Mover foto ${index + 1} hacia la izquierda`);

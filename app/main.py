@@ -4255,10 +4255,41 @@ def admin_activity_photo_delete(request: Request, item_id: int, foto_id: int, db
     if not foto:
         raise HTTPException(404, "Foto no encontrada")
     image_url, principal_url = foto.image_url, foto.actividad.imagen_url
+    remaining_photos = [item for item in foto.actividad.fotos if item.id != foto.id]
     db.delete(foto)
+    for position, remaining_photo in enumerate(remaining_photos):
+        remaining_photo.orden = position
     db.commit()
     delete_agenda_gallery_file(image_url, principal_url)
     return RedirectResponse(f"/admin/actividades?edit={item_id}&msg=Foto%20eliminada.", 303)
+
+
+@app.post("/admin/actividades/{item_id}/fotos/reordenar")
+def admin_activity_photos_reorder(
+    request: Request,
+    item_id: int,
+    orden: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    user = require_admin(request, db)
+    if isinstance(user, RedirectResponse):
+        return user
+    activity = db.get(models.ActividadAgenda, item_id)
+    if not activity:
+        raise HTTPException(status_code=404, detail="Actividad no encontrada")
+
+    photos = list(activity.fotos)
+    values = orden.split(",")
+    if not all(re.fullmatch(r"\d+", value.strip()) for value in values):
+        raise HTTPException(status_code=400, detail="El orden de la galería no es válido")
+    indices = [int(value.strip()) for value in values]
+    if len(indices) != len(photos) or sorted(indices) != list(range(len(photos))):
+        raise HTTPException(status_code=400, detail="El orden de la galería no es válido")
+
+    for new_position, current_index in enumerate(indices):
+        photos[current_index].orden = new_position
+    db.commit()
+    return JSONResponse({"ok": True})
 
 
 @app.post("/admin/actividades/{item_id}/duplicar")
