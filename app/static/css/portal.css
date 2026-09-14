@@ -6378,6 +6378,7 @@ body,
 .destination-guide .destination-planning .weather-current-icon { height: 106px; width: 106px; }
 .destination-guide .destination-planning .weather-temp { font-size: clamp(5rem, 7vw, 6.6rem); line-height: .78; margin-bottom: 9px; }
 .destination-guide .destination-planning .weather-today-range { margin-top: 7px; }
+.destination-guide .destination-planning .weather-updated { color: var(--portal-muted); font-size: .76rem; line-height: 1.45; margin: 8px 0 0; }
 .destination-guide .destination-planning .weather-advice { box-sizing: border-box; margin: 20px 0 0; max-width: 420px; padding: 5px 0 5px 14px; width: 100%; }
 .destination-guide .destination-planning .weather-summary div { gap: 3px 16px; min-height: 50px; padding-block: 15px; width: 100%; }
 .destination-guide .destination-planning .weather-summary span { min-width: 0; }

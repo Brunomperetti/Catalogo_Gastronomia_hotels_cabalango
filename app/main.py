@@ -28,6 +28,7 @@ from pathlib import Path
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 # PDF
 from reportlab.pdfgen import canvas
@@ -1069,18 +1070,68 @@ def get_destino_content(db: Session) -> models.DestinoContenido:
     db.refresh(content)
     return content
 
-_weather_cache = {"expires_at": None, "data": None}
+WEATHER_FRESH_TTL = timedelta(minutes=25)
+WEATHER_STALE_TTL = timedelta(hours=6)
+WEATHER_RETRY_INTERVAL = timedelta(minutes=1)
+CABALANGO_TIMEZONE = ZoneInfo("America/Argentina/Cordoba")
+_weather_cache = {
+    "data": None,
+    "expires_at": None,
+    "stale_until": None,
+    "last_success_at": None,
+    "retry_after": None,
+}
 WEATHER_CODE_LABELS = {0: "Despejado", 1: "Mayormente despejado", 2: "Parcialmente nublado", 3: "Nublado", 45: "Neblina", 48: "Neblina", 51: "Llovizna", 53: "Llovizna", 55: "Llovizna", 61: "Lluvia", 63: "Lluvia", 65: "Lluvia intensa", 80: "Chaparrones", 95: "Tormenta"}
+
+
+def _weather_for_display(data: dict, *, is_stale: bool) -> dict:
+    """Add presentation metadata without changing the cached weather snapshot."""
+    weather = dict(data)
+    last_success_at = _weather_cache["last_success_at"]
+    weather.update({
+        "is_stale": is_stale,
+        "last_updated_at": last_success_at,
+        "last_updated_label": last_success_at.astimezone(CABALANGO_TIMEZONE).strftime("%H:%M"),
+    })
+    return weather
+
+
+def _weather_failure_result(now: datetime, fallback: dict) -> dict:
+    data = _weather_cache["data"]
+    stale_until = _weather_cache["stale_until"]
+    if data and data.get("available") and stale_until and now <= stale_until:
+        # Stale values are only snapshots of successful Open-Meteo responses.
+        # No weather value is extrapolated, estimated, or generated here.
+        _weather_cache["retry_after"] = now + WEATHER_RETRY_INTERVAL
+        is_stale = not (_weather_cache["expires_at"] and _weather_cache["expires_at"] > now)
+        return _weather_for_display(data, is_stale=is_stale)
+
+    _weather_cache.update({
+        "data": fallback,
+        "expires_at": now + WEATHER_RETRY_INTERVAL,
+        "stale_until": None,
+        "last_success_at": None,
+        "retry_after": None,
+    })
+    return fallback
+
 
 def get_cabalango_weather(force_refresh: bool = False) -> dict:
     now = utc_now()
-    if (
-        not force_refresh
-        and _weather_cache["data"]
-        and _weather_cache["expires_at"]
-        and _weather_cache["expires_at"] > now
-    ):
-        return _weather_cache["data"]
+    cached = _weather_cache["data"]
+    if not force_refresh and cached:
+        if _weather_cache["expires_at"] and _weather_cache["expires_at"] > now:
+            if cached.get("available"):
+                return _weather_for_display(cached, is_stale=False)
+            return cached
+        if (
+            cached.get("available")
+            and _weather_cache["stale_until"]
+            and now <= _weather_cache["stale_until"]
+            and _weather_cache["retry_after"]
+            and _weather_cache["retry_after"] > now
+        ):
+            return _weather_for_display(cached, is_stale=True)
     params = urlencode({
         "latitude": -31.395,
         "longitude": -64.562,
@@ -1096,10 +1147,18 @@ def get_cabalango_weather(force_refresh: bool = False) -> dict:
                 payload = json.loads(response.read().decode("utf-8"))
             break
         except Exception as exc:
-            print(f"[weather] Open-Meteo request failed: {type(exc).__name__}: {exc}")
+            can_use_stale = bool(
+                cached and cached.get("available") and _weather_cache["stale_until"]
+                and now <= _weather_cache["stale_until"]
+            )
+            logger.warning(
+                "Open-Meteo attempt %s/2 failed (%s); stale cache %s be used",
+                attempt + 1,
+                type(exc).__name__,
+                "can" if can_use_stale else "cannot",
+            )
             if attempt == 1:
-                _weather_cache.update({"data": fallback, "expires_at": now + timedelta(minutes=1)})
-                return fallback
+                return _weather_failure_result(now, fallback)
 
     try:
         current = payload.get("current") or {}
@@ -1143,14 +1202,24 @@ def get_cabalango_weather(force_refresh: bool = False) -> dict:
         if not weather["available"]:
             raise ValueError("Open-Meteo response has no current temperature")
     except Exception as exc:
-        print(f"[weather] Open-Meteo request failed: {type(exc).__name__}: {exc}")
-        _weather_cache.update({"data": fallback, "expires_at": now + timedelta(minutes=1)})
-        return fallback
+        can_use_stale = bool(
+            cached and cached.get("available") and _weather_cache["stale_until"]
+            and now <= _weather_cache["stale_until"]
+        )
+        logger.warning(
+            "Open-Meteo response processing failed (%s); stale cache %s be used",
+            type(exc).__name__,
+            "can" if can_use_stale else "cannot",
+        )
+        return _weather_failure_result(now, fallback)
     _weather_cache.update({
         "data": weather,
-        "expires_at": now + timedelta(minutes=25),
+        "expires_at": now + WEATHER_FRESH_TTL,
+        "stale_until": now + WEATHER_STALE_TTL,
+        "last_success_at": now,
+        "retry_after": None,
     })
-    return weather
+    return _weather_for_display(weather, is_stale=False)
 
 EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 

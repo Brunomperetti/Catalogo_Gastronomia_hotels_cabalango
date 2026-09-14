@@ -307,6 +307,37 @@ def test_successful_weather_does_not_show_refresh_button(monkeypatch):
     assert "Actualizar clima" not in TestClient(app).get("/").text
 
 
+def test_fresh_weather_shows_local_update_time(monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "get_cabalango_weather", lambda: {
+        "available": True, "temperature": 21, "apparent_temperature": 20,
+        "condition": "Despejado", "min": 12, "max": 24,
+        "rain_probability": 0, "wind": 8, "advice": "Ideal para recorrer.",
+        "forecast": [], "is_stale": False, "last_updated_label": "13:24",
+    })
+
+    html = TestClient(app).get("/").text
+    assert "Actualizado a las 13:24" in html
+    assert "El clima está tomando una pausa" not in html
+
+
+def test_stale_weather_keeps_full_weather_and_shows_calm_delay_message(monkeypatch):
+    import app.main as main_module
+
+    monkeypatch.setattr(main_module, "get_cabalango_weather", lambda: {
+        "available": True, "temperature": 18, "apparent_temperature": 17,
+        "condition": "Nublado", "min": 10, "max": 20,
+        "rain_probability": 15, "wind": 9, "advice": "Ideal para recorrer.",
+        "forecast": [], "is_stale": True, "last_updated_label": "12:35",
+    })
+
+    html = TestClient(app).get("/").text
+    assert 'class="weather-temp">18°' in html
+    assert "Última actualización: 12:35 · actualización temporalmente demorada" in html
+    assert "El clima está tomando una pausa" not in html
+
+
 def test_weather_refresh_forces_request_and_redirects_to_clean_url(monkeypatch):
     import app.main as main_module
 
