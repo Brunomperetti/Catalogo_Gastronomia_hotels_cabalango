@@ -114,6 +114,31 @@ def test_admin_edits_and_clears_commerce_product_metadata(admin_app):
     assert company.compras_productos_taxonomia_version == 2
 
 
+def test_admin_product_container_initial_visibility_follows_service_category(admin_app):
+    client, db, _ = admin_app
+    cases = [
+        ("bakery", "compras", "Panadería", False, "PRODUCTOS DE PANADERÍA", "Criollos"),
+        ("store", "compras", "Almacén", False, "PRODUCTOS DISPONIBLES", "Carne vacuna"),
+        ("laundry", "otros", "Lavadero", True, "PRODUCTOS DISPONIBLES", "Carne vacuna"),
+    ]
+
+    for slug, group, subtype, hidden, title, product in cases:
+        company = add_company(
+            db, nombre=slug.title(), slug=slug, theme="servicios", subgrupo=group, subtipo=subtype
+        )
+        html = client.get(f"/admin?area=prestador&empresa={company.slug}&tab=rubro").text
+        fieldset = re.search(r'<fieldset class="full-width commerce-products"[^>]*>', html)
+        assert fieldset, "El contenedor debe existir para toda categoría de servicios"
+        assert ("hidden" in fieldset.group(0)) is hidden
+        assert ("disabled" in fieldset.group(0)) is hidden
+        assert title in html
+        assert product in html
+
+        marker = re.search(r'<input class="commerce-products-present"[^>]*>', html)
+        assert marker
+        assert ("disabled" in marker.group(0)) is hidden
+
+
 def test_admin_saves_beef_and_chicken_as_separate_categories(admin_app):
     client, db, _ = admin_app
     company = add_company(db, theme="servicios", subgrupo="compras", subtipo="Almacén")

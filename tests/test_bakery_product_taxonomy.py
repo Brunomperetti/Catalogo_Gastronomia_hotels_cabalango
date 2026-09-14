@@ -5,6 +5,7 @@ from app.main import (
     BAKERY_PRODUCT_CATEGORIES,
     COMMERCE_PRODUCT_TAXONOMY_VERSION,
     PROVIDER_PRODUCT_CATEGORIES,
+    SERVICIOS_CATEGORIAS_ADMIN,
     build_commerce_card_product_facts,
     build_provider_products,
     get_provider_product_categories,
@@ -70,6 +71,18 @@ def test_admin_javascript_switches_catalog_and_preserves_explicit_selections():
     assert "selectedProducts.delete(key)" in template
     assert "syncProductInputs()" in template
     assert "compras_productos_disponibles" in template
+    assert "const categoryConfig = serviceAdminCategories[categorySelect.value];" in template
+    assert "const isCommerce = categoryConfig?.subgrupo === 'compras';" in template
+    assert "products.hidden = !isCommerce;" in template
+    assert "products.disabled = !isCommerce;" in template
+    assert "presentMarker.disabled = !isCommerce;" in template
+    assert "if (!isCommerce)" in template
+    assert "products.querySelector('.commerce-products-inputs').replaceChildren();" in template
+    assert "selectedProducts.clear" not in template
+
+
+def test_bakery_admin_category_is_a_commerce_category():
+    assert SERVICIOS_CATEGORIAS_ADMIN["panaderias"]["subgrupo"] == "compras"
 
 
 def test_taxonomy_extension_does_not_change_intake_backfill_version():
