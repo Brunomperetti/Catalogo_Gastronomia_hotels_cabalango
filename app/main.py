@@ -97,6 +97,7 @@ def run_startup_db_maintenance():
         ensure_destino_contenido_table()
         ensure_lugares_tables()
         ensure_actividad_agenda_table()
+        migrate_mujer_astro_provider_to_activity()
         ensure_solicitud_prestador_table()
         normalize_legacy_bakery_taxonomy()
         backfill_commerce_product_categories_from_intake()
@@ -2191,6 +2192,162 @@ def get_empresa_gallery_urls(empresa: models.Empresa | None) -> list[str]:
     if not isinstance(data, list):
         return []
     return [clean_text(url, default="") for url in data if clean_text(url, default="")][:7]
+
+
+MUJER_ASTRO_LEGACY_SLUG = "mujer-astro-astrologia-y-tarot"
+
+
+def _normalized_legacy_image_url(value: str | None) -> str:
+    """Return a stable URL key without turning URL input into a filesystem path."""
+    value = clean_text(value, default="")
+    if not value:
+        return ""
+    parsed = urlparse(value)
+    if not parsed.scheme and not parsed.netloc:
+        return parsed.path
+    if parsed.scheme in {"http", "https"} and parsed.netloc:
+        return parsed._replace(fragment="").geturl()
+    return ""
+
+
+def _prepare_migrated_activity_image(
+    source_url: str,
+    role: str,
+    created_files: list[Path],
+) -> str:
+    """Copy one managed image deterministically, or retain a safe remote URL."""
+    normalized = _normalized_legacy_image_url(source_url)
+    if not normalized:
+        raise ValueError("invalid legacy image URL")
+    parsed = urlparse(normalized)
+    if parsed.scheme in {"http", "https"}:
+        return normalized
+
+    media_prefix = f"{MEDIA_URL_PREFIX}/"
+    if not normalized.startswith(media_prefix):
+        raise ValueError("legacy image is neither managed nor a safe external URL")
+    relative_path = normalized.removeprefix(media_prefix)
+    source = (STORAGE_DIR / relative_path).resolve()
+    storage_root = STORAGE_DIR.resolve()
+    try:
+        source.relative_to(storage_root)
+    except ValueError as exc:
+        raise ValueError("legacy image escapes managed storage") from exc
+    extension = source.suffix.lower()
+    if extension not in ALLOWED_IMAGE_EXTENSIONS:
+        raise ValueError("legacy image extension is not supported")
+    if not source.is_file():
+        raise FileNotFoundError("managed legacy image is missing")
+
+    target_dir = (STORAGE_DIR / "actividades" / MUJER_ASTRO_LEGACY_SLUG).resolve()
+    try:
+        target_dir.relative_to(storage_root)
+    except ValueError as exc:
+        raise ValueError("activity media destination escapes managed storage") from exc
+    target_dir.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:12]
+    destination = target_dir / f"migrated-{role}-{digest}{extension}"
+    if not destination.exists():
+        shutil.copy2(source, destination)
+        created_files.append(destination)
+    return f"{MEDIA_URL_PREFIX}/actividades/{MUJER_ASTRO_LEGACY_SLUG}/{destination.name}"
+
+
+def migrate_mujer_astro_provider_to_activity(db: Session | None = None) -> int:
+    """One-time, non-destructive migration of Mujer Astro into Activities."""
+    owns_session = db is None
+    session = db or SessionLocal()
+    created_files: list[Path] = []
+    try:
+        empresa = session.query(models.Empresa).filter_by(slug=MUJER_ASTRO_LEGACY_SLUG).first()
+        if not empresa:
+            return 0
+        existing = session.query(models.ActividadAgenda).filter_by(slug=MUJER_ASTRO_LEGACY_SLUG).first()
+        if existing:
+            if empresa.activo is False:
+                return 0
+            logger.warning("Mujer Astro migration conflict: activity exists while legacy Empresa is active")
+            return 0
+
+        unmapped = [
+            label for label, value in (
+                ("telefono", empresa.telefono),
+                ("facebook", empresa.facebook),
+                ("logo", empresa.logo_url),
+            )
+            if clean_text(value, default="")
+        ]
+        if unmapped:
+            logger.info("Unmapped legacy fields: %s", ", ".join(unmapped))
+
+        gallery = get_empresa_gallery_urls(empresa)
+        banner = clean_text(empresa.banner_url, default="")
+        logo = clean_text(empresa.logo_url, default="")
+
+        unique_gallery: list[str] = []
+        seen: set[str] = set()
+        for url in gallery:
+            key = _normalized_legacy_image_url(url)
+            if key and key not in seen:
+                seen.add(key)
+                unique_gallery.append(url)
+
+        principal = next(
+            (url for url in (banner, unique_gallery[0] if unique_gallery else "", logo)
+             if _normalized_legacy_image_url(url)),
+            "",
+        )
+        principal_key = _normalized_legacy_image_url(principal)
+        secondary_sources: list[str] = []
+        secondary_seen = {principal_key} if principal_key else set()
+        for url in [*unique_gallery, banner, logo]:
+            key = _normalized_legacy_image_url(url)
+            if key and key not in secondary_seen:
+                secondary_seen.add(key)
+                secondary_sources.append(url)
+
+        principal_url = (
+            _prepare_migrated_activity_image(principal, "principal", created_files)
+            if principal else None
+        )
+        secondary_urls = [
+            _prepare_migrated_activity_image(url, f"gallery-{index:02d}", created_files)
+            for index, url in enumerate(secondary_sources)
+        ]
+
+        lugar_encuentro = clean_text(empresa.lugar_encuentro, default="")
+        direccion = clean_text(empresa.direccion, default="")
+        activity = models.ActividadAgenda(
+            tipo="actividad", categoria="bienestar", momento="todo_el_dia",
+            titulo=empresa.nombre, slug=empresa.slug,
+            descripcion_corta=empresa.descripcion_corta, descripcion=empresa.descripcion,
+            horarios=empresa.horarios, whatsapp=empresa.whatsapp,
+            instagram=empresa.instagram, maps_url=empresa.maps_url,
+            direccion=empresa.direccion, url_externa=empresa.web_url,
+            lugar=lugar_encuentro or direccion or None,
+            imagen_url=principal_url, publicado=True, estado="programado",
+            mostrar_en_home=False, prioridad_home=0, oficial=False,
+            destacado=bool(empresa.destacado),
+        )
+        activity.fotos = [
+            models.ActividadAgendaFoto(image_url=url, orden=index)
+            for index, url in enumerate(secondary_urls)
+        ]
+        validate_activity(activity)
+        session.add(activity)
+        empresa.activo = False
+        session.commit()
+        logger.info("Mujer Astro migrated Empresa->ActividadAgenda")
+        return 1
+    except Exception as exc:
+        session.rollback()
+        for path in created_files:
+            path.unlink(missing_ok=True)
+        logger.warning("Mujer Astro migration aborted safely: %s", type(exc).__name__)
+        return 0
+    finally:
+        if owns_session:
+            session.close()
 
 
 def managed_gallery_file(empresa: models.Empresa, url: str) -> Path | None:
@@ -6633,6 +6790,13 @@ def prestador_publico(slug: str, request: Request, db: Session = Depends(get_db)
     empresa = db.query(models.Empresa).filter(models.Empresa.slug == slug).first()
     if not empresa:
         return HTMLResponse("<h1>Prestador no encontrado</h1>", status_code=404)
+    if normalize_taxonomy_key(empresa.theme) == "actividades" and empresa.activo is False:
+        migrated_activity = db.query(models.ActividadAgenda).filter_by(slug=slug, publicado=True).first()
+        if migrated_activity:
+            return RedirectResponse(
+                request.url_for("actividad_detail", slug=slug),
+                status_code=308,
+            )
 
     kind = get_prestador_kind(empresa)
     galeria_urls = get_empresa_gallery_urls(empresa)
