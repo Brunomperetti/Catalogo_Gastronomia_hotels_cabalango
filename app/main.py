@@ -414,10 +414,27 @@ def ensure_destino_contenido_table():
         "visible": "BOOLEAN DEFAULT TRUE",
         "updated_at": "TIMESTAMP",
     }
+    parking_columns = {
+        "estacionamiento_resumen": ("TEXT", "Estacionamiento diario para autos y motos, con servicios incluidos para disfrutar de los balnearios con mayor comodidad y seguridad."),
+        "estacionamiento_descripcion": ("TEXT", "El estacionamiento medido de Cabalango permite permanecer durante todo el día y brinda acceso a servicios pensados para quienes visitan los balnearios y sectores del río."),
+        "estacionamiento_auto": ("VARCHAR", "$10.000 por día"),
+        "estacionamiento_moto": ("VARCHAR", "$5.000 por día"),
+        "estacionamiento_asadores": ("VARCHAR", "$10.000 por día"),
+        "estacionamiento_servicios": ("TEXT", "Servicio de baño\nAsistencia médica\nProtección Civil\nGuardavidas"),
+        "estacionamiento_asadores_nota": ("TEXT", "Los asadores se abonan por separado del estacionamiento."),
+        "estacionamiento_nota": ("TEXT", "Las tarifas pueden actualizarse según la temporada."),
+    }
     with engine.begin() as conn:
         for column_name, column_type in optional_columns.items():
             if column_name not in columns:
                 conn.execute(text(f"ALTER TABLE destino_contenido ADD COLUMN {column_name} {column_type}"))
+        for column_name, (column_type, default_value) in parking_columns.items():
+            if column_name not in columns:
+                conn.execute(text(f"ALTER TABLE destino_contenido ADD COLUMN {column_name} {column_type}"))
+                conn.execute(
+                    text(f"UPDATE destino_contenido SET {column_name} = :default_value"),
+                    {"default_value": default_value},
+                )
 
 
 def ensure_destino_media_table():
@@ -1063,6 +1080,14 @@ DESTINO_DEFAULT_CONTENT = {
     "recomendaciones": "Traé calzado cómodo, abrigo liviano para la tarde y revisá el clima antes de planificar caminatas o río.",
     "vida_local": "Ferias, sabores caseros, prestadores familiares y encuentros comunitarios muestran la identidad del pueblo.",
     "video_url": "",
+    "estacionamiento_resumen": "Estacionamiento diario para autos y motos, con servicios incluidos para disfrutar de los balnearios con mayor comodidad y seguridad.",
+    "estacionamiento_descripcion": "El estacionamiento medido de Cabalango permite permanecer durante todo el día y brinda acceso a servicios pensados para quienes visitan los balnearios y sectores del río.",
+    "estacionamiento_auto": "$10.000 por día",
+    "estacionamiento_moto": "$5.000 por día",
+    "estacionamiento_asadores": "$10.000 por día",
+    "estacionamiento_servicios": "Servicio de baño\nAsistencia médica\nProtección Civil\nGuardavidas",
+    "estacionamiento_asadores_nota": "Los asadores se abonan por separado del estacionamiento.",
+    "estacionamiento_nota": "Las tarifas pueden actualizarse según la temporada.",
 }
 
 def get_destino_content(db: Session) -> models.DestinoContenido:
@@ -5589,6 +5614,14 @@ def actualizar_destino_contenido(
     naturaleza: str = Form(""),
     seguridad: str | None = Form(None),
     salud_emergencias: str | None = Form(None),
+    estacionamiento_resumen: str | None = Form(None),
+    estacionamiento_descripcion: str | None = Form(None),
+    estacionamiento_auto: str | None = Form(None),
+    estacionamiento_moto: str | None = Form(None),
+    estacionamiento_asadores: str | None = Form(None),
+    estacionamiento_servicios: str | None = Form(None),
+    estacionamiento_asadores_nota: str | None = Form(None),
+    estacionamiento_nota: str | None = Form(None),
     recomendaciones: str = Form(""),
     vida_local: str = Form(""),
     video_url: str = Form(""),
@@ -5605,6 +5638,14 @@ def actualizar_destino_contenido(
     content.naturaleza = clean_text(naturaleza, default="") or None
     content.seguridad = clean_text(seguridad, default="") or None
     content.salud_emergencias = clean_text(salud_emergencias, default="") or None
+    content.estacionamiento_resumen = clean_text(estacionamiento_resumen, default="") or None
+    content.estacionamiento_descripcion = clean_text(estacionamiento_descripcion, default="") or None
+    content.estacionamiento_auto = clean_text(estacionamiento_auto, default="") or None
+    content.estacionamiento_moto = clean_text(estacionamiento_moto, default="") or None
+    content.estacionamiento_asadores = clean_text(estacionamiento_asadores, default="") or None
+    content.estacionamiento_servicios = clean_text(estacionamiento_servicios, default="") or None
+    content.estacionamiento_asadores_nota = clean_text(estacionamiento_asadores_nota, default="") or None
+    content.estacionamiento_nota = clean_text(estacionamiento_nota, default="") or None
     content.recomendaciones = clean_text(recomendaciones, default="") or None
     content.vida_local = clean_text(vida_local, default="") or None
     content.video_url = normalize_external_url(video_url) or (clean_text(video_url, default="") or None)

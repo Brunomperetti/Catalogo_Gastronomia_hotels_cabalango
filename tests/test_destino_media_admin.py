@@ -92,7 +92,12 @@ def test_admin_renders_working_unique_edit_dialog_and_order_actions(destino_admi
 def test_destination_editor_supports_safety_health_and_preserves_existing_fields(destino_admin):
     client, db, _ = destino_admin
     html = client.get("/admin?area=portal&tab=cabalango").text
-    for field in ("seguridad", "salud_emergencias", "historia", "ubicacion", "naturaleza", "vida_local", "recomendaciones"):
+    parking_fields = (
+        "estacionamiento_resumen", "estacionamiento_descripcion", "estacionamiento_auto",
+        "estacionamiento_moto", "estacionamiento_asadores", "estacionamiento_servicios",
+        "estacionamiento_asadores_nota", "estacionamiento_nota",
+    )
+    for field in ("seguridad", "salud_emergencias", "historia", "ubicacion", "naturaleza", "vida_local", "recomendaciones", *parking_fields):
         assert f'name="{field}"' in html
 
     response = client.post("/admin/cabalango/contenido", data={
@@ -103,6 +108,14 @@ def test_destination_editor_supports_safety_health_and_preserves_existing_fields
         "naturaleza": "Naturaleza.",
         "vida_local": "Vida comunitaria.",
         "recomendaciones": "Recomendaciones.",
+        "estacionamiento_resumen": "Resumen personalizado",
+        "estacionamiento_descripcion": "Descripción personalizada",
+        "estacionamiento_auto": "$15.000 por día",
+        "estacionamiento_moto": "$7.500 por día",
+        "estacionamiento_asadores": "$12.000 por día",
+        "estacionamiento_servicios": "Baños\nGuardavidas\nProtección Civil",
+        "estacionamiento_asadores_nota": "Se abona por separado.",
+        "estacionamiento_nota": "Valores sujetos a actualización.",
         "visible": "1",
     }, follow_redirects=False)
     assert response.status_code == 303
@@ -111,6 +124,15 @@ def test_destination_editor_supports_safety_health_and_preserves_existing_fields
     assert content.salud_emergencias == "Atención en el CAPS."
     assert content.historia == "Memoria histórica intacta."
     assert content.ubicacion == "Ubicación intacta."
+    assert [getattr(content, field) for field in parking_fields] == [
+        "Resumen personalizado", "Descripción personalizada", "$15.000 por día",
+        "$7.500 por día", "$12.000 por día", "Baños\nGuardavidas\nProtección Civil",
+        "Se abona por separado.", "Valores sujetos a actualización.",
+    ]
+
+    editor_html = client.get("/admin?area=portal&tab=cabalango").text
+    for value in ("Resumen personalizado", "$15.000 por día", "Baños\nGuardavidas"):
+        assert value in editor_html
 
     html = client.get("/").text
     for value in ("Guardia local disponible.", "Atención en el CAPS."):
@@ -128,17 +150,27 @@ def test_destination_editor_supports_safety_health_and_preserves_existing_fields
 def test_destination_bootstrap_adds_editorial_columns_without_data_loss(monkeypatch):
     legacy_engine = create_engine("sqlite://", poolclass=StaticPool)
     with legacy_engine.begin() as connection:
-        connection.execute(text("CREATE TABLE destino_contenido (id INTEGER PRIMARY KEY, historia TEXT, ubicacion TEXT)"))
-        connection.execute(text("INSERT INTO destino_contenido (historia, ubicacion) VALUES ('Historia legada', 'Ubicación legada')"))
+        connection.execute(text("CREATE TABLE destino_contenido (id INTEGER PRIMARY KEY, historia TEXT, ubicacion TEXT, seguridad TEXT)"))
+        connection.execute(text("INSERT INTO destino_contenido (historia, ubicacion, seguridad) VALUES ('Historia legada', 'Ubicación legada', 'Seguridad legada')"))
     monkeypatch.setattr(main, "engine", legacy_engine)
 
     main.ensure_destino_contenido_table()
     main.ensure_destino_contenido_table()
 
-    assert {"seguridad", "salud_emergencias"}.issubset({column["name"] for column in inspect(legacy_engine).get_columns("destino_contenido")})
+    parking_columns = {
+        "estacionamiento_resumen", "estacionamiento_descripcion", "estacionamiento_auto",
+        "estacionamiento_moto", "estacionamiento_asadores", "estacionamiento_servicios",
+        "estacionamiento_asadores_nota", "estacionamiento_nota",
+    }
+    assert parking_columns.issubset({column["name"] for column in inspect(legacy_engine).get_columns("destino_contenido")})
+    with legacy_engine.begin() as connection:
+        row = connection.execute(text("SELECT historia, ubicacion, seguridad, estacionamiento_auto, estacionamiento_servicios FROM destino_contenido")).one()
+        assert row == ("Historia legada", "Ubicación legada", "Seguridad legada", "$10.000 por día", "Servicio de baño\nAsistencia médica\nProtección Civil\nGuardavidas")
+        connection.execute(text("UPDATE destino_contenido SET estacionamiento_auto = '$15.000 por día'"))
+
+    main.ensure_destino_contenido_table()
     with legacy_engine.connect() as connection:
-        row = connection.execute(text("SELECT historia, ubicacion FROM destino_contenido")).one()
-    assert row == ("Historia legada", "Ubicación legada")
+        assert connection.execute(text("SELECT estacionamiento_auto FROM destino_contenido")).scalar_one() == "$15.000 por día"
 
 
 def test_home_journeys_use_explicit_visible_assignments_and_keep_ctas(destino_admin, monkeypatch):
