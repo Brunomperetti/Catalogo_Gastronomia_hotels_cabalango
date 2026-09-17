@@ -71,7 +71,7 @@ def test_portal_home_smoke():
     assert response.text.count("destination-story-more") == 3
     assert "Cómo llegar y moverse" in response.text
     assert 'href="#como-llegar"' not in response.text
-    assert "?v=20260908-home-photo-signature-1" in response.text
+    assert "?v=20260917-home-hero-composition-1" in response.text
     for dialog_id in [
         "destination-dialog-seguridad",
         "destination-dialog-salud-emergencias",
@@ -167,6 +167,32 @@ def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     assert '.destination-planning [data-home-reveal][data-home-stagger="4"] { transition-delay: 240ms; }' in css
     assert "IntersectionObserver" in script
     assert "prefers-reduced-motion: reduce" in script
+
+
+def test_home_hero_keeps_one_responsive_editorial_composition():
+    template = __import__("pathlib").Path("app/templates/descubri_cabalango.html").read_text(encoding="utf-8")
+    css = __import__("pathlib").Path("app/static/css/portal.css").read_text(encoding="utf-8")
+
+    assert template.count('<section class="destination-editorial-hero"') == 1
+    assert template.count("Un rincón escondido entre las sierras, a solo 7 km de Villa Carlos Paz.") == 1
+    assert "{% if hero_photos %}{% for photo in hero_photos %}" in template
+    assert 'class="destination-hero-slide' in template
+
+    hero_rules = css.split("/* Cabalango home: photographs and type lead the editorial rhythm. */", 1)[1]
+    assert "grid-template-columns: minmax(0, 1.12fr) minmax(380px, .88fr)" in hero_rules
+    assert "font-size: clamp(4.2rem, 5.7vw, 5.55rem)" in hero_rules
+    assert "max-width: 34ch" in hero_rules
+    assert "aspect-ratio: 4 / 5" in hero_rules
+
+    tablet = hero_rules.split("@media (max-width: 900px) {", 1)[1].split("\n}", 1)[0]
+    assert ".destination-guide .destination-editorial-hero { gap: 30px; grid-template-columns: 1fr; padding: 32px; }" in tablet
+    assert "aspect-ratio: 16 / 10; min-height: 360px" in tablet
+
+    mobile = hero_rules.split("@media (max-width: 620px) {", 1)[1].split("\n}", 1)[0]
+    assert "max-width: 100%; overflow-wrap: normal" in mobile
+    assert "max-width: none" in mobile
+    assert "min-height: 300px" in mobile
+    assert "transform: scale(" not in mobile
 
 
 def test_home_about_has_one_living_photo_signature_with_accessible_one_shot_motion():
