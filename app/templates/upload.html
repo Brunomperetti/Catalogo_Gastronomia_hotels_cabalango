@@ -372,7 +372,7 @@
 
                     {% if empresa_activa.theme in ['gastronomia','comida'] %}
                     <div class="form-grid">
-                        <div><label class="field-label">Tipo / subtipo</label><select class="input-custom select-custom" name="subtipo">{% for option in ['Restaurante','Parrilla','Casa de comidas','Bar','Cafetería','Rotisería','Proveeduría','Food truck','Otro'] %}<option value="{{ option }}" {% if empresa_activa.subtipo == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
+                        <div><label class="field-label">Tipo / subtipo</label><select class="input-custom select-custom" name="subtipo">{% for option in ['Restaurante','Parrilla','Gastronomía ambulante','Bar','Cafetería','Rotisería','Proveeduría','Food truck','Otro'] %}<option value="{{ option }}" {% if empresa_activa.subtipo == option or (option == 'Gastronomía ambulante' and empresa_activa.subtipo == 'Casa de comidas') %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div>
                         <div><label class="field-label">Menú / carta URL</label><input class="input-custom" name="menu_url" value="{{ empresa_activa.menu_url or '' }}"></div>
                         <div><label class="field-label">Horarios de atención</label><input class="input-custom" name="horarios" value="{{ empresa_activa.horarios or '' }}"></div>
                         <div><label class="field-label">Especialidad / texto destacado</label><input class="input-custom" name="promocion" value="{{ empresa_activa.promocion or '' }}"></div>

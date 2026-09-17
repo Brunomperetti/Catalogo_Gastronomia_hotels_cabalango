@@ -121,6 +121,12 @@ def test_assistant_submenus_use_exact_public_urls():
     ]
 
 
+def test_assistant_uses_ambulant_gastronomy_label_with_legacy_url():
+    markup = PARTIAL.read_text(encoding="utf-8")
+    assert '<a href="/gastronomia?filtro=casas_comida">Gastronomía ambulante</a>' in markup
+    assert '>Casas de comida</a>' not in markup
+
+
 def test_assistant_assets_are_isolated_and_static_only():
     css = (ROOT / "app/static/css/portal-assistant.css").read_text(encoding="utf-8")
     script = (ROOT / "app/static/js/portal-assistant.js").read_text(encoding="utf-8")
