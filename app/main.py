@@ -148,6 +148,55 @@ _startup_db_maintenance_started = False
 _startup_db_maintenance_lock = threading.Lock()
 
 
+MAINTENANCE_ALLOWED_EXACT_PATHS = {
+    "/login",
+    "/logout",
+    "/panel",
+    "/mi-ficha",
+    "/upload_excel",
+    "/upload_zip",
+    "/delete_all_products",
+    "/_build",
+    "/build",
+    "/__build",
+}
+MAINTENANCE_ALLOWED_PREFIXES = (
+    "/admin",
+    "/api/internal",
+    "/static",
+    MEDIA_URL_PREFIX,
+    "/healthz",
+    # The admin and provider dashboards post their forms to these namespaces.
+    "/empresa",
+    "/cliente",
+)
+
+
+def maintenance_mode_enabled() -> bool:
+    """Read the maintenance flag for every request, defaulting safely to off."""
+    return os.getenv("MAINTENANCE_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def maintenance_path_is_allowed(path: str) -> bool:
+    """Keep operational, authentication, asset, and back-office routes available."""
+    if path in MAINTENANCE_ALLOWED_EXACT_PATHS:
+        return True
+    return any(path == prefix or path.startswith(prefix + "/") for prefix in MAINTENANCE_ALLOWED_PREFIXES)
+
+
+@app.middleware("http")
+async def maintenance_mode(request: Request, call_next):
+    if maintenance_mode_enabled() and not maintenance_path_is_allowed(request.url.path):
+        return templates.TemplateResponse(
+            request=request,
+            name="maintenance.html",
+            context={},
+            status_code=503,
+            headers={"Retry-After": "3600"},
+        )
+    return await call_next(request)
+
+
 _PUBLIC_SCHEDULE_DAY_SEQUENCES = {
     ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"): "Todos los días",
     ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado"): "Lunes a sábado",
