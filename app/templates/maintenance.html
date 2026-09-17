@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Guía Turística de Cabalango</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --paper: #f5efe3;
+            --ink: #26352d;
+            --muted: #657067;
+            --rule: #cbbd9f;
+            --accent: #8a4f32;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { min-height: 100%; }
+
+        body {
+            margin: 0;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: Georgia, "Times New Roman", serif;
+        }
+
+        .maintenance-page {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: clamp(2rem, 6vw, 5rem) 1.5rem;
+        }
+
+        .maintenance-card {
+            width: min(100%, 760px);
+            text-align: center;
+        }
+
+        .maintenance-logo {
+            display: block;
+            width: min(190px, 48vw);
+            height: auto;
+            margin: 0 auto 2.5rem;
+        }
+
+        .maintenance-kicker {
+            margin: 0 0 1.5rem;
+            color: var(--accent);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: .75rem;
+            font-weight: 700;
+            letter-spacing: .19em;
+        }
+
+        h1 {
+            max-width: 680px;
+            margin: 0 auto;
+            font-size: clamp(2.5rem, 8vw, 5.25rem);
+            font-weight: 400;
+            letter-spacing: -.045em;
+            line-height: .98;
+        }
+
+        .maintenance-rule {
+            width: 72px;
+            margin: 2.25rem auto;
+            border: 0;
+            border-top: 1px solid var(--rule);
+        }
+
+        .maintenance-lead {
+            margin: 0 0 1rem;
+            font-size: clamp(1.25rem, 3vw, 1.65rem);
+            line-height: 1.4;
+        }
+
+        .maintenance-copy {
+            max-width: 610px;
+            margin: 0 auto;
+            color: var(--muted);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: clamp(1rem, 2vw, 1.1rem);
+            line-height: 1.75;
+        }
+
+        .maintenance-footer {
+            margin: 3rem 0 0;
+            color: var(--accent);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: .78rem;
+            letter-spacing: .08em;
+        }
+    </style>
+</head>
+<body>
+    <main class="maintenance-page">
+        <section class="maintenance-card" aria-labelledby="maintenance-title">
+            <img class="maintenance-logo" src="/static/images/Logo_Cabalango.png" alt="Cabalango">
+            <p class="maintenance-kicker">CABALANGO · VALLE DE PUNILLA</p>
+            <h1 id="maintenance-title">Guía Turística de Cabalango</h1>
+            <hr class="maintenance-rule">
+            <p class="maintenance-lead">Estamos preparando la versión final.</p>
+            <p class="maintenance-copy">Muy pronto vas a poder descubrir alojamientos, gastronomía, actividades, servicios y todo lo necesario para disfrutar Cabalango.</p>
+            <p class="maintenance-footer">Entre las sierras, a solo 7 km de Villa Carlos Paz.</p>
+        </section>
+    </main>
+</body>
+</html>
