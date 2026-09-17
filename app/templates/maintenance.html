@@ -85,12 +85,71 @@
             line-height: 1.75;
         }
 
+        .maintenance-invitation {
+            max-width: 650px;
+            margin: 2.5rem auto 0;
+            padding-top: 2.5rem;
+            border-top: 1px solid var(--rule);
+        }
+
+        .maintenance-question {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: clamp(1.05rem, 2.2vw, 1.2rem);
+            font-weight: 600;
+            line-height: 1.55;
+        }
+
+        .maintenance-invitation-copy {
+            max-width: 560px;
+            margin: 1rem auto 0;
+            color: var(--muted);
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 1rem;
+            line-height: 1.65;
+        }
+
+        .maintenance-coming-soon {
+            margin: 2.75rem 0 0;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .maintenance-coming-soon-label {
+            display: block;
+            margin-bottom: .45rem;
+            color: var(--muted);
+            font-size: .82rem;
+            font-weight: 700;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .maintenance-domain {
+            display: block;
+            color: var(--accent);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: clamp(1.65rem, 5vw, 2.6rem);
+            font-weight: 400;
+            line-height: 1.15;
+            overflow-wrap: anywhere;
+        }
+
         .maintenance-footer {
-            margin: 3rem 0 0;
+            margin: 2.75rem 0 0;
             color: var(--accent);
             font-family: Arial, Helvetica, sans-serif;
             font-size: .78rem;
             letter-spacing: .08em;
+        }
+
+        @media (max-width: 420px) {
+            .maintenance-page { padding-inline: 1.25rem; }
+            .maintenance-logo { margin-bottom: 2rem; }
+            .maintenance-rule { margin-block: 1.8rem; }
+            .maintenance-invitation {
+                margin-top: 2rem;
+                padding-top: 2rem;
+            }
         }
     </style>
 </head>
@@ -103,6 +162,14 @@
             <hr class="maintenance-rule">
             <p class="maintenance-lead">Estamos preparando la versión final.</p>
             <p class="maintenance-copy">Muy pronto vas a poder descubrir alojamientos, gastronomía, actividades, servicios y todo lo necesario para disfrutar Cabalango.</p>
+            <section class="maintenance-invitation" aria-labelledby="maintenance-invitation-title">
+                <h2 class="maintenance-question" id="maintenance-invitation-title">¿Tenés un comercio, alojamiento, emprendimiento gastronómico, servicio, actividad o productos artesanales en Cabalango?</h2>
+                <p class="maintenance-invitation-copy">Completá el formulario y sumate a la Guía Turística de Cabalango.</p>
+            </section>
+            <p class="maintenance-coming-soon">
+                <span class="maintenance-coming-soon-label">Muy pronto en</span>
+                <span class="maintenance-domain">www.cabalango.com.ar</span>
+            </p>
             <p class="maintenance-footer">Entre las sierras, a solo 7 km de Villa Carlos Paz.</p>
         </section>
     </main>
