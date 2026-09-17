@@ -43,6 +43,13 @@ def test_truthy_values_enable_maintenance(client, monkeypatch, enabled_value):
     assert response.status_code == 503
     assert "Guía Turística de Cabalango" in response.text
     assert "Estamos preparando la versión final." in response.text
+    assert (
+        "¿Tenés un comercio, alojamiento, emprendimiento gastronómico, servicio, "
+        "actividad o productos artesanales en Cabalango?"
+    ) in response.text
+    assert "Completá el formulario y sumate a la Guía Turística de Cabalango." in response.text
+    assert "Muy pronto en" in response.text
+    assert "www.cabalango.com.ar" in response.text
     assert response.headers["Retry-After"] == "3600"
     assert '<meta name="robots" content="noindex, nofollow">' in response.text
 
