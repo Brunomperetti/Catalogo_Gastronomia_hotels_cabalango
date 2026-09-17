@@ -7,6 +7,7 @@ import pytest
 pytest.importorskip("httpx", reason="FastAPI TestClient requires httpx")
 from fastapi.testclient import TestClient
 
+from app import main
 from app.main import app, run_startup_db_maintenance
 
 
@@ -119,6 +120,56 @@ def test_portal_home_smoke():
         assert nearby_copy in response.text
     assert "destination-nearby-map" in response.text
     assert "Si buscás más movimiento" not in response.text
+
+
+def test_parking_dialog_uses_managed_content_and_hides_empty_sections():
+    db = main.SessionLocal()
+    content = main.get_destino_content(db)
+    fields = (
+        "estacionamiento_resumen", "estacionamiento_descripcion", "estacionamiento_auto",
+        "estacionamiento_moto", "estacionamiento_asadores", "estacionamiento_servicios",
+        "estacionamiento_asadores_nota", "estacionamiento_nota",
+    )
+    original = {field: getattr(content, field) for field in fields}
+    try:
+        values = {
+            "estacionamiento_resumen": "Resumen personalizado",
+            "estacionamiento_descripcion": "Descripción personalizada",
+            "estacionamiento_auto": "$15.000 por día",
+            "estacionamiento_moto": "$7.500 por día",
+            "estacionamiento_asadores": "$12.000 por día",
+            "estacionamiento_servicios": "Baños\n\nGuardavidas\nProtección Civil",
+            "estacionamiento_asadores_nota": "Se abona por separado.",
+            "estacionamiento_nota": "Valores sujetos a actualización.",
+        }
+        for field, value in values.items():
+            setattr(content, field, value)
+        db.commit()
+
+        html = TestClient(app).get("/").text
+        parking_dialog = html.split('id="destination-dialog-estacionamiento"', 1)[1].split("</dialog>", 1)[0]
+        for value in values.values():
+            for line in value.splitlines():
+                if line:
+                    assert line in html
+        assert "$10.000 por día" not in parking_dialog
+
+        for field in (
+            "estacionamiento_auto", "estacionamiento_moto", "estacionamiento_asadores",
+            "estacionamiento_servicios", "estacionamiento_asadores_nota", "estacionamiento_nota",
+        ):
+            setattr(content, field, None)
+        db.commit()
+        html = TestClient(app).get("/").text
+        parking_dialog = html.split('id="destination-dialog-estacionamiento"', 1)[1].split("</dialog>", 1)[0]
+        for heading in ("Tarifas vigentes", "La tarifa incluye", "Asadores"):
+            assert heading not in parking_dialog
+        assert "None" not in parking_dialog
+    finally:
+        for field, value in original.items():
+            setattr(content, field, value)
+        db.commit()
+        db.close()
 
 
 def test_portal_dialog_script_supports_destination_deep_links():

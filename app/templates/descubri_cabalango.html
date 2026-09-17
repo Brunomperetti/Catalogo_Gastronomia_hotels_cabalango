@@ -127,7 +127,7 @@
         {% set destination_stories = [
             ('seguridad', 'Seguridad y tranquilidad', content.seguridad or 'Información útil para disfrutar Cabalango con tranquilidad.', 'icon-shield', 'Información útil'),
             ('salud-emergencias', 'Salud y emergencias', content.salud_emergencias or 'Información de atención médica y contactos útiles para tu estadía.', 'icon-health', 'Ver atención y contactos'),
-            ('estacionamiento', 'Estacionamiento medido', 'Estacionamiento diario para autos y motos, con servicios incluidos para disfrutar de los balnearios con mayor comodidad y seguridad.', 'icon-parking', 'Ver tarifas y servicios')
+            ('estacionamiento', 'Estacionamiento medido', content.estacionamiento_resumen or 'Estacionamiento diario para autos y motos, con servicios incluidos para disfrutar de los balnearios con mayor comodidad y seguridad.', 'icon-parking', 'Ver tarifas y servicios')
         ] %}
         <div class="destination-story-grid">
             {% for key, label, story_text, icon, cta in destination_stories %}
@@ -248,7 +248,13 @@
         <button class="destination-dialog-close" type="button" data-dialog-close aria-label="Cerrar {{ label }}">×</button>
         <p class="portal-kicker">Sobre Cabalango · {{ label }}</p>
         <h2 id="destination-dialog-{{ key }}-title">{{ label }}</h2>
-        <div class="destination-dialog-content" id="destination-dialog-{{ key }}-description">{% if key == 'estacionamiento' %}<div class="destination-parking-info"><p>El estacionamiento medido de Cabalango permite permanecer durante todo el día y brinda acceso a servicios pensados para quienes visitan los balnearios y sectores del río.</p><h3>Tarifas vigentes</h3><ul><li><strong>Autos</strong><br>$10.000 por día</li><li><strong>Motos</strong><br>$5.000 por día</li></ul><h3>La tarifa incluye</h3><ul><li>Servicio de baño</li><li>Asistencia médica</li><li>Protección Civil</li><li>Guardavidas</li></ul><h3>Asadores</h3><p><strong>$10.000 por día</strong></p><p>Los asadores se abonan por separado del estacionamiento.</p><p class="destination-parking-note">Las tarifas pueden actualizarse según la temporada.</p></div>{% else %}<p>{{ story_text }}</p>{% endif %}</div>
+        <div class="destination-dialog-content" id="destination-dialog-{{ key }}-description">{% if key == 'estacionamiento' %}<div class="destination-parking-info">
+            <p>{{ content.estacionamiento_descripcion or 'El estacionamiento medido de Cabalango permite permanecer durante todo el día y brinda acceso a servicios pensados para quienes visitan los balnearios y sectores del río.' }}</p>
+            {% if content.estacionamiento_auto or content.estacionamiento_moto %}<h3>Tarifas vigentes</h3><ul>{% if content.estacionamiento_auto %}<li><strong>Autos</strong><br>{{ content.estacionamiento_auto }}</li>{% endif %}{% if content.estacionamiento_moto %}<li><strong>Motos</strong><br>{{ content.estacionamiento_moto }}</li>{% endif %}</ul>{% endif %}
+            {% if content.estacionamiento_servicios %}<h3>La tarifa incluye</h3><ul>{% for service in content.estacionamiento_servicios.splitlines() if service|trim %}<li>{{ service|trim }}</li>{% endfor %}</ul>{% endif %}
+            {% if content.estacionamiento_asadores or content.estacionamiento_asadores_nota %}<h3>Asadores</h3>{% if content.estacionamiento_asadores %}<p><strong>{{ content.estacionamiento_asadores }}</strong></p>{% endif %}{% if content.estacionamiento_asadores_nota %}<p>{{ content.estacionamiento_asadores_nota }}</p>{% endif %}{% endif %}
+            {% if content.estacionamiento_nota %}<p class="destination-parking-note">{{ content.estacionamiento_nota }}</p>{% endif %}
+        </div>{% else %}<p>{{ story_text }}</p>{% endif %}</div>
         <button class="portal-button destination-dialog-action" type="button" data-dialog-close>Cerrar</button>
     </div>
 </dialog>
