@@ -4127,6 +4127,10 @@ button:disabled {
 .destination-dialog h2 { color: #3F2F25; font-family: var(--portal-font-display); font-size: clamp(2.1rem, 6vw, 3.4rem); line-height: .96; margin: 0 52px 16px 0; }
 .destination-dialog-content { color: #5C4332; line-height: 1.75; min-height: 0; overflow-y: auto; padding-right: 6px; }
 .destination-dialog-content p { margin: 0; white-space: pre-line; }
+.destination-parking-info h3 { margin: 22px 0 8px; }
+.destination-parking-info ul { margin: 0; padding-left: 20px; }
+.destination-parking-info li { margin: 4px 0; }
+.destination-parking-info .destination-parking-note { font-size: .88rem; margin-top: 22px; }
 .destination-dialog-close { align-items: center; background: #FFF9F1; border: 1px solid #D8C7AE; border-radius: 999px; color: #4E5C45; cursor: pointer; display: inline-flex; font: inherit; font-size: 1.5rem; font-weight: 700; height: 42px; justify-content: center; position: absolute; right: 22px; top: 22px; width: 42px; }
 .destination-dialog-action { align-self: flex-start; margin-top: 26px; }
 .destination-dialog button:focus-visible, .destination-story-more:focus-visible { outline: 3px solid rgba(120, 170, 189, .55); outline-offset: 3px; }
