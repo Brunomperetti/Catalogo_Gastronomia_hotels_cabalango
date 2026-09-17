@@ -47,10 +47,11 @@ def test_portal_home_smoke():
 
     assert response.status_code == 200
     assert "Descubrí Cabalango" in response.text
+    assert "Un rincón escondido entre las sierras, a solo 7 km de Villa Carlos Paz." in response.text
+    assert "Río de aguas cristalinas, monte nativo y paisajes que invitan a perder la noción del tiempo. Descubrí un pueblo serrano con una magia especial, ideal para explorar, descansar y conectar con la naturaleza." in response.text
     for label in ["Seguridad y tranquilidad", "Salud y emergencias", "Vida local e historia"]:
         assert label in response.text
     for visitor_copy in [
-        "Río, monte y tiempo para disfrutar sin apuro.",
         "Río y balnearios",
         "Todo para tu visita",
         "Viví Cabalango a tu manera",
@@ -444,7 +445,7 @@ def test_home_preserves_editable_hero_content(monkeypatch):
     content.introduccion = None
     fallback_response = TestClient(app).get("/")
     assert fallback_response.status_code == 200
-    assert "Descubrí balnearios, alojamientos, sabores y experiencias locales en un rincón tranquilo de las sierras de Córdoba." in fallback_response.text
+    assert "Río de aguas cristalinas, monte nativo y paisajes que invitan a perder la noción del tiempo. Descubrí un pueblo serrano con una magia especial, ideal para explorar, descansar y conectar con la naturaleza." in fallback_response.text
 
 
 def test_home_agenda_is_hidden_when_empty_and_renders_compact_event_cards(monkeypatch):
