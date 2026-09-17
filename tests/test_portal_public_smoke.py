@@ -49,7 +49,7 @@ def test_portal_home_smoke():
     assert "Descubrí Cabalango" in response.text
     assert "Un rincón escondido entre las sierras, a solo 7 km de Villa Carlos Paz." in response.text
     assert "Río de aguas cristalinas, monte nativo y paisajes que invitan a perder la noción del tiempo. Descubrí un pueblo serrano con una magia especial, ideal para explorar, descansar y conectar con la naturaleza." in response.text
-    for label in ["Seguridad y tranquilidad", "Salud y emergencias", "Vida local e historia"]:
+    for label in ["Seguridad y tranquilidad", "Salud y emergencias", "Estacionamiento medido"]:
         assert label in response.text
     for visitor_copy in [
         "Río y balnearios",
@@ -75,15 +75,24 @@ def test_portal_home_smoke():
     for dialog_id in [
         "destination-dialog-seguridad",
         "destination-dialog-salud-emergencias",
-        "destination-dialog-vida-local-historia",
+        "destination-dialog-estacionamiento",
     ]:
         assert f'id="{dialog_id}"' in response.text
     assert "/static/js/portal-dialogs.js" in response.text
     assert "destination-dialog-content" in response.text
+    for parking_copy in [
+        "$10.000 por día",
+        "$5.000 por día",
+        "Servicio de baño",
+        "Asistencia médica",
+        "Protección Civil",
+        "Guardavidas",
+        "Las tarifas pueden actualizarse según la temporada.",
+    ]:
+        assert parking_copy in response.text
+    story_grid = response.text.split('class="destination-story-grid"', 1)[1].split("</section>", 1)[0]
+    assert "Vida local e historia" not in story_grid
     for full_text in [
-        "Un destino serrano de ritmo pausado",
-        "Río, balnearios, senderos",
-        "Ferias, sabores caseros",
         "Información útil para disfrutar Cabalango con tranquilidad.",
         "Información de atención médica y contactos útiles para tu estadía.",
     ]:
@@ -160,7 +169,7 @@ def test_home_editorial_motion_is_scoped_and_keeps_visit_links():
     assert '[data-home-stagger="1"]' in css
     assert 'class="destination-story-grid"' in template
     assert 'class="destination-story-grid" data-home-reveal' not in template
-    for story, stagger in (("seguridad", "1"), ("salud-emergencias", "2"), ("vida-local-historia", "3")):
+    for story, stagger in (("seguridad", "1"), ("salud-emergencias", "2"), ("estacionamiento", "3")):
         assert f"destination-story-{story}" in home
         story_card = home[home.index(f"destination-story-{story}"):]
         assert f'data-home-stagger="{stagger}"' in story_card.split(">", 1)[0]

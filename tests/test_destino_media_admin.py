@@ -113,13 +113,14 @@ def test_destination_editor_supports_safety_health_and_preserves_existing_fields
     assert content.ubicacion == "Ubicación intacta."
 
     html = client.get("/").text
-    for value in ("Guardia local disponible.", "Atención en el CAPS.", "Vida comunitaria.", "Memoria histórica intacta."):
+    for value in ("Guardia local disponible.", "Atención en el CAPS."):
         assert value in html
     assert content.vida_local == "Vida comunitaria."
     assert content.historia == "Memoria histórica intacta."
     cards = html.split('class="destination-story-grid"', 1)[1].split("</section>", 1)[0]
-    for title in ("Seguridad y tranquilidad", "Salud y emergencias", "Vida local e historia"):
+    for title in ("Seguridad y tranquilidad", "Salud y emergencias", "Estacionamiento medido"):
         assert f"<h3" in cards and title in cards
+    assert "Vida local e historia" not in cards
     assert not any(f">{old}</h3>" in cards for old in ("Historia", "Ubicación", "Vida local"))
     assert cards.count("data-home-reveal") == 3
 

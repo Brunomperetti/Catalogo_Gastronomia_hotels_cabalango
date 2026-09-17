@@ -26,6 +26,7 @@
         <symbol id="icon-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.2"/><path d="M3.5 20c.3-4 2.1-6 5.5-6s5.2 2 5.5 6M14 15c3.5-.7 5.7.9 6.2 4"/></symbol>
         <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.2 8.3-8 10-4.8-1.7-8-5-8-10V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
         <symbol id="icon-health" viewBox="0 0 24 24"><path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4Z"/></symbol>
+        <symbol id="icon-parking" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 17V7h4.5a3 3 0 0 1 0 6H9"/></symbol>
         <symbol id="icon-food" viewBox="0 0 24 24"><path d="M7 3v8M4 3v5c0 2 1.3 3 3 3s3-1 3-3V3M7 11v10M16 3v18M16 3c3 1 4 4 4 7h-4"/></symbol>
         <symbol id="icon-shop" viewBox="0 0 24 24"><path d="M4 9h16v11H4V9ZM3 9l2-5h14l2 5"/><path d="M8 20v-6h5v6M3 9c0 1.5 1 2.5 2.5 2.5S8 10.5 8 9c0 1.5 1 2.5 2.5 2.5S13 10.5 13 9c0 1.5 1 2.5 2.5 2.5S18 10.5 18 9c0 1.5 1 2.5 2.5 2.5"/></symbol>
         <symbol id="icon-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
@@ -126,7 +127,7 @@
         {% set destination_stories = [
             ('seguridad', 'Seguridad y tranquilidad', content.seguridad or 'Información útil para disfrutar Cabalango con tranquilidad.', 'icon-shield', 'Información útil'),
             ('salud-emergencias', 'Salud y emergencias', content.salud_emergencias or 'Información de atención médica y contactos útiles para tu estadía.', 'icon-health', 'Ver atención y contactos'),
-            ('vida-local-historia', 'Vida local e historia', content.vida_local or content.historia or 'Estamos preparando más información sobre Cabalango.', 'icon-people', 'Conocé Cabalango')
+            ('estacionamiento', 'Estacionamiento medido', 'Estacionamiento diario para autos y motos, con servicios incluidos para disfrutar de los balnearios con mayor comodidad y seguridad.', 'icon-parking', 'Ver tarifas y servicios')
         ] %}
         <div class="destination-story-grid">
             {% for key, label, story_text, icon, cta in destination_stories %}
@@ -247,7 +248,7 @@
         <button class="destination-dialog-close" type="button" data-dialog-close aria-label="Cerrar {{ label }}">×</button>
         <p class="portal-kicker">Sobre Cabalango · {{ label }}</p>
         <h2 id="destination-dialog-{{ key }}-title">{{ label }}</h2>
-        <div class="destination-dialog-content" id="destination-dialog-{{ key }}-description">{% if key == 'vida-local-historia' %}<h3>Vida local</h3><p>{{ content.vida_local or 'Estamos preparando más información sobre la vida local de Cabalango.' }}</p><h3>Historia</h3><p>{{ content.historia or 'Estamos preparando más información sobre la historia de Cabalango.' }}</p>{% else %}<p>{{ story_text }}</p>{% endif %}</div>
+        <div class="destination-dialog-content" id="destination-dialog-{{ key }}-description">{% if key == 'estacionamiento' %}<div class="destination-parking-info"><p>El estacionamiento medido de Cabalango permite permanecer durante todo el día y brinda acceso a servicios pensados para quienes visitan los balnearios y sectores del río.</p><h3>Tarifas vigentes</h3><ul><li><strong>Autos</strong><br>$10.000 por día</li><li><strong>Motos</strong><br>$5.000 por día</li></ul><h3>La tarifa incluye</h3><ul><li>Servicio de baño</li><li>Asistencia médica</li><li>Protección Civil</li><li>Guardavidas</li></ul><h3>Asadores</h3><p><strong>$10.000 por día</strong></p><p>Los asadores se abonan por separado del estacionamiento.</p><p class="destination-parking-note">Las tarifas pueden actualizarse según la temporada.</p></div>{% else %}<p>{{ story_text }}</p>{% endif %}</div>
         <button class="portal-button destination-dialog-action" type="button" data-dialog-close>Cerrar</button>
     </div>
 </dialog>
