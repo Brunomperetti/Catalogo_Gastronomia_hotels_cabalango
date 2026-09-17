@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -16,6 +17,9 @@ from app.main import (
 from app.models import Empresa
 
 
+ROOT = Path(__file__).parents[1]
+
+
 def test_public_gastronomy_category_uses_only_structured_taxonomy():
     assert list(GASTRONOMIA_FILTROS_PUBLICOS) == [
         "restaurantes", "parrillas", "casas_comida", "bares", "cafeterias",
@@ -25,6 +29,12 @@ def test_public_gastronomy_category_uses_only_structured_taxonomy():
         ("gastronomia", "Restaurante", "restaurantes"),
         ("gastronomia", "Parrilla", "parrillas"),
         ("gastronomia", "Casa de comidas", "casas_comida"),
+        ("gastronomia", "Gastronomía ambulante", "casas_comida"),
+        ("gastronomia", "Gastronomia ambulante", "casas_comida"),
+        ("gastronomia", "Comida ambulante", "casas_comida"),
+        ("gastronomia", "Venta ambulante", "casas_comida"),
+        ("gastronomia", "Vendedor ambulante", "casas_comida"),
+        ("gastronomia", "Vendedores ambulantes", "casas_comida"),
         ("gastronomia", "Bar", "bares"),
         ("gastronomia", "CAFETERÍA", "cafeterias"),
         ("gastronomia", "Rotisería", "rotiserias"),
@@ -41,6 +51,12 @@ def test_public_gastronomy_category_uses_only_structured_taxonomy():
     assert public_gastronomy_category_key(misleading) == "bares"
     assert public_gastronomy_category_key(Empresa(theme="gastronomia", subtipo="Panadería")) is None
     assert public_gastronomy_category_key(Empresa(theme="servicios", subtipo="Bar")) is None
+
+
+def test_admin_uses_new_canonical_subtype_and_recognizes_legacy_value():
+    markup = (ROOT / "app/templates/upload.html").read_text(encoding="utf-8")
+    assert "['Restaurante','Parrilla','Gastronomía ambulante','Bar'" in markup
+    assert "option == 'Gastronomía ambulante' and empresa_activa.subtipo == 'Casa de comidas'" in markup
 
 
 def test_gastronomy_directory_groups_previews_and_filters_exclusively():
@@ -80,7 +96,7 @@ def test_gastronomy_directory_groups_previews_and_filters_exclusively():
         html = response.text
         filters = html.split('<nav class="services-filters"', 1)[1].split("</nav>", 1)[0]
         assert re.findall(r">([^<>]+)</a>", filters) == [
-            "Todo", "Restaurantes", "Parrillas", "Casas de comida", "Bares",
+            "Todo", "Restaurantes", "Parrillas", "Gastronomía ambulante", "Bares",
             "Cafeterías", "Rotiserías", "Food trucks", "Otros",
         ]
         assert re.findall(r'href="([^"]+)"', filters) == [
@@ -98,6 +114,13 @@ def test_gastronomy_directory_groups_previews_and_filters_exclusively():
         assert "Restaurante 4" not in html
         assert "Restaurante 5" not in html
         assert "Panadería A" not in html
+        assert "Casas de comida" not in html
+        assert "Preparaciones caseras y productos gastronómicos que podés encontrar en distintos puntos de Cabalango o pedir a domicilio." in html
+        assert "Ver gastronomía ambulante" in html
+
+        ambulant = client.get("/gastronomia?filtro=casas_comida").text
+        assert "Casa de comidas A" in ambulant
+        assert "Encontrá propuestas de gastronomía ambulante disponibles en Cabalango." in ambulant
 
         restaurants = client.get("/gastronomia?filtro=restaurantes").text
         assert all(f"Restaurante {index}" in restaurants for index in range(1, 6))
