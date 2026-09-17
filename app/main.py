@@ -1056,7 +1056,7 @@ def get_public_destino_media(db: Session, tipo: str | None = None) -> list[model
 
 
 DESTINO_DEFAULT_CONTENT = {
-    "introduccion": "Cabalango combina río, monte, sierras y vida local en un entorno tranquilo para descansar y recorrer.",
+    "introduccion": "Río de aguas cristalinas, monte nativo y paisajes que invitan a perder la noción del tiempo. Descubrí un pueblo serrano con una magia especial, ideal para explorar, descansar y conectar con la naturaleza.",
     "historia": "Un destino serrano de ritmo pausado, memoria local y paisajes que invitan a volver a lo simple.",
     "ubicacion": "Cabalango se encuentra en el Valle de Punilla, Córdoba, cerca de Villa Carlos Paz y conectado por caminos serranos.",
     "naturaleza": "Río, balnearios, senderos, monte nativo y paisajes serranos forman parte de la experiencia cotidiana.",
