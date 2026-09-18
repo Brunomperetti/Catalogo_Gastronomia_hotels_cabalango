@@ -47,6 +47,10 @@
                     <strong>Productos locales y artesanías</strong>
                     <span>Sabores, cosmética, cerámica y creaciones de emprendedores locales.</span>
                 </a>
+                <a class="purchase-type-option {% if active_purchase_type == 'ropa accesorios' %}is-active{% endif %}" href="/servicios?grupo=compras&amp;tipo=ropa_accesorios">
+                    <strong>Ropa y accesorios</strong>
+                    <span>Indumentaria, calzado, accesorios y ferias de ropa nueva y de segunda mano en Cabalango.</span>
+                </a>
             </div>
             {% if active_purchase_type %}<a class="purchase-types-reset" href="/servicios?grupo=compras">Ver todas las compras</a>{% endif %}
         </section>
@@ -160,8 +164,9 @@
         </header>
         {% elif active_service_group == 'compras' %}
         <header class="purchase-results-header">
-            <h2>{% if active_purchase_type == 'almacenes' %}Almacenes y kioscos{% elif active_purchase_type == 'locales' %}Productos locales y artesanías{% else %}Compras{% endif %}</h2>
+            <h2>{% if active_purchase_type == 'almacenes' %}Almacenes y kioscos{% elif active_purchase_type == 'locales' %}Productos locales y artesanías{% elif active_purchase_type == 'ropa accesorios' %}Ropa y accesorios{% else %}Compras{% endif %}</h2>
             {% if active_purchase_type == 'locales' %}<p>Descubrí sabores, objetos y productos creados por emprendedores de Cabalango.</p>{% endif %}
+            {% if active_purchase_type == 'ropa accesorios' %}<p>Encontrá ropa, calzado, accesorios y propuestas de segunda mano en Cabalango.</p>{% endif %}
         </header>
         {% endif %}
 

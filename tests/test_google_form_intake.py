@@ -504,6 +504,27 @@ def test_health_intake_labels_have_identical_conversion_mapping():
     ] == {"entity": "empresa", "theme": "servicios", "subgrupo": "salud"}
 
 
+def test_clothing_correction_creates_company_not_activity(intake_app, payload):
+    client, db = intake_app
+    item_id = post_intake(
+        client, authorized_payload(payload, business_type="Otro servicio", business_name="Feria de prueba")
+    ).json()["id"]
+    login_admin(client)
+
+    correction = client.post(
+        f"/admin/solicitudes/{item_id}/tipo",
+        data={"business_type": "Ropa y accesorios"}, follow_redirects=False,
+    )
+    conversion = client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+
+    assert correction.status_code == conversion.status_code == 303
+    company = db.query(Empresa).one()
+    assert (company.theme, company.subgrupo, company.subtipo) == (
+        "servicios", "compras", "Ropa y accesorios"
+    )
+    assert db.query(ActividadAgenda).count() == 0
+
+
 def intake_key_for_test(value):
     return "".join(character if character.isalnum() else "-" for character in value.lower())
 

@@ -671,6 +671,11 @@ def test_admin_uses_shopping_group_label_without_changing_value(admin_app):
     ("compras", "Proveeduría", "almacenes", "Almacenes y kioscos"),
     ("compras", "Despensa", "almacenes", "Almacenes y kioscos"),
     ("compras", "Productos regionales", "locales", "Productos locales y artesanías"),
+    ("compras", "Ropa y accesorios", "ropa_accesorios", "Ropa y accesorios"),
+    ("compras", "Feria de ropa y accesorios", "ropa_accesorios", "Ropa y accesorios"),
+    ("compras", "Indumentaria", "ropa_accesorios", "Ropa y accesorios"),
+    ("compras", "Calzado", "ropa_accesorios", "Ropa y accesorios"),
+    ("compras", "Accesorios", "ropa_accesorios", "Ropa y accesorios"),
     ("transporte", "Remis", "transporte", "Transporte"),
     ("transporte", "Taxi", "transporte", "Transporte"),
     ("transporte", "Traslado turístico", "transporte", "Transporte"),
@@ -694,6 +699,21 @@ def test_admin_displays_public_service_category_and_matching_type(
     assert "Categoría en la guía" in response.text
     assert "Tipo de servicio" in response.text
     assert "Las panaderías se cargan desde Gastronomía → Panadería" not in response.text
+
+
+def test_admin_saves_clothing_fair_in_shopping_group(admin_app):
+    client, db, _ = admin_app
+    company = add_company(db, slug="feria-textil", theme="servicios", subgrupo="otros", subtipo="Otro")
+
+    response = edit_company(
+        client, company, categoria_guia="ropa_accesorios", subtipo="Feria de ropa y accesorios"
+    )
+
+    assert response.status_code == 303
+    db.refresh(company)
+    assert (company.theme, company.subgrupo, company.subtipo) == (
+        "servicios", "compras", "Feria de ropa y accesorios"
+    )
 
 
 def test_admin_preserves_unknown_historical_service_type(admin_app):

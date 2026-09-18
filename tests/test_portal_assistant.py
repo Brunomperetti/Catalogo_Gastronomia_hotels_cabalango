@@ -111,10 +111,13 @@ def test_assistant_submenus_use_exact_public_urls():
     ]
     assert urls("services") == [
         "/servicios?filtro=almacenes", "/servicios?filtro=panaderias",
-        "/servicios?filtro=locales", "/servicios?filtro=transporte",
+        "/servicios?filtro=locales", "/servicios?filtro=ropa_accesorios",
+        "/servicios?filtro=transporte",
         "/servicios?filtro=estacionamiento", "/servicios?filtro=farmacia",
         "/servicios?filtro=lavanderia", "/servicios?filtro=otros", "/servicios",
     ]
+    services = re.search(r'<section id="assistant-view-services"[\s\S]*?</section>', markup).group()
+    assert services.index("Productos locales y artesanías") < services.index("Ropa y accesorios") < services.index("Transporte")
     assert urls("agenda") == ["/agenda?cuando=hoy", "/agenda"]
     assert urls("health") == [
         "/servicios?filtro=farmacia", "/#destination-dialog-salud-emergencias",
