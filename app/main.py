@@ -5200,7 +5200,39 @@ def admin_intake_detail(solicitud_id: int, request: Request, db: Session = Depen
         "duplicate_empresa": duplicate_empresa,
         "converted_url": converted_admin_url(item, db),
         "error": request.query_params.get("error", ""),
+        "message": request.query_params.get("msg", ""),
+        "conversion_business_types": INTAKE_CONVERSION_MAP.keys(),
     })
+
+
+@app.post("/admin/solicitudes/{solicitud_id}/tipo")
+def admin_intake_business_type(solicitud_id: int, request: Request, business_type: str = Form(...),
+                               db: Session = Depends(get_db)):
+    auth = require_admin(request, db)
+    if isinstance(auth, RedirectResponse):
+        return auth
+    item = db.get(models.SolicitudPrestador, solicitud_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+    if item.status not in {"pendiente", "revisando"} or item.converted_entity_id is not None:
+        return RedirectResponse(
+            f"/admin/solicitudes/{item.id}?error={quote('El tipo de una solicitud cerrada o convertida no puede modificarse.')}",
+            status_code=303,
+        )
+    corrected_type = clean_text(business_type, default="")
+    if corrected_type not in INTAKE_CONVERSION_MAP:
+        return RedirectResponse(
+            f"/admin/solicitudes/{item.id}?error={quote('El tipo / rubro seleccionado no es válido.')}",
+            status_code=303,
+        )
+
+    item.business_type = corrected_type
+    item.updated_at = utc_now()
+    db.commit()
+    return RedirectResponse(
+        f"/admin/solicitudes/{item.id}?msg={quote('Tipo / rubro actualizado.')}", status_code=303
+    )
 
 
 @app.post("/admin/solicitudes/{solicitud_id}/convertir")
