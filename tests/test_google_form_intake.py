@@ -307,6 +307,129 @@ def login_admin(client):
     client.post("/login", data={"username": "intake-admin", "password": "secret", "next": "/admin/solicitudes"})
 
 
+def test_admin_can_correct_business_type_without_changing_original_data_or_files(intake_app, payload):
+    client, db = intake_app
+    body = authorized_payload(
+        payload,
+        business_type="Otro servicio",
+        business_name="Coaching Holístico Laura Magdalena",
+        description="Constelaciones familiares y acompañamiento holístico",
+    )
+    body["contact"] = {
+        "name": "Laura Magdalena", "phone": "3512345678",
+        "public_whatsapp": "3512345678", "email": "laura@example.com",
+    }
+    body["raw"] = {
+        "nombre": "Coaching Holístico Laura Magdalena",
+        "actividad": "Constelaciones familiares",
+        "otro_dato": "Información original",
+    }
+    item_id = post_intake(client, body).json()["id"]
+    assert post_media(client, body["external_id"], "logo", "original-logo").status_code == 201
+    item = db.get(SolicitudPrestador, item_id)
+    original_payload = item.raw_payload
+    preserved = {
+        field: getattr(item, field) for field in (
+            "external_id", "source", "received_at", "business_name", "contact_name", "phone",
+            "public_whatsapp", "email", "instagram", "facebook", "website", "address", "directions",
+            "maps_url", "description", "opening_hours", "payment_methods", "highlights", "review_notes",
+            "status", "converted_entity_type", "converted_entity_id", "processed_at",
+        )
+    }
+    files_before = [
+        (row.id, row.kind, row.drive_file_id, row.original_name, row.stored_name, row.mime_type, row.size, row.relative_path)
+        for row in db.query(SolicitudPrestadorArchivo).filter_by(solicitud_id=item_id).all()
+    ]
+    login_admin(client)
+
+    response = client.post(
+        f"/admin/solicitudes/{item_id}/tipo",
+        data={"business_type": "Actividad / clase / experiencia"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    db.refresh(item)
+    assert item.business_type == "Actividad / clase / experiencia"
+    assert item.raw_payload == original_payload
+    assert {field: getattr(item, field) for field in preserved} == preserved
+    assert [
+        (row.id, row.kind, row.drive_file_id, row.original_name, row.stored_name, row.mime_type, row.size, row.relative_path)
+        for row in db.query(SolicitudPrestadorArchivo).filter_by(solicitud_id=item_id).all()
+    ] == files_before
+    assert db.query(Empresa).count() == db.query(ActividadAgenda).count() == 0
+    assert "Tipo / rubro actualizado." in client.get(response.headers["location"]).text
+
+
+def test_corrected_business_type_controls_subsequent_draft_conversion(intake_app, payload):
+    client, db = intake_app
+    body = authorized_payload(payload, business_type="Otro servicio", business_name="Constelaciones familiares")
+    item_id = post_intake(client, body).json()["id"]
+    login_admin(client)
+
+    correction = client.post(
+        f"/admin/solicitudes/{item_id}/tipo",
+        data={"business_type": "Actividad / clase / experiencia"}, follow_redirects=False,
+    )
+    conversion = client.post(f"/admin/solicitudes/{item_id}/convertir", follow_redirects=False)
+
+    assert correction.status_code == conversion.status_code == 303
+    activity = db.query(ActividadAgenda).one()
+    assert activity.tipo == "actividad" and activity.publicado is False
+    assert db.query(Empresa).count() == 0
+    item = db.get(SolicitudPrestador, item_id)
+    assert item.status == "procesada"
+    assert item.converted_entity_type == "actividad_agenda"
+    assert item.converted_entity_id == activity.id
+
+
+def test_business_type_correction_rejects_unknown_type_and_processed_request(intake_app, payload):
+    client, db = intake_app
+    first_id = post_intake(client, authorized_payload(payload, business_type="Otro servicio")).json()["id"]
+    original_payload = db.get(SolicitudPrestador, first_id).raw_payload
+    login_admin(client)
+
+    invalid = client.post(
+        f"/admin/solicitudes/{first_id}/tipo", data={"business_type": "Tipo inventado"},
+        follow_redirects=False,
+    )
+    assert invalid.status_code == 303
+    first = db.get(SolicitudPrestador, first_id)
+    assert first.business_type == "Otro servicio" and first.raw_payload == original_payload
+    assert db.query(Empresa).count() == db.query(ActividadAgenda).count() == 0
+
+    first.status = "procesada"
+    first.converted_entity_id = 987
+    first.converted_entity_type = "empresa"
+    db.commit()
+    blocked = client.post(
+        f"/admin/solicitudes/{first_id}/tipo",
+        data={"business_type": "Actividad / clase / experiencia"}, follow_redirects=False,
+    )
+    db.refresh(first)
+    assert blocked.status_code == 303
+    assert first.business_type == "Otro servicio"
+    assert first.converted_entity_id == 987 and first.converted_entity_type == "empresa"
+
+
+def test_business_type_selector_is_only_shown_for_editable_requests(intake_app, payload):
+    client, db = intake_app
+    item_id = post_intake(client, authorized_payload(payload, business_type="Otro servicio")).json()["id"]
+    login_admin(client)
+
+    editable_html = client.get(f"/admin/solicitudes/{item_id}").text
+    assert 'action="/admin/solicitudes/{}/tipo"'.format(item_id) in editable_html
+    assert '<option value="Otro servicio" selected>' in editable_html
+    assert '<option value="Actividad / clase / experiencia">' in editable_html
+
+    item = db.get(SolicitudPrestador, item_id)
+    item.status = "procesada"
+    db.commit()
+    processed_html = client.get(f"/admin/solicitudes/{item_id}").text
+    assert 'action="/admin/solicitudes/{}/tipo"'.format(item_id) not in processed_html
+    assert "<strong>Tipo / rubro:</strong> Otro servicio" in processed_html
+
+
 def test_conversion_requires_admin_and_missing_is_404(intake_app, payload):
     client, _ = intake_app
     item_id = post_intake(client, authorized_payload(payload)).json()["id"]
