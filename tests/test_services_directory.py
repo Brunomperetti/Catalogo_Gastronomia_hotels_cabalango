@@ -146,7 +146,7 @@ def test_bakery_normalization_covers_every_structured_legacy_representation():
 def test_services_taxonomy_filters_and_compatibility():
     assert SERVICIOS_GRUPOS["compras"] == "Compras"
     assert list(SERVICIOS_FILTROS_PUBLICOS) == [
-        "almacenes", "panaderias", "locales", "transporte", "estacionamiento", "farmacia", "lavanderia", "otros"
+        "almacenes", "panaderias", "locales", "ropa_accesorios", "transporte", "estacionamiento", "farmacia", "lavanderia", "otros"
     ]
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
@@ -157,6 +157,7 @@ def test_services_taxonomy_filters_and_compatibility():
     records = [
         ("Almacén del Río", "almacen-rio", "compras", "Almacén", True),
         ("Manos de Cabalango", "manos-cabalango", "compras", "  PRODUCTOS   REGIONALES ", True),
+        ("Feria Textil", "feria-textil", "compras", " Feria de ROPA y accesorios ", True),
         ("Remis Cabalango", "remis-cabalango", "transporte", "Remis", True),
         ("Costa Norte", "costa-norte", "estacionamiento", "Playa de estacionamiento", True),
         ("Farmacia Cabalango", "farmacia-cabalango", "salud", "Farmacia", True),
@@ -190,7 +191,7 @@ def test_services_taxonomy_filters_and_compatibility():
         assert 'href="/servicios?filtro=almacenes">Almacenes y kioscos</a>' in response.text
         filters = response.text.split('<nav class="services-filters"', 1)[1].split("</nav>", 1)[0]
         assert re.findall(r">([^<>]+)</a>", filters) == [
-            "Todo", "Almacenes y kioscos", "Panaderías", "Productos locales y artesanías", "Transporte",
+            "Todo", "Almacenes y kioscos", "Panaderías", "Productos locales y artesanías", "Ropa y accesorios", "Transporte",
             "Estacionamiento", "Farmacia", "Lavandería", "Otros servicios",
         ]
         assert re.findall(r'href="([^"]+)"', filters) == [
@@ -198,6 +199,7 @@ def test_services_taxonomy_filters_and_compatibility():
             "/servicios?filtro=almacenes",
             "/servicios?filtro=panaderias",
             "/servicios?filtro=locales",
+            "/servicios?filtro=ropa_accesorios",
             "/servicios?filtro=transporte",
             "/servicios?filtro=estacionamiento",
             "/servicios?filtro=farmacia",
@@ -243,6 +245,7 @@ def test_services_taxonomy_filters_and_compatibility():
         public_expectations = {
             "almacenes": ("Almacén del Río", "Manos de Cabalango"),
             "locales": ("Manos de Cabalango", "Almacén del Río"),
+            "ropa_accesorios": ("Feria Textil", "Manos de Cabalango"),
             "transporte": ("Remis Cabalango", "Costa Norte"),
             "estacionamiento": ("Costa Norte", "Pregot Rosana"),
             "farmacia": ("Farmacia Cabalango", "Pregot Rosana"),

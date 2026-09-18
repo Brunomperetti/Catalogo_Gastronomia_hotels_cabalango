@@ -3146,6 +3146,12 @@ SERVICIOS_FILTROS_PUBLICOS = {
         "filtered_description": "Descubrí sabores, objetos y productos creados por emprendedores de Cabalango.",
         "cta": "Descubrir productos locales",
     },
+    "ropa_accesorios": {
+        "label": "Ropa y accesorios",
+        "description": "Indumentaria, calzado, accesorios y ferias de ropa nueva y de segunda mano en Cabalango.",
+        "filtered_description": "Encontrá ropa, calzado, accesorios y propuestas de segunda mano en Cabalango.",
+        "cta": "Ver ropa y accesorios",
+    },
     "transporte": {
         "label": "Transporte",
         "description": "Opciones para moverte por Cabalango y la zona.",
@@ -3234,6 +3240,11 @@ SERVICIOS_SUBTIPOS = {
     "kiosco": ("compras", "Kiosco"),
     "panaderia": ("compras", "Panadería"),
     "regionales": ("compras", "Productos regionales"),
+    "ropa y accesorios": ("compras", "Ropa y accesorios"),
+    "feria de ropa y accesorios": ("compras", "Feria de ropa y accesorios"),
+    "indumentaria": ("compras", "Indumentaria"),
+    "calzado": ("compras", "Calzado"),
+    "accesorios": ("compras", "Accesorios"),
     "fraccionamiento de productos secos": ("compras", "Fraccionamiento de productos secos"),
     "remis": ("transporte", "Remis"),
     "taxi": ("transporte", "Taxi"),
@@ -3267,6 +3278,11 @@ SERVICIOS_CATEGORIAS_ADMIN = {
         "label": SERVICIOS_FILTROS_PUBLICOS["locales"]["label"],
         "subgrupo": "compras",
         "subtipos": ["Productos regionales"],
+    },
+    "ropa_accesorios": {
+        "label": SERVICIOS_FILTROS_PUBLICOS["ropa_accesorios"]["label"],
+        "subgrupo": "compras",
+        "subtipos": ["Ropa y accesorios", "Feria de ropa y accesorios", "Indumentaria", "Calzado", "Accesorios"],
     },
     "transporte": {
         "label": SERVICIOS_FILTROS_PUBLICOS["transporte"]["label"],
@@ -3436,6 +3452,10 @@ def public_service_category_key(empresa: models.Empresa) -> str:
         return "panaderias"
     group = service_group_key(empresa)
     if group == "compras":
+        if normalize_theme(empresa.theme) == "servicios" and normalize_taxonomy_key(empresa.subtipo) in {
+            "ropa y accesorios", "feria de ropa y accesorios", "indumentaria", "calzado", "accesorios"
+        }:
+            return "ropa_accesorios"
         return "locales" if is_local_products_service(empresa) else "almacenes"
     if group == "otros":
         return "lavanderia" if is_laundry_service(empresa) else "otros"
@@ -4247,7 +4267,7 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
     active_public_service_presentation = None
     service_group_previews = []
     if section == "servicios":
-        requested_public_filter = normalize_taxonomy_key(request.query_params.get("filtro"))
+        requested_public_filter = normalize_taxonomy_key(request.query_params.get("filtro")).replace(" ", "_")
         if requested_public_filter in SERVICIOS_FILTROS_PUBLICOS:
             active_public_service_filter = requested_public_filter
             active_public_service_presentation = SERVICIOS_FILTROS_PUBLICOS[requested_public_filter]
@@ -4281,9 +4301,11 @@ def portal_section_context(request: Request, db: Session, *, title: str, eyebrow
                     })
         if not active_public_service_filter and active_service_group == "compras":
             requested_type = normalize_taxonomy_key(request.query_params.get("tipo"))
-            active_purchase_type = requested_type if requested_type in {"almacenes", "locales"} else ""
+            active_purchase_type = requested_type if requested_type in {"almacenes", "locales", "ropa accesorios"} else ""
             if active_purchase_type == "locales":
                 empresas = [empresa for empresa in empresas if is_local_products_service(empresa)]
+            elif active_purchase_type == "ropa accesorios":
+                empresas = [empresa for empresa in empresas if public_service_category_key(empresa) == "ropa_accesorios"]
             elif active_purchase_type == "almacenes":
                 empresas = [
                     empresa for empresa in empresas
@@ -4841,6 +4863,7 @@ INTAKE_CONVERSION_MAP = {
     "Gastronomía": {"entity": "empresa", "theme": "gastronomia"},
     "Almacén / kiosco / proveeduría": {"entity": "empresa", "theme": "servicios", "subgrupo": "compras"},
     "Productos regionales / artesanías": {"entity": "empresa", "theme": "servicios", "subgrupo": "compras", "subtipo": "Productos regionales"},
+    "Ropa y accesorios": {"entity": "empresa", "theme": "servicios", "subgrupo": "compras", "subtipo": "Ropa y accesorios"},
     "Camping": {"entity": "empresa", "theme": "alojamiento", "subtipo": "Camping"},
     "Estacionamiento": {"entity": "empresa", "theme": "servicios", "subgrupo": "estacionamiento", "subtipo": "Estacionamiento"},
     "Transporte / remis": {"entity": "empresa", "theme": "servicios", "subgrupo": "transporte", "subtipo": "Remis"},
